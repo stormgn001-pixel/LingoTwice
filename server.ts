@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
+import { translate as bingTranslate } from 'bing-translate-api';
 
 dotenv.config();
 
@@ -240,12 +241,10 @@ app.post('/api/translate', async (req: Request, res: Response) => {
     const ip = getClientIp(req);
     const quota = getOrInitQuota(ip);
 
-    // Re-verify premium if code provided
     if (authCode && (authCode === 'LINGOTWICE_PRO' || authCode === 'LINGOTWIN_PRO' || authCode === 'PRO2026' || authCode === 'TEST_PASS')) {
       quota.isPremium = true;
     }
 
-    // Generous quota check: 500 passages per day for smooth reading
     if (!quota.isPremium && quota.translationsCount + paragraphs.length > 500) {
       res.status(429).json({
         error: 'Достигнут дневной лимит бесплатных переводов (500 фрагментов). Перейдите на тариф Премиум для безлимитного доступа.',
@@ -253,8 +252,7 @@ app.post('/api/translate', async (req: Request, res: Response) => {
       return;
     }
 
-    // Direct return if source and target are identical
-    if (sourceLang.toLowerCase() === targetLang.toLowerCase()) {
+    if (sourceLang && sourceLang !== 'auto' && sourceLang.toLowerCase() === targetLang.toLowerCase()) {
       res.json({
         translatedParagraphs: paragraphs,
         cachedCount: 0,
@@ -268,9 +266,9 @@ app.post('/api/translate', async (req: Request, res: Response) => {
     const missingIndices: number[] = [];
     const missingTexts: string[] = [];
 
-    // Check cache
     paragraphs.forEach((p: string, idx: number) => {
-      const cacheKey = `${sourceLang}:${targetLang}:${p.trim()}`;
+      const src = sourceLang || 'auto';
+      const cacheKey = `${src}:${targetLang}:${p.trim()}`;
       if (translationCache.has(cacheKey)) {
         results[idx] = translationCache.get(cacheKey)!;
         cachedCount++;
@@ -280,7 +278,6 @@ app.post('/api/translate', async (req: Request, res: Response) => {
       }
     });
 
-    // If all in cache, return immediately
     if (missingTexts.length === 0) {
       res.json({
         translatedParagraphs: results,
@@ -290,170 +287,84 @@ app.post('/api/translate', async (req: Request, res: Response) => {
       return;
     }
 
-    const ai = getAiClient();
+    let translatedBatch: string[] = [];
+    let activeProvider = 'free-built-in-translator';
+    const fromLang = !sourceLang || sourceLang === 'auto' ? null : sourceLang.toLowerCase();
+    const toLang = targetLang.toLowerCase();
 
-    // Check if Gemini API client is available
-    if (!ai) {
-      // Check if all missing texts happen to be known offline quotes
-      const allKnown = missingTexts.every(
-        (t) => smartFallbackTranslate(t, targetLang) !== `[${targetLang.toUpperCase()}] ${t.trim()}`
-      );
-
-      if (allKnown) {
-        missingIndices.forEach((origIdx) => {
-          results[origIdx] = smartFallbackTranslate(paragraphs[origIdx], targetLang);
-        });
-        res.json({
-          translatedParagraphs: results,
-          cachedCount,
-          provider: 'offline-library',
-        });
-        return;
-      }
-
-      res.status(503).json({
-        error:
-          'API-ключ Gemini не настроен на сервере (отсутствует GEMINI_API_KEY). Укажите действующий ключ в переменных окружения хостинга (или панели Secrets).',
-        code: 'MISSING_API_KEY',
+    // 1. Try robust free neural translator first
+    try {
+      const promises = missingTexts.map(async (text) => {
+        if (!text.trim()) return '';
+        const r = await bingTranslate(text, fromLang, toLang);
+        return r.translation || text;
       });
-      return;
+      translatedBatch = await Promise.all(promises);
+    } catch (freeErr: any) {
+      console.warn('Free neural translation failed, attempting Gemini cascade:', freeErr.message);
+      activeProvider = 'gemini-cascade';
     }
 
-    const LANG_NAMES: Record<string, string> = {
-      ru: 'Russian', en: 'English', de: 'German', fr: 'French', es: 'Spanish',
-      it: 'Italian', zh: 'Chinese', ja: 'Japanese', ko: 'Korean', pt: 'Portuguese',
-      ar: 'Arabic', tr: 'Turkish', nl: 'Dutch', pl: 'Polish', sv: 'Swedish', he: 'Hebrew',
-      uk: 'Ukrainian', ja_kana: 'Japanese',
-    };
+    // 2. If free translator failed or returned empty, try Gemini API cascade if key is configured
+    if (translatedBatch.length === 0 || translatedBatch.some(t => !t)) {
+      const ai = getAiClient();
+      if (ai) {
+        try {
+          const LANG_NAMES: Record<string, string> = {
+            ru: 'Russian', en: 'English', de: 'German', fr: 'French', es: 'Spanish',
+            it: 'Italian', zh: 'Chinese', ja: 'Japanese', ko: 'Korean', pt: 'Portuguese',
+            ar: 'Arabic', tr: 'Turkish', nl: 'Dutch', pl: 'Polish', sv: 'Swedish', he: 'Hebrew',
+            uk: 'Ukrainian',
+          };
+          const srcName = sourceLang === 'auto' ? 'the source language' : (LANG_NAMES[sourceLang.toLowerCase()] || sourceLang);
+          const tgtName = LANG_NAMES[targetLang.toLowerCase()] || targetLang;
 
-    const srcName = LANG_NAMES[sourceLang.toLowerCase()] || sourceLang;
-    const tgtName = LANG_NAMES[targetLang.toLowerCase()] || targetLang;
+          const prompt = `Expert bilingual literary translator. Translate these ${missingTexts.length} passages from ${srcName} into natural, high quality ${tgtName}.
+Do not add conversational commentary. Return JSON object: {"translations": ["..."]}.
+Passages: ${JSON.stringify(missingTexts)}`;
 
-    // Batch processing: 15 paragraphs per request for fast streaming & low latency
-    const BATCH_SIZE = 15;
-    const PRIMARY_MODEL = 'gemini-3.1-flash-lite';
-    const SECONDARY_MODEL = 'gemini-3.8-flash';
-    let activeProvider = PRIMARY_MODEL;
-
-    const callTranslate = async (
-      client: GoogleGenAI,
-      texts: string[],
-      model: string
-    ): Promise<string[] | null> => {
-      const prompt = `Expert bilingual literary translator. Translate these ${texts.length} paragraphs from ${srcName} into natural, high quality ${tgtName}.
-Do not add conversational commentary or notes. Keep original tone and formatting.
-Return JSON with key "translations" containing the array of translated paragraphs in exact order.
-Source: ${JSON.stringify(texts)}`;
-
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error(`Timeout for ${model}`)), 15000)
-      );
-
-      const geminiPromise = client.models.generateContent({
-        model,
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              translations: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
+          const resp = await ai.models.generateContent({
+            model: 'gemini-3.1-flash-lite',
+            contents: prompt,
+            config: {
+              responseMimeType: 'application/json',
+              responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                  translations: {
+                    type: Type.ARRAY,
+                    items: { type: Type.STRING },
+                  },
+                },
+                required: ['translations'],
               },
             },
-            required: ['translations'],
-          },
-        },
-      });
+          });
 
-      const resp = await Promise.race([geminiPromise, timeoutPromise]);
-      const data = JSON.parse(resp.text || '{}');
-      if (Array.isArray(data.translations) && data.translations.length > 0) {
-        return data.translations;
-      }
-      return null;
-    };
-
-    for (let i = 0; i < missingTexts.length; i += BATCH_SIZE) {
-      const batch = missingTexts.slice(i, i + BATCH_SIZE);
-      const batchIndices = missingIndices.slice(i, i + BATCH_SIZE);
-      let batchTranslations: string[] | null = null;
-      let lastError: any = null;
-
-      // Try model pipeline: gemini-3.1-flash-lite -> gemini-3.8-flash -> gemini-2.5-flash
-      const modelsToTry = ['gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-2.5-flash'];
-      for (const modelName of modelsToTry) {
-        try {
-          batchTranslations = await callTranslate(ai, batch, modelName);
-          if (batchTranslations && batchTranslations.length > 0) {
-            activeProvider = modelName;
-            break;
+          const parsed = JSON.parse(resp.text || '{}');
+          if (Array.isArray(parsed.translations) && parsed.translations.length === missingTexts.length) {
+            translatedBatch = parsed.translations;
+            activeProvider = 'gemini-3.1-flash-lite';
           }
-        } catch (mErr: any) {
-          lastError = mErr;
-          console.warn(`Translation attempt with ${modelName} failed:`, mErr.message);
+        } catch (geminiErr: any) {
+          console.warn('Gemini translation cascade failed:', geminiErr.message);
         }
       }
-
-      if (!batchTranslations || batchTranslations.length === 0) {
-        const errMsg = lastError?.message || '';
-        const isAuthError =
-          lastError?.status === 401 ||
-          errMsg.includes('401') ||
-          errMsg.includes('API key not valid') ||
-          errMsg.includes('UNAUTHENTICATED') ||
-          errMsg.includes('ACCESS_TOKEN_TYPE_UNSUPPORTED');
-        const isQuotaError =
-          lastError?.status === 429 ||
-          errMsg.includes('429') ||
-          errMsg.includes('RESOURCE_EXHAUSTED') ||
-          errMsg.includes('Quota exceeded');
-        const isTimeout = errMsg.includes('Timeout');
-
-        if (isAuthError) {
-          res.status(401).json({
-            error:
-              'Ошибка авторизации Gemini API (HTTP 401): недействительный API-ключ. Проверьте переменную GEMINI_API_KEY в панели хостинга.',
-            code: 'INVALID_API_KEY',
-          });
-          return;
-        }
-
-        if (isQuotaError) {
-          res.status(429).json({
-            error:
-              'Превышена квота запросов к Gemini API (HTTP 429). Пожалуйста, подождите или используйте платный тариф ключа.',
-            code: 'QUOTA_EXCEEDED',
-          });
-          return;
-        }
-
-        if (isTimeout) {
-          res.status(504).json({
-            error: 'Превышено время ожидания ответа от Gemini API (таймаут 15 сек). Попробуйте разбить текст на меньшие части.',
-            code: 'TIMEOUT',
-          });
-          return;
-        }
-
-        res.status(502).json({
-          error: `Ошибка Gemini API при выполнении перевода: ${errMsg.slice(0, 150) || 'сервис временно недоступен'}.`,
-          code: 'UPSTREAM_ERROR',
-        });
-        return;
-      }
-
-      // Fill results for this batch
-      batchIndices.forEach((origIdx, batchIdx) => {
-        const trans = batchTranslations![batchIdx]?.trim() || '';
-        results[origIdx] = trans;
-        const cacheKey = `${sourceLang}:${targetLang}:${paragraphs[origIdx].trim()}`;
-        translationCache.set(cacheKey, trans);
-      });
     }
 
-    // Update quota
+    // 3. Ultimate fallback if both failed
+    if (translatedBatch.length === 0 || translatedBatch.length !== missingTexts.length) {
+      translatedBatch = missingTexts.map(t => smartFallbackTranslate(t, targetLang));
+      activeProvider = 'smart-fallback';
+    }
+
+    missingIndices.forEach((origIdx, batchIdx) => {
+      const trans = translatedBatch[batchIdx] || missingTexts[batchIdx];
+      results[origIdx] = trans;
+      const cacheKey = `${sourceLang || 'auto'}:${targetLang}:${paragraphs[origIdx].trim()}`;
+      translationCache.set(cacheKey, trans);
+    });
+
     quota.translationsCount += missingTexts.length;
     quota.wordsCount += missingTexts.reduce((acc, t) => acc + t.split(/\s+/).length, 0);
 
@@ -467,7 +378,7 @@ Source: ${JSON.stringify(texts)}`;
       },
     });
   } catch (error: any) {
-    console.error('Translate route error:', error);
+    console.error('Translate route unexpected error:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервиса перевода.' });
   }
 });
