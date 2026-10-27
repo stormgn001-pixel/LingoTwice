@@ -1,0 +1,6 @@
+{
+  "name": "LingoTwice",
+  "description": "Многоязычный браузер параллельного чтения и изучения иностранных языков с синхронной прокруткой, контекстным словарём и интервальным повторением.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
