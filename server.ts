@@ -381,21 +381,18 @@ Source: ${JSON.stringify(texts)}`;
       let batchTranslations: string[] | null = null;
       let lastError: any = null;
 
-      // Try primary model: gemini-3.1-flash-lite
-      try {
-        batchTranslations = await callTranslate(ai, batch, PRIMARY_MODEL);
-        activeProvider = PRIMARY_MODEL;
-      } catch (err: any) {
-        lastError = err;
-        console.warn(`Translation attempt with ${PRIMARY_MODEL} failed:`, err.message);
-
-        // Attempt secondary model: gemini-3.8-flash
+      // Try model pipeline: gemini-3.1-flash-lite -> gemini-3.8-flash -> gemini-2.5-flash
+      const modelsToTry = ['gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-2.5-flash'];
+      for (const modelName of modelsToTry) {
         try {
-          batchTranslations = await callTranslate(ai, batch, SECONDARY_MODEL);
-          activeProvider = SECONDARY_MODEL;
-        } catch (secErr: any) {
-          lastError = secErr;
-          console.warn(`Fallback translation attempt with ${SECONDARY_MODEL} failed:`, secErr.message);
+          batchTranslations = await callTranslate(ai, batch, modelName);
+          if (batchTranslations && batchTranslations.length > 0) {
+            activeProvider = modelName;
+            break;
+          }
+        } catch (mErr: any) {
+          lastError = mErr;
+          console.warn(`Translation attempt with ${modelName} failed:`, mErr.message);
         }
       }
 

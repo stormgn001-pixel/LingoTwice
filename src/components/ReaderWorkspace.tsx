@@ -429,8 +429,10 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
         activePassageId || (document.passages.length > 0 ? document.passages[0].id : null);
       if (!startPassageId) return;
 
-      const currentIndex = document.passages.findIndex((p) => p.id === startPassageId);
-      if (currentIndex === -1) return;
+      let currentIndex = document.passages.findIndex((p) => p.id === startPassageId);
+      if (currentIndex === -1) {
+        currentIndex = 0;
+      }
 
       // Look ahead up to 25 passages, gathering untranslated passages up to 1000 characters
       let untranslatedChars = 0;
@@ -445,6 +447,20 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
           }
           batchToTranslate.push(p);
           untranslatedChars += p.sourceText.length;
+        }
+      }
+
+      // If no untranslated passages ahead, scan remaining passages in document
+      if (batchToTranslate.length === 0) {
+        for (let i = 0; i < document.passages.length; i++) {
+          const p = document.passages[i];
+          if (!p.targetText && !inFlightIdsRef.current.has(p.id)) {
+            if (untranslatedChars + p.sourceText.length > 1000 && batchToTranslate.length > 0) {
+              break;
+            }
+            batchToTranslate.push(p);
+            untranslatedChars += p.sourceText.length;
+          }
         }
       }
 

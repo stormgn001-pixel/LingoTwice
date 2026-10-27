@@ -12,8 +12,9 @@ export interface TranslateRequest {
 
 export interface TranslateResponse {
   translatedParagraphs: string[];
+  detectedSourceLang?: string;
   cachedCount: number;
-  provider: 'gemini' | 'cache' | 'demo';
+  provider: string;
   usageQuota?: {
     used: number;
     limit: number;
@@ -247,5 +248,36 @@ export const apiService = {
       localStorage.setItem('linguatwin_activation_code', code);
     }
     return data;
+  },
+
+  /**
+   * Detect language of a given text snippet
+   */
+  async detectLanguage(text: string): Promise<string | null> {
+    try {
+      const res = await fetch('/api/detect-language', {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ text }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data.detectedLang || null;
+      }
+    } catch (err) {
+      console.warn('Language detection error:', err);
+    }
+    return null;
+  },
+
+  /**
+   * Diagnostic health & provider status check
+   */
+  async getProvidersStatus(): Promise<any> {
+    try {
+      const res = await fetch('/api/health');
+      if (res.ok) return await res.json();
+    } catch {}
+    return null;
   }
 };

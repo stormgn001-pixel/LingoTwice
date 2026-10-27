@@ -27,7 +27,18 @@ export const SUPPORTED_LANGUAGES: Language[] = [
   { code: 'he', name: 'Иврит', nativeName: 'עברית', flag: '🇮🇱', ttsLocale: 'he-IL', rtl: true },
 ];
 
+export const AUTO_DETECT_LANGUAGE: Language = {
+  code: 'auto',
+  name: 'Автоопределение',
+  nativeName: 'Auto Detect',
+  flag: '✨',
+  ttsLocale: 'en-US',
+};
+
+export const SOURCE_LANGUAGES: Language[] = [AUTO_DETECT_LANGUAGE, ...SUPPORTED_LANGUAGES];
+
 export const getLanguageByCode = (code: string): Language => {
+  if (code === 'auto') return AUTO_DETECT_LANGUAGE;
   return SUPPORTED_LANGUAGES.find(l => l.code === code) || {
     code,
     name: code.toUpperCase(),

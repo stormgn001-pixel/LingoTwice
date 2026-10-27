@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Globe, FileText, Upload, Sparkles, AlertCircle, X, Lock, Plus } from 'lucide-react';
 import { InterfaceLanguage, ReadingDocument, SubscriptionStatus } from '../types';
-import { SUPPORTED_LANGUAGES } from '../constants/languages';
+import { SUPPORTED_LANGUAGES, SOURCE_LANGUAGES } from '../constants/languages';
 import { getTranslation } from '../i18n/translations';
 import { apiService } from '../services/api';
 
@@ -164,6 +164,8 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
       const initialTexts = initialIndices.map((i) => passages[i]);
       const initialTranslations: Record<number, string> = {};
 
+      let finalSourceLang = sourceLang;
+
       // If source and target are different, translate initial batch immediately
       if (sourceLang.toLowerCase() !== targetLang.toLowerCase() && initialTexts.length > 0) {
         setProgressStatus('Перевод выполняется...');
@@ -177,6 +179,11 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
           initialIndices.forEach((origIdx, batchIdx) => {
             initialTranslations[origIdx] = transResult.translatedParagraphs[batchIdx] || '';
           });
+
+          if (transResult.detectedSourceLang) {
+            finalSourceLang = transResult.detectedSourceLang.split('-')[0].toLowerCase();
+          }
+
           setProgressStatus('Перевод готов!');
           // Short delay for visual confirmation
           await new Promise((r) => setTimeout(r, 400));
@@ -195,7 +202,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
       const newDoc: ReadingDocument = {
         id: `doc-${Date.now()}`,
         title: titleInput.trim() || 'Пользовательский текст',
-        sourceLang,
+        sourceLang: finalSourceLang,
         targetLang,
         category: forceSaveToLib ? selectedCategory : 'custom',
         createdAt: Date.now(),
@@ -343,7 +350,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
               onChange={(e) => setSourceLang(e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 cursor-pointer"
             >
-              {SUPPORTED_LANGUAGES.map((l) => (
+              {SOURCE_LANGUAGES.map((l) => (
                 <option key={l.code} value={l.code}>
                   {l.flag} {l.name} ({l.nativeName})
                 </option>
@@ -629,7 +636,14 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
             <div className="flex-1">
               <span>{errorMessage}</span>
               {activeTab === 'paste' && textInput.trim().length > 0 && (
-                <div className="mt-2 flex items-center gap-2">
+                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={(e) => handlePasteSubmit(e, saveToLibrary)}
+                    className="rounded-lg bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 cursor-pointer shadow-xs"
+                  >
+                    Повторить попытку
+                  </button>
                   <button
                     type="button"
                     onClick={handleOpenAnywayWithoutTranslation}
