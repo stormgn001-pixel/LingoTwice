@@ -26,7 +26,8 @@ import {
   BookOpen,
   ChevronDown,
   Search,
-  X
+  X,
+  AlertCircle
 } from 'lucide-react';
 import {
   AlignedPassage,
@@ -183,6 +184,8 @@ const TargetPassage = React.memo(({
   playAudio, 
   isHiddenInImmersion,
   isTranslating,
+  translationError,
+  onRetry,
   fontSizeStyle, 
   lineHeightClass, 
   targetTextColorClass,
@@ -199,6 +202,8 @@ const TargetPassage = React.memo(({
   playAudio: (text: string) => void;
   isHiddenInImmersion: boolean;
   isTranslating: boolean;
+  translationError?: string | null;
+  onRetry?: () => void;
   fontSizeStyle: React.CSSProperties;
   lineHeightClass: string;
   targetTextColorClass: string;
@@ -219,7 +224,7 @@ const TargetPassage = React.memo(({
           <button
             onClick={() => toggleReveal(passage.id)}
             title={isRevealed ? t.hideTranslation : t.revealTranslation}
-            className="rounded p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            className="rounded p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
           >
             {isRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
           </button>
@@ -228,7 +233,7 @@ const TargetPassage = React.memo(({
           <button
             onClick={() => playAudio(passage.targetText)}
             title={t.listenTarget}
-            className="rounded p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            className="rounded p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
           >
             <Volume2 className="h-3.5 w-3.5" />
           </button>
@@ -245,15 +250,39 @@ const TargetPassage = React.memo(({
           />
         </div>
       ) : isTranslating ? (
-        <div className="flex flex-col gap-2 py-1">
+        <div className="flex flex-col gap-2 py-1.5">
+          <div className="flex items-center gap-2 text-xs font-medium text-amber-600 dark:text-amber-400">
+            <RefreshCw className="h-3 w-3 animate-spin" />
+            <span>Перевод выполняется...</span>
+          </div>
           <div className="h-3 w-full animate-pulse rounded bg-slate-200 dark:bg-slate-800"></div>
           <div className="h-3 w-4/5 animate-pulse rounded bg-slate-200 dark:bg-slate-800"></div>
         </div>
       ) : !passage.targetText ? (
-        <div className="flex items-center gap-2 py-1 text-[11px] text-slate-400 italic">
-          <RefreshCw className="h-3 w-3 animate-spin" />
-          <span>Ожидание перевода...</span>
-        </div>
+        translationError ? (
+          <div className="rounded-xl border border-dashed border-rose-300 bg-rose-50/60 p-3 text-xs text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200">
+            <div className="flex items-center gap-1.5 font-semibold text-rose-700 dark:text-rose-300">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+              <span>Не удалось получить перевод</span>
+            </div>
+            <p className="mt-1 text-[11px] text-rose-600/90 dark:text-rose-300/80">{translationError}</p>
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="mt-2 inline-flex items-center gap-1 rounded-lg bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 cursor-pointer shadow-xs"
+              >
+                <RefreshCw className="h-3 w-3" />
+                <span>Повторить перевод</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 py-1 text-[11px] text-slate-400 italic">
+            <RefreshCw className="h-3 w-3 animate-spin" />
+            <span>Ожидание перевода...</span>
+          </div>
+        )
       ) : isHiddenInImmersion ? (
         <div
           onClick={() => toggleReveal(passage.id)}
@@ -330,14 +359,26 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
   const visiblePassages = document.passages.slice(0, visibleCount);
   const hasMore = document.passages.length > visibleCount;
 
-  // Lazy translation state
+  // Lazy translation state & status reporting
   const [translatingPassageIds, setTranslatingPassageIds] = useState<Set<string>>(new Set());
+  const [translationStatus, setTranslationStatus] = useState<'idle' | 'translating' | 'ready' | 'error'>('idle');
+  const [translationErrorMessage, setTranslationErrorMessage] = useState<string | null>(null);
+  const [retryTrigger, setRetryTrigger] = useState(0);
   const inFlightIdsRef = React.useRef<Set<string>>(new Set());
 
-  // Reset visibility when document changes
+  const retryTranslation = React.useCallback(() => {
+    inFlightIdsRef.current.clear();
+    setTranslationErrorMessage(null);
+    setTranslationStatus('idle');
+    setRetryTrigger((prev) => prev + 1);
+  }, []);
+
+  // Reset visibility and translation errors when document changes
   useEffect(() => {
     setVisibleCount(100);
     inFlightIdsRef.current.clear();
+    setTranslationStatus('idle');
+    setTranslationErrorMessage(null);
   }, [document.id]);
 
   // Synchronized scroll hook
@@ -411,6 +452,8 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
         const idsToTrack = new Set(batchToTranslate.map((p) => p.id));
         idsToTrack.forEach((id) => inFlightIdsRef.current.add(id));
         setTranslatingPassageIds((prev) => new Set([...prev, ...idsToTrack]));
+        setTranslationStatus('translating');
+        setTranslationErrorMessage(null);
 
         apiService
           .translate({
@@ -431,6 +474,13 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
                 onUpdatePassage(p.id, p.sourceText, res.translatedParagraphs[idx] || '');
               });
             }
+            setTranslationStatus('ready');
+            setTimeout(() => setTranslationStatus('idle'), 3500);
+          })
+          .catch((err: any) => {
+            console.error('Reader lazy translation error:', err);
+            setTranslationStatus('error');
+            setTranslationErrorMessage(err.message || 'Ошибка сервиса перевода');
           })
           .finally(() => {
             idsToTrack.forEach((id) => inFlightIdsRef.current.delete(id));
@@ -444,7 +494,7 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
     }, 120);
 
     return () => clearTimeout(timer);
-  }, [activePassageId, document.id, document.targetLang, preferences.activeMode, document.passages]);
+  }, [activePassageId, document.id, document.targetLang, preferences.activeMode, document.passages, retryTrigger]);
 
   // Subscribe to speech service
   useEffect(() => {
@@ -653,6 +703,33 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
           <span className="text-xs font-bold">{t.translationPane}</span>
         </div>
         <div className="flex items-center gap-2">
+          {translationStatus === 'translating' && (
+            <div className="flex items-center gap-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-950/80 px-2 py-0.5 rounded-md shadow-xs animate-pulse">
+              <RefreshCw className="h-3 w-3 animate-spin text-amber-600 dark:text-amber-400" />
+              <span>Перевод выполняется...</span>
+            </div>
+          )}
+          {translationStatus === 'ready' && (
+            <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-950/80 px-2 py-0.5 rounded-md shadow-xs">
+              <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+              <span>Перевод готов</span>
+            </div>
+          )}
+          {translationStatus === 'error' && (
+            <div className="flex items-center gap-1.5 text-[11px] font-medium text-rose-700 dark:text-rose-300 bg-rose-100/90 dark:bg-rose-950/90 px-2 py-0.5 rounded-md shadow-xs">
+              <AlertCircle className="h-3 w-3 text-rose-600 shrink-0" />
+              <span className="truncate max-w-[130px] sm:max-w-[200px]" title={translationErrorMessage || ''}>
+                {translationErrorMessage || 'Ошибка перевода'}
+              </span>
+              <button
+                type="button"
+                onClick={retryTranslation}
+                className="underline font-bold hover:text-rose-900 dark:hover:text-rose-100 cursor-pointer ml-0.5"
+              >
+                Повторить
+              </button>
+            </div>
+          )}
           {preferences.activeMode === 'immersion' && (
             <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400">Погружение</span>
           )}
@@ -677,6 +754,8 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
               playAudio={playTargetAudio}
               isHiddenInImmersion={preferences.activeMode === 'immersion' && !revealedPassageIds.has(passage.id)}
               isTranslating={translatingPassageIds.has(passage.id)}
+              translationError={translationErrorMessage}
+              onRetry={retryTranslation}
               fontSizeStyle={fontSizeStyle}
               lineHeightClass={lineHeightClass}
               targetTextColorClass={targetTextColorClass}

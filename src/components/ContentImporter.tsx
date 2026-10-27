@@ -141,7 +141,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
     try {
       setIsProcessing(true);
       setErrorMessage(null);
-      setProgressStatus('Оптимизация и подготовка фрагментов для быстрого чтения...');
+      setProgressStatus('Подготовка текста...');
 
       const passages = splitIntoOptimalPassages(textInput);
       if (passages.length === 0) {
@@ -150,8 +150,48 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
 
       const wordCount = textInput.trim().split(/\s+/).length;
 
-      // Real-time on-demand lazy translation: passages are initially untranslated
-      // and translate in real-time within ~1000 chars as the user reads!
+      // Prepare initial batch (up to ~1000 chars) for immediate real-time translation
+      let initialCharCount = 0;
+      const initialIndices: number[] = [];
+      for (let i = 0; i < passages.length; i++) {
+        if (initialCharCount + passages[i].length > 1000 && initialIndices.length > 0) {
+          break;
+        }
+        initialIndices.push(i);
+        initialCharCount += passages[i].length;
+      }
+
+      const initialTexts = initialIndices.map((i) => passages[i]);
+      const initialTranslations: Record<number, string> = {};
+
+      // If source and target are different, translate initial batch immediately
+      if (sourceLang.toLowerCase() !== targetLang.toLowerCase() && initialTexts.length > 0) {
+        setProgressStatus('Перевод выполняется...');
+        try {
+          const transResult = await apiService.translate({
+            sourceLang,
+            targetLang,
+            paragraphs: initialTexts,
+          });
+
+          initialIndices.forEach((origIdx, batchIdx) => {
+            initialTranslations[origIdx] = transResult.translatedParagraphs[batchIdx] || '';
+          });
+          setProgressStatus('Перевод готов!');
+          // Short delay for visual confirmation
+          await new Promise((r) => setTimeout(r, 400));
+        } catch (transErr: any) {
+          console.warn('Initial translation error in importer:', transErr.message);
+          // Show error to the user so they know what happened, with option to proceed
+          setErrorMessage(
+            `Перевод не удался: ${transErr.message}. Вы можете повторить попытку или открыть текст для чтения в оригинале.`
+          );
+          setIsProcessing(false);
+          setProgressStatus('');
+          return;
+        }
+      }
+
       const newDoc: ReadingDocument = {
         id: `doc-${Date.now()}`,
         title: titleInput.trim() || 'Пользовательский текст',
@@ -166,7 +206,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
           id: `p-${idx + 1}`,
           order: idx + 1,
           sourceText: p,
-          targetText: '', // Will be translated on-demand within 1000 chars
+          targetText: initialTranslations[idx] || '', // Pre-filled for initial passages, lazy for rest
         })),
       };
 
@@ -177,6 +217,30 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
       setIsProcessing(false);
       setProgressStatus('');
     }
+  };
+
+  const handleOpenAnywayWithoutTranslation = () => {
+    if (!textInput.trim()) return;
+    const passages = splitIntoOptimalPassages(textInput);
+    const wordCount = textInput.trim().split(/\s+/).length;
+    const newDoc: ReadingDocument = {
+      id: `doc-${Date.now()}`,
+      title: titleInput.trim() || 'Пользовательский текст',
+      sourceLang,
+      targetLang,
+      category: saveToLibrary ? selectedCategory : 'custom',
+      createdAt: Date.now(),
+      lastReadAt: Date.now(),
+      readingProgress: 0,
+      wordCount,
+      passages: passages.map((p, idx) => ({
+        id: `p-${idx + 1}`,
+        order: idx + 1,
+        sourceText: p,
+        targetText: '',
+      })),
+    };
+    onImportComplete(newDoc);
   };
 
   const extractTextFromPdf = async (file: File): Promise<string> => {
@@ -564,6 +628,17 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
             <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
             <div className="flex-1">
               <span>{errorMessage}</span>
+              {activeTab === 'paste' && textInput.trim().length > 0 && (
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleOpenAnywayWithoutTranslation}
+                    className="rounded-lg border border-rose-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-rose-800 hover:bg-rose-100 dark:border-rose-700 dark:bg-slate-900 dark:text-rose-200 cursor-pointer"
+                  >
+                    Открыть только оригинал (без перевода)
+                  </button>
+                </div>
+              )}
               {isFree && errorMessage.includes('1000 знаков') && (
                 <button
                   onClick={onOpenSubscription}

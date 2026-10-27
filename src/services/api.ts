@@ -49,18 +49,28 @@ export const apiService = {
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP error ${res.status}`);
+        let errMsg = errorData.error;
+        if (!errMsg) {
+          if (res.status === 404) {
+            errMsg =
+              'Серверный маршрут /api/translate не найден (HTTP 404). На хостинге веб-сервер не перенаправляет запросы к Node.js. Проверьте файл .htaccess или настройки прокси.';
+          } else if (res.status === 429) {
+            errMsg = 'Превышен лимит запросов к Gemini API (HTTP 429). Пожалуйста, подождите.';
+          } else if (res.status === 401) {
+            errMsg = 'API-ключ Gemini недействителен (HTTP 401). Проверьте GEMINI_API_KEY в настройках сервера.';
+          } else if (res.status === 503) {
+            errMsg = 'API-ключ Gemini не настроен на сервере (HTTP 503).';
+          } else {
+            errMsg = `Ошибка сервера перевода (HTTP ${res.status}).`;
+          }
+        }
+        throw new Error(errMsg);
       }
 
       return await res.json();
     } catch (err: any) {
-      console.warn('Backend translation unavailable, falling back:', err.message);
-      // Fallback for demonstration when server or API key is not ready
-      return {
-        translatedParagraphs: req.paragraphs.map(p => `[Перевод (${req.targetLang})]: ${p}`),
-        cachedCount: 0,
-        provider: 'demo',
-      };
+      console.error('Translation request error:', err.message);
+      throw err;
     }
   },
 
