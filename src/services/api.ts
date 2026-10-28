@@ -40,10 +40,28 @@ export const apiService = {
   },
 
   /**
-   * Translate paragraphs purely on the user's device (client-side browser execution)
+   * Translate paragraphs via server neural/Apertium endpoint with smooth on-device fallback
    */
   async translate(req: TranslateRequest): Promise<TranslateResponse> {
-    // Pure client-side execution on user's device
+    try {
+      // 1. Attempt backend server route (which supports ALL language pairs with fluent quality)
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(req),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.translatedParagraphs) && data.translatedParagraphs.length === req.paragraphs.length) {
+          return data;
+        }
+      }
+    } catch (serverErr) {
+      console.warn('Backend server translation unavailable, falling back to on-device translation...');
+    }
+
+    // 2. On-device client translation fallback
     const onDeviceRes = await translateOnDevice(req.paragraphs, req.sourceLang, req.targetLang);
     return {
       translatedParagraphs: onDeviceRes.translatedParagraphs,
