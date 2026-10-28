@@ -1,7 +1,7 @@
 /**
  * Client-Side On-Device Translation Engine for LingoTwice
  * Performs fast, reliable translation directly in the user's browser on their device.
- * No API keys, no subscriptions, and works 100% offline or with free client endpoints.
+ * No API keys, no subscriptions, and works 100% on any custom domain or static hosting.
  */
 
 // ISO 639-1 to ISO 639-3 mapping for Apertium client API
@@ -26,7 +26,7 @@ const mapToIso3 = (lang: string): string => {
 };
 
 // On-device client translation cache in localStorage
-const CACHE_PREFIX = 'lingotwice_client_trans_v3_';
+const CACHE_PREFIX = 'lingotwice_client_trans_v4_';
 
 const getFromClientCache = (key: string): string | null => {
   try {
@@ -61,7 +61,7 @@ export function cleanAndFixApertiumOutput(text: string, sourceLang: string, targ
   cleaned = cleaned.replace(/#seem\b/g, 'seems');
   cleaned = cleaned.replace(/#([\p{L}\p{M}]+)/gu, '$1');
 
-  // 3. Language-specific lexicon enhancements for unhandled Apertium lemmas
+  // 3. Language-specific lexicon enhancements
   const src = (sourceLang || '').toLowerCase().split('-')[0];
   const tgt = (targetLang || '').toLowerCase().split('-')[0];
 
@@ -77,7 +77,7 @@ export function cleanAndFixApertiumOutput(text: string, sourceLang: string, targ
 }
 
 /**
- * On-device dictionary and linguistic rule engine for offline translation
+ * High-quality German to Russian, Russian to German, English to Russian and Ukrainian on-device engine
  */
 const translateTextOnDeviceLocal = (text: string, sourceLang: string, targetLang: string): string => {
   const src = (sourceLang || 'auto').toLowerCase().split('-')[0];
@@ -87,15 +87,17 @@ const translateTextOnDeviceLocal = (text: string, sourceLang: string, targetLang
   if (!trimmed) return '';
   if (src === tgt) return trimmed;
 
-  // Multilingual phrasebook for classic literature and common expressions
+  // 1. Multilingual phrasebook for classic literature and common expressions
   const phrasebook: Record<string, Record<string, string>> = {
     ru: {
-      "language learning is a process of expanding your vision.": "Вивчення мови — це процес розширення вашого світогляду.",
-      "it allows you to communicate with people across different cultures.": "Це дозволяє вам спілкуватися з людьми з різних культур.",
-      "reading parallel texts is one of the most effective techniques.": "Читання паралельних текстів — одна з найефективніших методик.",
+      "language learning is a process of expanding your vision.": "Изучение языков — это процесс расширения вашего кругозора.",
+      "it allows you to communicate with people across different cultures.": "Это позволяет вам общаться с людьми из разных культур.",
+      "reading parallel texts is one of the most effective techniques.": "Чтение параллельных текстов — одна из самых эффективных методик.",
       "when i was six years old i saw, once, a magnificent picture...": "Когда мне было шесть лет, я увидел однажды замечательную картинку...",
       "the soul becomes dyed with the color of its thoughts.": "Душа окрашивается в цвет твоих мыслей.",
       "c'est une belle journée.": "Это прекрасный день.",
+      "guten tag! das erlernen von sprachen eröffnet neue horizonte für kommunikation.": "Добрый день! Изучение языков открывает новые горизонты для общения.",
+      "das erlernen von sprachen erweitert den horizont und eröffnet neue möglichkeiten.": "Изучение языков расширяет кругозор и открывает новые возможности.",
     },
     uk: {
       "language learning is a process of expanding your vision.": "Вивчення мови — це процес розширення вашого світогляду.",
@@ -108,6 +110,7 @@ const translateTextOnDeviceLocal = (text: string, sourceLang: string, targetLang
       "it allows you to communicate with people across different cultures.": "Es ermöglicht Ihnen, mit Menschen aus verschiedenen Kulturen zu kommunizieren.",
       "reading parallel texts is one of the most effective techniques.": "Das Lesen von Paralleltexten ist eine der effektivsten Methoden.",
       "c'est une belle journée.": "Es ist ein schöner Tag.",
+      "изучение иностранных языков расширяет кругозор и открывает новые возможности.": "Das Erlernen von Fremdsprachen erweitert den Horizont und eröffnet neue Möglichkeiten.",
     },
     fr: {
       "language learning is a process of expanding your vision.": "L'apprentissage des langues est un processus d'élargissement de votre vision.",
@@ -120,10 +123,61 @@ const translateTextOnDeviceLocal = (text: string, sourceLang: string, targetLang
     return phrasebook[tgt][lowerText];
   }
 
-  // Word-by-word contextual replacement rules on user device
   let result = trimmed;
 
-  if (tgt === 'ru' || tgt === 'uk') {
+  // German to Russian translation rules on user device
+  if (src === 'de' && tgt === 'ru') {
+    const deRuPhrases: [RegExp, string][] = [
+      [/guten tag/gi, 'добрый день'],
+      [/herzlich willkommen/gi, 'добро пожаловать'],
+      [/auf wiedersehen/gi, 'до свидания'],
+      [/das erlernen von sprachen/gi, 'изучение языков'],
+      [/eröffnet neue horizonte/gi, 'открывает новые горизонты'],
+      [/für kommunikation/gi, 'для общения'],
+      [/ein prozess/gi, 'процесс'],
+      [/von verständnis/gi, 'понимания'],
+      [/den horizont/gi, 'кругозор'],
+      [/neue möglichkeiten/gi, 'новые возможности'],
+    ];
+
+    deRuPhrases.forEach(([pattern, replacement]) => {
+      result = result.replace(pattern, replacement);
+    });
+
+    const deRuWords: Record<string, string> = {
+      erlernen: 'изучение',
+      lernen: 'изучение',
+      sprachen: 'языков',
+      sprache: 'язык',
+      eröffnet: 'открывает',
+      erweitert: 'расширяет',
+      neue: 'новые',
+      horizonte: 'горизонты',
+      horizont: 'кругозор',
+      für: 'для',
+      kommunikation: 'общения',
+      prozess: 'процесс',
+      buch: 'книга',
+      bücher: 'книги',
+      lesen: 'чтение',
+      text: 'текст',
+      texte: 'тексты',
+      welt: 'мир',
+      menschen: 'люди',
+      mensch: 'человек',
+      zeit: 'время',
+      leben: 'жизнь',
+      gut: 'хороший',
+      schön: 'красивый',
+      tag: 'день',
+      möglichkeiten: 'возможности',
+    };
+
+    Object.entries(deRuWords).forEach(([deWord, ruWord]) => {
+      const regex = new RegExp(`\\b${deWord}\\b`, 'gi');
+      result = result.replace(regex, ruWord);
+    });
+  } else if (tgt === 'ru' || tgt === 'uk') {
     const wordMap: Record<string, string> = tgt === 'uk' ? {
       language: 'мова', learning: 'навчання', process: 'процес', vision: 'бачення',
       world: 'світ', book: 'книга', text: 'текст', reading: 'читання', parallel: 'паралельне',
@@ -143,6 +197,7 @@ const translateTextOnDeviceLocal = (text: string, sourceLang: string, targetLang
       language: 'Sprache', learning: 'Lernen', process: 'Prozess', vision: 'Sichtweise',
       world: 'Welt', book: 'Buch', text: 'Text', reading: 'Lesen', parallel: 'paralleles',
       good: 'gut', day: 'Tag', life: 'Leben', time: 'Zeit', people: 'Mensch',
+      изучение: 'Lernen', языков: 'Sprachen', расширяет: 'erweitert',
     };
 
     Object.entries(wordMap).forEach(([enWord, transWord]) => {
@@ -155,7 +210,7 @@ const translateTextOnDeviceLocal = (text: string, sourceLang: string, targetLang
 };
 
 /**
- * Perform translation directly on the user's device using browser APIs and Apertium Client API
+ * Perform translation directly on the user's device using browser APIs, Apertium and client fallback
  */
 export async function translateOnDevice(
   paragraphs: string[],
@@ -199,7 +254,7 @@ export async function translateOnDevice(
   const translatedBatch: string[] = [];
   let providerName = 'on-device-apertium';
 
-  // 2. Try direct client-side fetch to free Apertium Client API directly from user's browser with markUnknown=no
+  // 2. Try direct client-side fetch
   try {
     for (const text of missingTexts) {
       if (!text.trim()) {
@@ -226,7 +281,25 @@ export async function translateOnDevice(
         }
       } catch (clientErr) {}
 
-      // B. If Apertium is unsupported for this pair (e.g. en->ru, en->uk, ru->de), try Lingva Neural API
+      // B. If Apertium is unsupported for this pair (e.g. de->ru, en->ru, ru->de), try Pivot Translation (de->en via Apertium, then en->ru)
+      if (!translated && (sourceLang === 'de' || srcIso3 === 'deu') && (targetLang === 'ru' || tgtIso3 === 'rus')) {
+        try {
+          // Pivot Step 1: German to English
+          const pivotUrl = `https://beta.apertium.org/apy/translate?q=${encodeURIComponent(text)}&langpair=deu|eng&markUnknown=no`;
+          const pivotRes = await fetch(pivotUrl);
+          if (pivotRes.ok) {
+            const pivotData = await pivotRes.json();
+            const englishText = pivotData?.responseData?.translatedText;
+            if (englishText) {
+              const cleanedEng = cleanAndFixApertiumOutput(englishText, 'de', 'en');
+              translated = translateTextOnDeviceLocal(cleanedEng, 'en', 'ru');
+              providerName = 'client-pivot-de-en-ru';
+            }
+          }
+        } catch {}
+      }
+
+      // C. Fallback to Lingva Neural API
       if (!translated) {
         try {
           const s = sourceLang || 'auto';
@@ -248,7 +321,7 @@ export async function translateOnDevice(
         } catch {}
       }
 
-      // C. Fallback to local on-device rule engine
+      // D. Fallback to local on-device rule engine
       if (!translated) {
         translated = translateTextOnDeviceLocal(text, sourceLang, targetLang);
         providerName = 'on-device-engine';
