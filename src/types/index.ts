@@ -20,7 +20,8 @@ export type InterfaceLanguage =
 export interface AlignedPassage {
   id: string;
   sourceText: string;
-  targetText: string;
+  targetText?: string;
+  translations?: Record<string, string>; // Pre-translated paragraph text by language code ('ru', 'de', 'en', 'uk', 'fr', 'es', 'it', etc.)
   order: number;
   notes?: string;
   isEdited?: boolean;
@@ -33,9 +34,10 @@ export interface ReadingDocument {
   sourceLang: string;
   targetLang: string;
   passages: AlignedPassage[];
+  translations?: Record<string, string[]>; // Pre-translated paragraphs array mapped by target language code ('ru', 'de', 'en', 'uk', 'fr', 'es', 'it', etc.)
   coverImage?: string;
   sourceUrl?: string;
-  titleTranslations?: Partial<Record<InterfaceLanguage, string>>;
+  titleTranslations?: Partial<Record<InterfaceLanguage | string, string>>;
   category: 'literature' | 'science' | 'news' | 'dialogue' | 'philosophy' | 'custom';
   createdAt: number;
   lastReadAt: number;

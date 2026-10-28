@@ -23,7 +23,7 @@ import { apiService } from './services/api';
 import { getDueVocabulary } from './services/srs';
 
 const STORAGE_KEYS = {
-  DOCUMENTS: 'linguatwin_documents_v1',
+  DOCUMENTS: 'linguatwin_documents_v3',
   VOCABULARY: 'linguatwin_vocabulary_v1',
   PREFERENCES: 'linguatwin_preferences_v1',
   STATS: 'linguatwin_stats_v1',

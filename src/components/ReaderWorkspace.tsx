@@ -419,99 +419,6 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
     };
   }, [document.passages.length, sourceRef, targetRef]);
 
-  // Real-time on-demand lazy translation effect:
-  // Translates strictly within ~1000 characters ahead of current reading position
-  useEffect(() => {
-    if (preferences.activeMode === 'recall') return;
-
-    const timer = setTimeout(() => {
-      const startPassageId =
-        activePassageId || (document.passages.length > 0 ? document.passages[0].id : null);
-      if (!startPassageId) return;
-
-      let currentIndex = document.passages.findIndex((p) => p.id === startPassageId);
-      if (currentIndex === -1) {
-        currentIndex = 0;
-      }
-
-      // Look ahead up to 25 passages, gathering untranslated passages up to 1000 characters
-      let untranslatedChars = 0;
-      const batchToTranslate: AlignedPassage[] = [];
-      const lookaheadLimit = Math.min(document.passages.length, currentIndex + 25);
-
-      for (let i = currentIndex; i < lookaheadLimit; i++) {
-        const p = document.passages[i];
-        if (!p.targetText && !inFlightIdsRef.current.has(p.id)) {
-          if (untranslatedChars + p.sourceText.length > 1000 && batchToTranslate.length > 0) {
-            break; // Strictly translate up to ~1000 characters ahead to prevent model overload
-          }
-          batchToTranslate.push(p);
-          untranslatedChars += p.sourceText.length;
-        }
-      }
-
-      // If no untranslated passages ahead, scan remaining passages in document
-      if (batchToTranslate.length === 0) {
-        for (let i = 0; i < document.passages.length; i++) {
-          const p = document.passages[i];
-          if (!p.targetText && !inFlightIdsRef.current.has(p.id)) {
-            if (untranslatedChars + p.sourceText.length > 1000 && batchToTranslate.length > 0) {
-              break;
-            }
-            batchToTranslate.push(p);
-            untranslatedChars += p.sourceText.length;
-          }
-        }
-      }
-
-      if (batchToTranslate.length > 0) {
-        const idsToTrack = new Set(batchToTranslate.map((p) => p.id));
-        idsToTrack.forEach((id) => inFlightIdsRef.current.add(id));
-        setTranslatingPassageIds((prev) => new Set([...prev, ...idsToTrack]));
-        setTranslationStatus('translating');
-        setTranslationErrorMessage(null);
-
-        apiService
-          .translate({
-            sourceLang: document.sourceLang,
-            targetLang: document.targetLang,
-            paragraphs: batchToTranslate.map((p) => p.sourceText),
-          })
-          .then((res) => {
-            if (onUpdatePassages) {
-              const updates = batchToTranslate.map((p, idx) => ({
-                id: p.id,
-                sourceText: p.sourceText,
-                targetText: res.translatedParagraphs[idx] || '',
-              }));
-              onUpdatePassages(document.id, updates);
-            } else {
-              batchToTranslate.forEach((p, idx) => {
-                onUpdatePassage(p.id, p.sourceText, res.translatedParagraphs[idx] || '');
-              });
-            }
-            setTranslationStatus('ready');
-            setTimeout(() => setTranslationStatus('idle'), 3500);
-          })
-          .catch((err: any) => {
-            console.error('Reader lazy translation error:', err);
-            setTranslationStatus('error');
-            setTranslationErrorMessage(err.message || 'Ошибка сервиса перевода');
-          })
-          .finally(() => {
-            idsToTrack.forEach((id) => inFlightIdsRef.current.delete(id));
-            setTranslatingPassageIds((prev) => {
-              const next = new Set(prev);
-              idsToTrack.forEach((id) => next.delete(id));
-              return next;
-            });
-          });
-      }
-    }, 120);
-
-    return () => clearTimeout(timer);
-  }, [activePassageId, document.id, document.targetLang, preferences.activeMode, document.passages, retryTrigger]);
-
   // Subscribe to speech service
   useEffect(() => {
     return speechService.subscribe(setSpeechState);
@@ -664,26 +571,44 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
         className="flex-1 min-w-0 min-h-0 overflow-y-auto px-3 py-3 sm:px-6 md:px-8 reader-scrollbar"
       >
         <div className="space-y-4 sm:space-y-5 max-w-2xl mx-auto pb-16">
-          {visiblePassages.map((passage) => (
-            <SourcePassage
-              key={passage.id}
-              passage={passage}
-              isActive={activePassageId === passage.id}
-              isEditing={editingPassageId === passage.id}
-              editSourceText={editSourceText}
-              setEditSourceText={setEditSourceText}
-              saveEditing={saveEditing}
-              cancelEditing={cancelEditing}
-              playAudio={playSourceAudio}
-              startEditing={startEditing}
-              handleWordSelect={handleWordSelect}
-              fontSizeStyle={fontSizeStyle}
-              lineHeightClass={lineHeightClass}
-              sourceTextColorClass={sourceTextColorClass}
-              t={t}
-              theme={preferences.theme}
-            />
-          ))}
+          {visiblePassages.map((passage, idx) => {
+            // UI language for Source Pane
+            const resolvedSourceText =
+              passage.translations?.[uiLang] ||
+              document.translations?.[uiLang]?.[idx] ||
+              passage.sourceText ||
+              '';
+            const displaySourcePassage = { ...passage, sourceText: resolvedSourceText };
+            
+            // Target language for Target Pane
+            const resolvedTargetText =
+              passage.translations?.[document.targetLang] ||
+              document.translations?.[document.targetLang]?.[idx] ||
+              passage.targetText ||
+              '';
+            const displayTargetPassage = { ...passage, targetText: resolvedTargetText };
+
+            return (
+              <SourcePassage
+                key={passage.id}
+                passage={displaySourcePassage}
+                isActive={activePassageId === passage.id}
+                isEditing={editingPassageId === passage.id}
+                editSourceText={editSourceText}
+                setEditSourceText={setEditSourceText}
+                saveEditing={saveEditing}
+                cancelEditing={cancelEditing}
+                playAudio={playSourceAudio}
+                startEditing={startEditing}
+                handleWordSelect={handleWordSelect}
+                fontSizeStyle={fontSizeStyle}
+                lineHeightClass={lineHeightClass}
+                sourceTextColorClass={sourceTextColorClass}
+                t={t}
+                theme={preferences.theme}
+              />
+            );
+          })}
           
           {hasMore && (
             <div className="flex justify-center py-8">
@@ -757,28 +682,35 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
         className="flex-1 min-w-0 min-h-0 overflow-y-auto px-3 py-3 sm:px-6 md:px-8 reader-scrollbar"
       >
         <div className="space-y-4 sm:space-y-5 max-w-2xl mx-auto pb-16">
-          {visiblePassages.map((passage) => (
-            <TargetPassage
-              key={passage.id}
-              passage={passage}
-              isActive={activePassageId === passage.id}
-              isEditing={editingPassageId === passage.id}
-              editTargetText={editTargetText}
-              setEditTargetText={setEditTargetText}
-              isRevealed={revealedPassageIds.has(passage.id)}
-              toggleReveal={toggleReveal}
-              playAudio={playTargetAudio}
-              isHiddenInImmersion={preferences.activeMode === 'immersion' && !revealedPassageIds.has(passage.id)}
-              isTranslating={translatingPassageIds.has(passage.id)}
-              translationError={translationErrorMessage}
-              onRetry={retryTranslation}
-              fontSizeStyle={fontSizeStyle}
-              lineHeightClass={lineHeightClass}
-              targetTextColorClass={targetTextColorClass}
-              t={t}
-              mode={preferences.activeMode}
-            />
-          ))}
+          {visiblePassages.map((passage, idx) => {
+            const resolvedTargetText =
+              passage.translations?.[document.targetLang] ||
+              document.translations?.[document.targetLang]?.[idx] ||
+              passage.targetText ||
+              '';
+            const displayPassage = { ...passage, targetText: resolvedTargetText };
+
+            return (
+              <TargetPassage
+                key={passage.id}
+                passage={displayPassage}
+                isActive={activePassageId === passage.id}
+                isEditing={editingPassageId === passage.id}
+                editTargetText={editTargetText}
+                setEditTargetText={setEditTargetText}
+                isRevealed={revealedPassageIds.has(passage.id)}
+                toggleReveal={toggleReveal}
+                playAudio={playTargetAudio}
+                isHiddenInImmersion={preferences.activeMode === 'immersion' && !revealedPassageIds.has(passage.id)}
+                isTranslating={false}
+                fontSizeStyle={fontSizeStyle}
+                lineHeightClass={lineHeightClass}
+                targetTextColorClass={targetTextColorClass}
+                t={t}
+                mode={preferences.activeMode}
+              />
+            );
+          })}
 
           {preferences.activeMode === 'recall' && (
             <div className="rounded-2xl border border-amber-200/80 bg-amber-50/40 p-4 sm:p-5 dark:border-amber-900/60 dark:bg-amber-950/30">
