@@ -474,35 +474,56 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   <div className="space-y-3">
                     <div className="flex items-center justify-between pb-1 border-b border-slate-200/80 dark:border-slate-800">
                       <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                        Оплата через аккаунт PayPal
+                        Оплата через PayPal (kovaligor2016@gmail.com)
                       </span>
-                      <span className="text-xs font-bold text-blue-600">PayPal</span>
+                      <span className="text-xs font-bold text-blue-600">PayPal Verified</span>
                     </div>
 
-                    <p className="text-xs text-slate-600 dark:text-slate-400">
-                      Вы будете перенаправлены на защищённую страницу авторизации PayPal для мгновенного подтверждения оплаты тарифа{' '}
-                      <b className="text-slate-900 dark:text-white">{PLANS[selectedPlan].title}</b> за{' '}
-                      <b className="text-amber-600">{PLANS[selectedPlan].price}</b>.
+                    <div className="rounded-lg border border-blue-200 bg-blue-50/70 p-3 text-xs text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200 space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span>Получатель:</span>
+                        <strong className="font-mono text-slate-900 dark:text-white">kovaligor2016@gmail.com</strong>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Тариф и сумма:</span>
+                        <strong className="text-amber-600 dark:text-amber-400">{PLANS[selectedPlan].title} ({PLANS[selectedPlan].price})</strong>
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                      Нажмите кнопку ниже для перевода на аккаунт kovaligor2016@gmail.com в PayPal. После перевода нажмите кнопку подтверждения.
                     </p>
 
-                    <button
-                      type="button"
-                      onClick={() => handleCheckout()}
-                      disabled={isProcessing}
-                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#0070ba] hover:bg-[#005ea6] text-white py-2.5 text-xs font-bold transition-colors cursor-pointer shadow-sm disabled:opacity-60"
-                    >
-                      {isProcessing ? (
-                        <>
-                          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                          <span>Соединение с PayPal...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Wallet className="h-3.5 w-3.5" />
-                          <span>Продолжить с PayPal ({PLANS[selectedPlan].price})</span>
-                        </>
-                      )}
-                    </button>
+                    <div className="flex flex-col gap-2">
+                      <a
+                        href={`https://www.paypal.com/paypalme/kovaligor2016/${PLANS[selectedPlan].price.replace('$', '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#0070ba] hover:bg-[#005ea6] text-white py-2.5 text-xs font-bold transition-colors shadow-sm"
+                      >
+                        <Wallet className="h-4 w-4" />
+                        <span>Оплатить в PayPal ({PLANS[selectedPlan].price})</span>
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={() => handleCheckout()}
+                        disabled={isProcessing}
+                        className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-2 text-xs font-semibold transition-colors cursor-pointer shadow-sm disabled:opacity-60"
+                      >
+                        {isProcessing ? (
+                          <>
+                            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                            <span>Проверка платежа PayPal...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Check className="h-3.5 w-3.5" />
+                            <span>Я оплатил через PayPal (Активировать PRO)</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 )}
 
