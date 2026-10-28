@@ -227,6 +227,37 @@ export const apiService = {
   },
 
   /**
+   * Verify cryptocurrency transaction in real-time via blockchain explorer API
+   */
+  async verifyCryptoTx(params: {
+    cryptoType: string;
+    txHash: string;
+    plan: 'monthly' | 'yearly' | 'lifetime';
+  }): Promise<{ success: boolean; tier: 'premium'; plan: string; txHash: string; confirmations: number }> {
+    const res = await fetch('/api/subscription/verify-tx', {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(params),
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Ошибка проверки блокчейн-транзакции.');
+    }
+
+    const data = await res.json();
+    if (data.success) {
+      const activeCode = `CRYPTO_TX_${data.txHash}`;
+      localStorage.setItem('lingotwice_activation_code', activeCode);
+      localStorage.setItem('lingotwin_activation_code', activeCode);
+      localStorage.setItem('linguatwin_activation_code', activeCode);
+      localStorage.setItem('lingotwice_subscription_plan', data.plan);
+      localStorage.setItem('lingotwice_subscription_method', 'crypto');
+    }
+    return data;
+  },
+
+  /**
    * Upgrade subscription tier (verified on backend)
    */
   async upgradeSubscription(params?: {

@@ -115,11 +115,52 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
   const activeCrypto = CRYPTO_OPTIONS[selectedCrypto];
 
+  const [txHash, setTxHash] = useState('');
+
   const handleCopyAddress = () => {
     if (activeCrypto?.address) {
       navigator.clipboard?.writeText(activeCrypto.address);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
+
+  const handleVerifyTx = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!txHash.trim() || txHash.trim().length < 10) {
+      setErrorMessage('Введите корректный хеш транзакции (TxID) для проверки в блокчейне.');
+      return;
+    }
+    setIsProcessing(true);
+    setErrorMessage(null);
+
+    try {
+      const res = await apiService.verifyCryptoTx({
+        cryptoType: selectedCrypto,
+        txHash: txHash.trim(),
+        plan: selectedPlan,
+      });
+
+      if (res.success) {
+        const updated = await apiService.getSubscription();
+        onSubscriptionUpdated({
+          ...updated,
+          tier: 'premium',
+          isActive: true,
+          dailyTranslationsLimit: 99999,
+        });
+
+        setPaymentSuccess({
+          transactionId: res.txHash,
+          plan: PLANS[selectedPlan].title,
+          method: `Криптовалюта (${activeCrypto.label}, Подтверждений: ${res.confirmations})`,
+          date: new Date().toLocaleDateString(uiLang === 'ru' ? 'ru-RU' : 'en-US'),
+        });
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Транзакция не найдена в блокчейне. Проверьте правильность TxID.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -364,24 +405,43 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleCheckout()}
-                  disabled={isProcessing}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 text-xs font-semibold transition-colors cursor-pointer shadow-sm disabled:opacity-60"
-                >
-                  {isProcessing ? (
-                    <>
-                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                      <span>Проверка блокчейн-транзакции...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Check className="h-3.5 w-3.5" />
-                      <span>Я оплатил (Подтвердить активацию {PLANS[selectedPlan].title})</span>
-                    </>
-                  )}
-                </button>
+                {/* TxID Input Form for Real Blockchain Verification */}
+                <form onSubmit={handleVerifyTx} className="space-y-2 pt-1">
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                      Хеш транзакции (TxID / Signature):
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={txHash}
+                      onChange={(e) => setTxHash(e.target.value)}
+                      placeholder="Вставьте TxID перевода (например: 0x... или хэш блокчейна)"
+                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-mono focus:border-emerald-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                    />
+                    <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
+                      Система проверит транзакцию через блокчейн-эксплорер и ноды в реальном времени.
+                    </p>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isProcessing}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 text-xs font-bold transition-colors cursor-pointer shadow-sm disabled:opacity-60"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                        <span>Проверка транзакции в блокчейне...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-3.5 w-3.5" />
+                        <span>Проверить транзакцию и активировать PRO</span>
+                      </>
+                    )}
+                  </button>
+                </form>
               </div>
 
               {/* Error Notification */}

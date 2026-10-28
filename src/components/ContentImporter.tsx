@@ -257,6 +257,12 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
       return;
     }
 
+    if (isFree && sourceTextInput.length > 1000) {
+      setErrorMessage('Без Премиум тарифа лимит текста составляет 1000 символов. Пожалуйста, сократите текст или оформите Премиум доступ.');
+      onOpenSubscription();
+      return;
+    }
+
     try {
       setIsProcessing(true);
       setErrorMessage(null);
@@ -778,8 +784,8 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
                       <span>Текст оригинала ({sourceMeta.name})</span>
                       <span className="text-amber-600">*</span>
                     </span>
-                    <span className="text-[11px] font-mono text-slate-400">
-                      {sourceParagraphs.length} абз. · {sourceWords} слов
+                    <span className={`text-[11px] font-mono ${isFree && sourceTextInput.length > 1000 ? 'text-rose-600 font-bold' : 'text-slate-400'}`}>
+                      {sourceTextInput.length} {isFree ? '/ 1000 симв.' : 'симв.'} · {sourceWords} слов
                     </span>
                   </div>
 
