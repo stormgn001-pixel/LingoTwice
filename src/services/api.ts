@@ -4,6 +4,8 @@ import {
   WordLookupResponse
 } from '../types';
 
+import { translateOnDevice } from './clientTranslator';
+
 export interface TranslateRequest {
   sourceLang: string;
   targetLang: string;
@@ -38,41 +40,35 @@ export const apiService = {
   },
 
   /**
-   * Translate paragraphs via backend Gemini API
+   * Translate paragraphs on the user's device (client-side execution)
    */
   async translate(req: TranslateRequest): Promise<TranslateResponse> {
     try {
+      // First attempt backend server route if available
       const res = await fetch('/api/translate', {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify(req),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        let errMsg = errorData.error;
-        if (!errMsg) {
-          if (res.status === 404) {
-            errMsg =
-              'Серверный маршрут /api/translate не найден (HTTP 404). На хостинге веб-сервер не перенаправляет запросы к Node.js. Проверьте файл .htaccess или настройки прокси.';
-          } else if (res.status === 429) {
-            errMsg = 'Превышен лимит запросов к Gemini API (HTTP 429). Пожалуйста, подождите.';
-          } else if (res.status === 401) {
-            errMsg = 'API-ключ Gemini недействителен (HTTP 401). Проверьте GEMINI_API_KEY в настройках сервера.';
-          } else if (res.status === 503) {
-            errMsg = 'API-ключ Gemini не настроен на сервере (HTTP 503).';
-          } else {
-            errMsg = `Ошибка сервера перевода (HTTP ${res.status}).`;
-          }
-        }
-        throw new Error(errMsg);
+      if (res.ok) {
+        return await res.json();
       }
-
-      return await res.json();
-    } catch (err: any) {
-      console.error('Translation request error:', err.message);
-      throw err;
+    } catch (serverErr) {
+      console.warn('Backend server translation unavailable, executing translation on user device...');
     }
+
+    // Direct fallback to on-device translation in user browser
+    const onDeviceRes = await translateOnDevice(req.paragraphs, req.sourceLang, req.targetLang);
+    return {
+      translatedParagraphs: onDeviceRes.translatedParagraphs,
+      cachedCount: onDeviceRes.cachedCount,
+      provider: onDeviceRes.provider,
+      usageQuota: {
+        used: 1,
+        limit: 99999,
+      },
+    };
   },
 
   /**

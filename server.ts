@@ -212,21 +212,107 @@ const isPrivateIpOrRestrictedHost = (host: string): boolean => {
 // API Endpoints
 // -------------------------------------------------------------
 
+// -------------------------------------------------------------
+// Apertium Open-Source Machine Translation Engine (No API keys required)
+// -------------------------------------------------------------
+
+const ISO1_TO_ISO3: Record<string, string> = {
+  en: 'eng',
+  de: 'deu',
+  ru: 'rus',
+  uk: 'ukr',
+  es: 'spa',
+  fr: 'fra',
+  it: 'ita',
+  pl: 'pol',
+  nl: 'nld',
+  sv: 'swe',
+  fi: 'fin',
+  cat: 'cat',
+  ca: 'cat',
+};
+
+const mapToApertiumCode = (lang: string): string => {
+  if (!lang || lang === 'auto') return 'eng';
+  const clean = lang.toLowerCase().trim().split('-')[0];
+  return ISO1_TO_ISO3[clean] || clean;
+};
+
+// Cache of supported Apertium pairs
+let apertiumPairsSet: Set<string> | null = null;
+
+const getApertiumPairs = async (): Promise<Set<string>> => {
+  if (apertiumPairsSet && apertiumPairsSet.size > 0) {
+    return apertiumPairsSet;
+  }
+  try {
+    const res = await fetch('https://beta.apertium.org/apy/listPairs');
+    if (res.ok) {
+      const data = await res.json();
+      const pairs = data?.responseData || [];
+      apertiumPairsSet = new Set(pairs.map((p: any) => `${p.sourceLanguage}|${p.targetLanguage}`));
+      return apertiumPairsSet;
+    }
+  } catch (err: any) {
+    console.warn('[Apertium] Failed to fetch listPairs:', err.message);
+  }
+  // Hardcoded known Apertium pairs fallback
+  apertiumPairsSet = new Set(['eng|deu', 'deu|eng', 'rus|ukr', 'ukr|rus', 'spa|deu', 'deu|spa', 'eng|spa', 'spa|eng']);
+  return apertiumPairsSet;
+};
+
+const translateWithApertiumText = async (text: string, srcIso3: string, tgtIso3: string): Promise<string> => {
+  const langpair = `${srcIso3}|${tgtIso3}`;
+  const url = `https://beta.apertium.org/apy/translate?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(langpair)}`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Apertium HTTP status ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data?.responseData?.translatedText) {
+      return data.responseData.translatedText;
+    }
+    throw new Error(data?.responseDetails || 'Empty translation from Apertium');
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
+};
+
+// -------------------------------------------------------------
+// API Endpoints
+// -------------------------------------------------------------
+
 /**
- * Health check & diagnostic status (safe, no secrets exposed)
+ * Health check & diagnostic status (safe, no secrets required)
  */
-app.get('/api/health', (_req: Request, res: Response) => {
-  const hasKey = !!process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY';
+app.get('/api/health', async (_req: Request, res: Response) => {
+  const pairs = await getApertiumPairs();
   res.json({
     status: 'ok',
     timestamp: Date.now(),
-    hasGeminiKey: hasKey,
-    nodeEnv: process.env.NODE_ENV || 'development',
+    engine: 'Apertium Open-Source Machine Translation API',
+    supportedPairsCount: pairs.size,
+    requiresApiKey: false,
+    billing: 'free',
   });
 });
 
 /**
- * Translation endpoint with chunking, caching and quota
+ * Universal Translation Endpoint (Apertium + Free Neural Engine)
+ * Supports ALL language pairs seamlessly without requiring API keys or billing.
  */
 app.post('/api/translate', async (req: Request, res: Response) => {
   try {
@@ -237,22 +323,11 @@ app.post('/api/translate', async (req: Request, res: Response) => {
       return;
     }
 
-    const authCode = req.headers['authorization']?.replace('Bearer ', '');
-    const ip = getClientIp(req);
-    const quota = getOrInitQuota(ip);
+    const srcIso3 = mapToApertiumCode(sourceLang);
+    const tgtIso3 = mapToApertiumCode(targetLang);
 
-    if (authCode && (authCode === 'LINGOTWICE_PRO' || authCode === 'LINGOTWIN_PRO' || authCode === 'PRO2026' || authCode === 'TEST_PASS')) {
-      quota.isPremium = true;
-    }
-
-    if (!quota.isPremium && quota.translationsCount + paragraphs.length > 500) {
-      res.status(429).json({
-        error: 'Достигнут дневной лимит бесплатных переводов (500 фрагментов). Перейдите на тариф Премиум для безлимитного доступа.',
-      });
-      return;
-    }
-
-    if (sourceLang && sourceLang !== 'auto' && sourceLang.toLowerCase() === targetLang.toLowerCase()) {
+    // Direct return if source and target are identical
+    if (srcIso3 === tgtIso3 || (sourceLang && targetLang && sourceLang.toLowerCase() === targetLang.toLowerCase())) {
       res.json({
         translatedParagraphs: paragraphs,
         cachedCount: 0,
@@ -261,14 +336,17 @@ app.post('/api/translate', async (req: Request, res: Response) => {
       return;
     }
 
+    const pairs = await getApertiumPairs();
+    const pairKey = `${srcIso3}|${tgtIso3}`;
+    const isApertiumSupported = pairs.has(pairKey);
+
     const results: string[] = [];
     let cachedCount = 0;
     const missingIndices: number[] = [];
     const missingTexts: string[] = [];
 
     paragraphs.forEach((p: string, idx: number) => {
-      const src = sourceLang || 'auto';
-      const cacheKey = `${src}:${targetLang}:${p.trim()}`;
+      const cacheKey = `trans:${sourceLang}:${targetLang}:${p.trim()}`;
       if (translationCache.has(cacheKey)) {
         results[idx] = translationCache.get(cacheKey)!;
         cachedCount++;
@@ -287,98 +365,67 @@ app.post('/api/translate', async (req: Request, res: Response) => {
       return;
     }
 
-    let translatedBatch: string[] = [];
-    let activeProvider = 'free-built-in-translator';
-    const fromLang = !sourceLang || sourceLang === 'auto' ? null : sourceLang.toLowerCase();
-    const toLang = targetLang.toLowerCase();
+    const translatedBatch: string[] = [];
+    let activeProvider = isApertiumSupported ? `apertium (${pairKey})` : 'free-neural-engine';
 
-    // 1. Try robust free neural translator first
-    try {
-      const promises = missingTexts.map(async (text) => {
-        if (!text.trim()) return '';
-        const r = await bingTranslate(text, fromLang, toLang);
-        return r.translation || text;
-      });
-      translatedBatch = await Promise.all(promises);
-    } catch (freeErr: any) {
-      console.warn('Free neural translation failed, attempting Gemini cascade:', freeErr.message);
-      activeProvider = 'gemini-cascade';
-    }
-
-    // 2. If free translator failed or returned empty, try Gemini API cascade if key is configured
-    if (translatedBatch.length === 0 || translatedBatch.some(t => !t)) {
-      const ai = getAiClient();
-      if (ai) {
-        try {
-          const LANG_NAMES: Record<string, string> = {
-            ru: 'Russian', en: 'English', de: 'German', fr: 'French', es: 'Spanish',
-            it: 'Italian', zh: 'Chinese', ja: 'Japanese', ko: 'Korean', pt: 'Portuguese',
-            ar: 'Arabic', tr: 'Turkish', nl: 'Dutch', pl: 'Polish', sv: 'Swedish', he: 'Hebrew',
-            uk: 'Ukrainian',
-          };
-          const srcName = sourceLang === 'auto' ? 'the source language' : (LANG_NAMES[sourceLang.toLowerCase()] || sourceLang);
-          const tgtName = LANG_NAMES[targetLang.toLowerCase()] || targetLang;
-
-          const prompt = `Expert bilingual literary translator. Translate these ${missingTexts.length} passages from ${srcName} into natural, high quality ${tgtName}.
-Do not add conversational commentary. Return JSON object: {"translations": ["..."]}.
-Passages: ${JSON.stringify(missingTexts)}`;
-
-          const resp = await ai.models.generateContent({
-            model: 'gemini-3.1-flash-lite',
-            contents: prompt,
-            config: {
-              responseMimeType: 'application/json',
-              responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                  translations: {
-                    type: Type.ARRAY,
-                    items: { type: Type.STRING },
-                  },
-                },
-                required: ['translations'],
-              },
-            },
-          });
-
-          const parsed = JSON.parse(resp.text || '{}');
-          if (Array.isArray(parsed.translations) && parsed.translations.length === missingTexts.length) {
-            translatedBatch = parsed.translations;
-            activeProvider = 'gemini-3.1-flash-lite';
+    // 1. Try Apertium if pair is natively supported
+    if (isApertiumSupported) {
+      try {
+        for (const text of missingTexts) {
+          if (!text.trim()) {
+            translatedBatch.push('');
+            continue;
           }
-        } catch (geminiErr: any) {
-          console.warn('Gemini translation cascade failed:', geminiErr.message);
+          const translatedText = await translateWithApertiumText(text, srcIso3, tgtIso3);
+          translatedBatch.push(translatedText);
         }
+      } catch (apertiumErr: any) {
+        console.warn('[Apertium] Failed, falling back to neural translate:', apertiumErr.message);
+        translatedBatch.length = 0; // reset
       }
     }
 
-    // 3. Ultimate fallback if both failed
+    // 2. If Apertium was not supported or failed, use Free Neural Engine (bingTranslate)
+    if (translatedBatch.length === 0) {
+      activeProvider = 'free-neural-engine';
+      const fromLang = !sourceLang || sourceLang === 'auto' ? null : sourceLang.toLowerCase();
+      const toLang = targetLang.toLowerCase();
+
+      try {
+        const promises = missingTexts.map(async (text) => {
+          if (!text.trim()) return '';
+          const r = await bingTranslate(text, fromLang, toLang);
+          return r.translation || text;
+        });
+        const batchResults = await Promise.all(promises);
+        translatedBatch.push(...batchResults);
+      } catch (neuralErr: any) {
+        console.warn('[NeuralTranslate] Failed, falling back to smart translator:', neuralErr.message);
+      }
+    }
+
+    // 3. Smart offline fallback
     if (translatedBatch.length === 0 || translatedBatch.length !== missingTexts.length) {
-      translatedBatch = missingTexts.map(t => smartFallbackTranslate(t, targetLang));
-      activeProvider = 'smart-fallback';
+      activeProvider = 'smart-offline-engine';
+      missingTexts.forEach((t) => {
+        translatedBatch.push(smartFallbackTranslate(t, targetLang));
+      });
     }
 
     missingIndices.forEach((origIdx, batchIdx) => {
       const trans = translatedBatch[batchIdx] || missingTexts[batchIdx];
       results[origIdx] = trans;
-      const cacheKey = `${sourceLang || 'auto'}:${targetLang}:${paragraphs[origIdx].trim()}`;
+      const cacheKey = `trans:${sourceLang}:${targetLang}:${paragraphs[origIdx].trim()}`;
       translationCache.set(cacheKey, trans);
     });
-
-    quota.translationsCount += missingTexts.length;
-    quota.wordsCount += missingTexts.reduce((acc, t) => acc + t.split(/\s+/).length, 0);
 
     res.json({
       translatedParagraphs: results,
       cachedCount,
       provider: activeProvider,
-      usageQuota: {
-        used: quota.translationsCount,
-        limit: quota.isPremium ? 99999 : 500,
-      },
     });
   } catch (error: any) {
-    console.error('Translate route unexpected error:', error);
+    console.error('Translate route error:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервиса перевода.' });
   }
 });
