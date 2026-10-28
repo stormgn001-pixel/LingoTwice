@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { BookOpen, Sparkles, Settings as SettingsIcon } from 'lucide-react';
+import { BookOpen, Sparkles, Languages } from 'lucide-react';
 import { InterfaceLanguage, SubscriptionStatus } from '../types';
 import { getTranslation } from '../i18n/translations';
 
@@ -177,7 +177,7 @@ export const Header: React.FC<HeaderProps> = ({
           title={t.navSettings}
           className="flex h-7.5 w-7.5 sm:h-8 sm:w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
         >
-          <SettingsIcon className="h-4 w-4" />
+          <Languages className="h-4 w-4" />
         </button>
       </div>
     </header>

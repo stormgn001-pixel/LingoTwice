@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { BookOpen, Plus, Trash2, ArrowRight, ShieldCheck, Globe, Filter, RotateCcw, ChevronDown } from 'lucide-react';
+import { BookOpen, Plus, Trash2, ArrowRight, ShieldCheck, Globe, Filter, RotateCcw, ChevronDown, Languages } from 'lucide-react';
 import { InterfaceLanguage, ReadingDocument, SubscriptionStatus } from '../types';
 import { getTranslation, getDocTitle } from '../i18n/translations';
 import { getLanguageByCode } from '../constants/languages';
+import { SAMPLE_DOCUMENTS } from '../constants/sampleLibrary';
 
 interface LibraryViewProps {
   documents: ReadingDocument[];
@@ -11,6 +12,7 @@ interface LibraryViewProps {
   onDeleteDocument: (docId: string) => void;
   uiLang: InterfaceLanguage;
   subscription: SubscriptionStatus;
+  onOpenSettings: () => void;
 }
 
 export const LibraryView: React.FC<LibraryViewProps> = ({
@@ -20,54 +22,28 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   onDeleteDocument,
   uiLang,
   subscription,
+  onOpenSettings,
 }) => {
   const t = getTranslation(uiLang);
   const [filterCategory, setFilterCategory] = useState<string>('all');
-  const [filterSourceLang, setFilterSourceLang] = useState<string>('all');
-  const [isLangFilterOpen, setIsLangFilterOpen] = useState<boolean>(false);
 
-  // Extract all unique original (source) languages present in the documents
-  const availableSourceLangs = useMemo(() => {
-    const langsSet = new Set<string>();
-    documents.forEach((d) => {
-      if (d.sourceLang) langsSet.add(d.sourceLang.toLowerCase());
-    });
-    return Array.from(langsSet).sort();
-  }, [documents]);
-
-  // Combined filtering logic
+  // Simplified filtering logic: only by category
   const filteredDocs = useMemo(() => {
     return documents.filter((d) => {
-      const matchesCategory = filterCategory === 'all' || d.category === filterCategory;
-      const matchesLang = filterSourceLang === 'all' || d.sourceLang === filterSourceLang;
-      return matchesCategory && matchesLang;
+      return filterCategory === 'all' || d.category === filterCategory;
     });
-  }, [documents, filterCategory, filterSourceLang]);
+  }, [documents, filterCategory]);
 
   // Helper to count documents matching a category
   const getCategoryCount = (cat: string) => {
     return documents.filter((d) => {
-      const matchesCat = cat === 'all' || d.category === cat;
-      const matchesLang = filterSourceLang === 'all' || d.sourceLang === filterSourceLang;
-      return matchesCat && matchesLang;
-    }).length;
-  };
-
-  // Helper to count documents matching a language
-  const getLangCount = (langCode: string) => {
-    return documents.filter((d) => {
-      const matchesCat = filterCategory === 'all' || d.category === filterCategory;
-      const matchesLang = langCode === 'all' || d.sourceLang === langCode;
-      return matchesCat && matchesLang;
+      return cat === 'all' || d.category === cat;
     }).length;
   };
 
   const handleResetFilters = () => {
     setFilterCategory('all');
-    setFilterSourceLang('all');
   };
-
-  const activeLangMeta = filterSourceLang !== 'all' ? getLanguageByCode(filterSourceLang) : null;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
@@ -85,13 +61,22 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={onOpenImporter}
-          className="flex items-center gap-1.5 sm:gap-2 rounded-xl bg-amber-600 px-3 py-1.5 sm:px-4 sm:py-2.5 text-xs font-semibold text-white transition-colors hover:bg-amber-700 shadow-sm shrink-0 cursor-pointer"
-        >
-          <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          <span>{t.addNewText}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onOpenSettings}
+            title={t.navSettings}
+            className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white cursor-pointer"
+          >
+            <Languages className="h-4 w-4 sm:h-5 sm:w-5" />
+          </button>
+          <button
+            onClick={onOpenImporter}
+            className="flex items-center gap-1.5 sm:gap-2 rounded-xl bg-amber-600 px-3 py-1.5 sm:px-4 sm:py-2.5 text-xs font-semibold text-white transition-colors hover:bg-amber-700 shadow-sm shrink-0 cursor-pointer"
+          >
+            <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span>{t.addNewText}</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter Control Section */}
@@ -155,87 +140,17 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             >
               {t.sampleCategoryCustom} ({getCategoryCount('custom')})
             </button>
-          </div>
 
-          {/* Language Filter Toggle Button */}
-          <button
-            onClick={() => setIsLangFilterOpen(!isLangFilterOpen)}
-            className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer border ${
-              filterSourceLang !== 'all' || isLangFilterOpen
-                ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
-                : 'bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700 border-slate-200'
-            }`}
-          >
-            <Globe className="h-3.5 w-3.5" />
-            <span>
-              {activeLangMeta
-                ? `${activeLangMeta.flag} ${activeLangMeta.nativeName}`
-                : t.filterByOriginalLang || 'Язык оригинала'}
-            </span>
-            <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-300 ${isLangFilterOpen ? 'rotate-180' : ''}`} />
-          </button>
-        </div>
-
-        {/* Smoothly Expanding / Collapsing Original Language Filter Drawer */}
-        <div
-          className={`grid transition-all duration-300 ease-in-out overflow-hidden ${
-            isLangFilterOpen ? 'grid-rows-[1fr] opacity-100 pt-2 border-t border-slate-200/70 dark:border-slate-800/80 mt-2' : 'grid-rows-[0fr] opacity-0'
-          }`}
-        >
-          <div className="overflow-hidden">
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-medium py-1">
-              <span className="text-amber-800 dark:text-amber-400 mr-1 flex items-center gap-1 font-semibold shrink-0">
-                <span>{t.filterByOriginalLang || 'Язык оригинала:'}</span>
-              </span>
-
-              {/* All Languages pill */}
+            {/* Active filter clear button */}
+            {filterCategory !== 'all' && (
               <button
-                onClick={() => setFilterSourceLang('all')}
-                className={`flex items-center gap-1 rounded-lg px-2.5 py-1 sm:px-3 sm:py-1.5 transition-all cursor-pointer ${
-                  filterSourceLang === 'all'
-                    ? 'bg-amber-700 text-white font-semibold shadow-xs'
-                    : 'bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
-                }`}
+                onClick={handleResetFilters}
+                className="ml-auto flex items-center gap-1 text-[11px] text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 font-semibold cursor-pointer underline underline-offset-2"
               >
-                <span>🌐</span>
-                <span>{t.filterLanguageAll || 'Все языки'}</span>
-                <span className="ml-0.5 opacity-70">({getLangCount('all')})</span>
+                <RotateCcw className="h-3 w-3" />
+                <span>{t.resetFilters || 'Сбросить'}</span>
               </button>
-
-              {/* Individual Original Language Pills */}
-              {availableSourceLangs.map((langCode) => {
-                const langMeta = getLanguageByCode(langCode);
-                const count = getLangCount(langCode);
-                const isSelected = filterSourceLang === langCode;
-
-                return (
-                  <button
-                    key={langCode}
-                    onClick={() => setFilterSourceLang(langCode)}
-                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 sm:px-3 sm:py-1.5 transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-amber-700 text-white font-semibold shadow-xs'
-                        : 'bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
-                    }`}
-                  >
-                    <span>{langMeta.flag}</span>
-                    <span>{langMeta.nativeName || langMeta.name}</span>
-                    <span className="text-[10px] opacity-75 font-mono">({count})</span>
-                  </button>
-                );
-              })}
-
-              {/* Active filter clear button */}
-              {(filterCategory !== 'all' || filterSourceLang !== 'all') && (
-                <button
-                  onClick={handleResetFilters}
-                  className="ml-auto flex items-center gap-1 text-[11px] text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 font-semibold cursor-pointer underline underline-offset-2"
-                >
-                  <RotateCcw className="h-3 w-3" />
-                  <span>{t.resetFilters || 'Сбросить'}</span>
-                </button>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -244,10 +159,11 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       {filteredDocs.length > 0 ? (
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredDocs.map((doc) => {
+            const isBuiltIn = Boolean(doc.isSample || SAMPLE_DOCUMENTS.some((s) => s.id === doc.id));
             const docTitle = getDocTitle(doc, uiLang);
             const sLang = getLanguageByCode(doc.sourceLang);
-            // Target language flag indicator matches current interface language (uiLang)
-            const tLang = getLanguageByCode(uiLang);
+            // Built-in articles adapt to UI language; user custom texts retain their own fixed target language
+            const tLang = isBuiltIn ? getLanguageByCode(uiLang) : getLanguageByCode(doc.targetLang);
 
             const categoryBadge =
               doc.category === 'literature'
@@ -266,25 +182,38 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                 <div>
                   {/* Book Cover Image slot */}
                   <div className="relative aspect-16/10 w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
-                    {doc.coverImage ? (
-                      <img
-                        src={doc.coverImage}
-                        alt={docTitle}
-                        referrerPolicy="no-referrer"
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-103"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-amber-50 to-amber-100 text-amber-800 dark:from-slate-800 dark:to-slate-900 dark:text-amber-400">
-                        <BookOpen className="h-10 w-10 opacity-40" />
+                    {(() => {
+                      const displayImage = doc.coverImage || (
+                        doc.category === 'literature' ? '/assets/images/book_cover_literature_1792926490325.jpg' :
+                        doc.category === 'science' ? '/assets/images/book_cover_quantum_1792929019401.jpg' :
+                        doc.category === 'dialogue' ? '/assets/images/book_cover_dialogues_1792926491648.jpg' :
+                        doc.category === 'philosophy' ? '/assets/images/book_cover_kafka_1792929018156.jpg' :
+                        doc.category === 'news' ? '/assets/images/book_cover_paris_bookstore_1792929019575.jpg' :
+                        '/assets/images/book_cover_technology_1792926491315.jpg'
+                      );
+
+                      return (
+                        <img
+                          src={displayImage}
+                          alt={docTitle}
+                          referrerPolicy="no-referrer"
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-103"
+                          onError={(e) => {
+                            // Fallback if the specific asset fails to load
+                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=800';
+                          }}
+                        />
+                      );
+                    })()}
+
+                    {/* Category pill on top right - hidden for 'method' category to keep image clean */}
+                    {doc.category !== 'method' && (
+                      <div className="absolute top-2.5 right-2.5">
+                        <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium backdrop-blur-xs ${categoryBadge.style}`}>
+                          {categoryBadge.text}
+                        </span>
                       </div>
                     )}
-
-                    {/* Category pill on top right */}
-                    <div className="absolute top-2.5 right-2.5">
-                      <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium backdrop-blur-xs ${categoryBadge.style}`}>
-                        {categoryBadge.text}
-                      </span>
-                    </div>
 
                     {/* Clean language pair indicators (Left: original text language, Right: current interface language) */}
                     <div className="absolute bottom-2.5 left-2.5 rounded-md bg-white/90 px-2 py-1 text-xs font-semibold text-slate-800 backdrop-blur-xs dark:bg-slate-900/90 dark:text-white shadow-xs">

@@ -15,7 +15,14 @@ export type InterfaceLanguage =
   | 'it'
   | 'pl'
   | 'tr'
-  | 'zh';
+  | 'zh'
+  | 'ja'
+  | 'ko'
+  | 'pt'
+  | 'ar'
+  | 'nl'
+  | 'sv'
+  | 'he';
 
 export interface AlignedPassage {
   id: string;
@@ -38,7 +45,7 @@ export interface ReadingDocument {
   coverImage?: string;
   sourceUrl?: string;
   titleTranslations?: Partial<Record<InterfaceLanguage | string, string>>;
-  category: 'literature' | 'science' | 'news' | 'dialogue' | 'philosophy' | 'custom';
+  category: 'literature' | 'science' | 'news' | 'dialogue' | 'philosophy' | 'custom' | 'method';
   createdAt: number;
   lastReadAt: number;
   readingProgress: number; // 0 to 100%

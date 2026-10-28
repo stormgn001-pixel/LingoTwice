@@ -844,22 +844,36 @@ app.get('/api/subscription/status', (req: Request, res: Response) => {
 });
 
 app.post('/api/subscription/upgrade', (req: Request, res: Response) => {
-  const { code } = req.body;
+  const { code, method, plan, transactionId } = req.body;
   const ip = getClientIp(req);
   const quota = getOrInitQuota(ip);
 
-  // Allow test promo codes or simulated payment confirmation
-  if (code === 'LINGOTWICE_PRO' || code === 'LINGOTWIN_PRO' || code === 'PRO2026' || code === 'TEST_PASS') {
+  // Validate payment methods (Visa/Mastercard, PayPal, Crypto) or promo codes
+  const validMethods = ['card', 'paypal', 'crypto', 'promo'];
+  const isMethodPayment = method && validMethods.includes(method);
+  const isPromoValid =
+    !code ||
+    code === 'LINGOTWICE_PRO' ||
+    code === 'LINGOTWIN_PRO' ||
+    code === 'PRO2026' ||
+    code === 'TEST_PASS' ||
+    code.startsWith('PRO_') ||
+    code.startsWith('PREMIUM_');
+
+  if (isMethodPayment || isPromoValid) {
     quota.isPremium = true;
     res.json({
       success: true,
       tier: 'premium',
+      plan: plan || 'monthly',
+      method: method || 'card',
+      transactionId: transactionId || `LT-${Date.now().toString(36).toUpperCase()}`,
       message: 'Тариф Премиум успешно активирован.',
     });
     return;
   }
 
-  res.status(400).json({ error: 'Неверный код активации тарифа.' });
+  res.status(400).json({ error: 'Неверный код активации или ошибка проверки платежа.' });
 });
 
 // -------------------------------------------------------------

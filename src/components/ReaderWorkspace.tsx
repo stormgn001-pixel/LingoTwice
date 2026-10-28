@@ -39,6 +39,7 @@ import {
   ComprehensionQuestion
 } from '../types';
 import { SUPPORTED_LANGUAGES, getLanguageByCode } from '../constants/languages';
+import { SAMPLE_DOCUMENTS } from '../constants/sampleLibrary';
 import { getTranslation, getDocTitle } from '../i18n/translations';
 import { useSynchronizedScroll } from '../hooks/useSynchronizedScroll';
 import { speechService, SpeechState } from '../services/speech';
@@ -492,8 +493,11 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
     playAudio(text, document.targetLang);
   }, [playAudio, document.targetLang]);
 
-  // Change target language
+  const isBuiltIn = Boolean(document.isSample || SAMPLE_DOCUMENTS.some((s) => s.id === document.id));
+
+  // Change target language (only allowed for built-in library articles)
   const handleTargetLangChange = async (newTarget: string) => {
+    if (!isBuiltIn) return;
     onChangeLanguages(document.id, document.sourceLang, newTarget);
     onUpdatePreferences({ targetLang: newTarget });
     // Trigger retranslation to new target language
@@ -560,9 +564,26 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
       <div className={`h-7 shrink-0 px-3 sm:px-6 flex items-center justify-between border-b select-none ${paneHeaderBgClass}`}>
         <div className="flex items-center gap-1.5">
           <span className="text-base leading-none" role="img" aria-label="Original Language Flag">
-            {sourceLangMeta.flag}
+            {(() => {
+              if (!isBuiltIn) return sourceLangMeta.flag;
+              const samplePassage = document.passages[0];
+              const hasUiTranslation = 
+                (samplePassage?.translations?.[uiLang]) || 
+                (document.translations?.[uiLang]?.length > 0);
+              
+              return hasUiTranslation 
+                ? getLanguageByCode(uiLang).flag 
+                : sourceLangMeta.flag;
+            })()}
           </span>
           <span className="text-xs font-bold">{t.originalPane}</span>
+          <span className="text-[11px] text-slate-500 font-normal">
+            ({!isBuiltIn
+              ? sourceLangMeta.name
+              : ((document.passages[0]?.translations?.[uiLang] || document.translations?.[uiLang]?.length)
+                  ? getLanguageByCode(uiLang).name
+                  : sourceLangMeta.name)})
+          </span>
         </div>
       </div>
 
@@ -572,12 +593,12 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
       >
         <div className="space-y-4 sm:space-y-5 max-w-2xl mx-auto pb-16">
           {visiblePassages.map((passage, idx) => {
-            // UI language for Source Pane
-            const resolvedSourceText =
-              passage.translations?.[uiLang] ||
-              document.translations?.[uiLang]?.[idx] ||
-              passage.sourceText ||
-              '';
+            const resolvedSourceText = isBuiltIn
+              ? passage.translations?.[uiLang] ||
+                document.translations?.[uiLang]?.[idx] ||
+                passage.sourceText ||
+                ''
+              : passage.sourceText || '';
             const displaySourcePassage = { ...passage, sourceText: resolvedSourceText };
             
             // Target language for Target Pane
@@ -642,6 +663,7 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
             {targetLangMeta.flag}
           </span>
           <span className="text-xs font-bold">{t.translationPane}</span>
+          <span className="text-[11px] text-slate-500 font-normal">({targetLangMeta.name})</span>
         </div>
         <div className="flex items-center gap-2">
           {translationStatus === 'translating' && (
@@ -683,11 +705,12 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
       >
         <div className="space-y-4 sm:space-y-5 max-w-2xl mx-auto pb-16">
           {visiblePassages.map((passage, idx) => {
-            const resolvedTargetText =
-              passage.translations?.[document.targetLang] ||
-              document.translations?.[document.targetLang]?.[idx] ||
-              passage.targetText ||
-              '';
+            const resolvedTargetText = isBuiltIn
+              ? passage.translations?.[document.targetLang] ||
+                document.translations?.[document.targetLang]?.[idx] ||
+                passage.targetText ||
+                ''
+              : passage.targetText || '';
             const displayPassage = { ...passage, targetText: resolvedTargetText };
 
             return (
@@ -816,16 +839,40 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
             )}
           </div>
 
-          <div className="flex items-center gap-1 sm:gap-1.5 bg-white rounded-lg border border-slate-200 px-1.5 py-0.5 sm:px-2 sm:py-0.5 text-[11px] sm:text-xs dark:border-slate-700 dark:bg-slate-900 shrink-0 shadow-xs">
-            <span className="hidden sm:inline text-[10px] sm:text-[11px] font-medium text-slate-500 dark:text-slate-400">{t.translateTo}</span>
-            <div className="flex items-center gap-0.5">
-              <select value={document.targetLang} onChange={(e) => handleTargetLangChange(e.target.value)}
-                className="bg-transparent font-semibold text-slate-800 dark:text-slate-200 cursor-pointer focus:outline-hidden text-[11px] sm:text-xs py-0">
-                {SUPPORTED_LANGUAGES.map((l) => (<option key={l.code} value={l.code}>{l.flag} {l.name}</option>))}
-              </select>
+          {isBuiltIn ? (
+            <div className="flex items-center gap-1 sm:gap-1.5 bg-white rounded-lg border border-slate-200 px-1.5 py-0.5 sm:px-2 sm:py-0.5 text-[11px] sm:text-xs dark:border-slate-700 dark:bg-slate-900 shrink-0 shadow-xs">
+              <span className="hidden sm:inline text-[10px] sm:text-[11px] font-medium text-slate-500 dark:text-slate-400">{t.translateTo}</span>
+              <div className="flex items-center gap-0.5">
+                <select
+                  value={document.targetLang}
+                  onChange={(e) => handleTargetLangChange(e.target.value)}
+                  className="bg-transparent font-semibold text-slate-800 dark:text-slate-200 cursor-pointer focus:outline-hidden text-[11px] sm:text-xs py-0"
+                >
+                  {SUPPORTED_LANGUAGES.map((l) => (
+                    <option key={l.code} value={l.code}>
+                      {l.flag} {l.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {isRetranslating && <RefreshCw className="h-3 w-3 text-amber-600 animate-spin ml-0.5" />}
             </div>
-            {isRetranslating && <RefreshCw className="h-3 w-3 text-amber-600 animate-spin ml-0.5" />}
-          </div>
+          ) : (
+            <div
+              className="flex items-center gap-1.5 bg-slate-100/90 dark:bg-slate-800/80 rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-[11px] sm:text-xs text-slate-700 dark:text-slate-200 shrink-0 select-none shadow-2xs"
+              title="Для добавленного вами текста языки зафиксированы (оригинал и добавленный перевод)"
+            >
+              <span className="flex items-center gap-1">
+                <span>{sourceLangMeta.flag}</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-100">{sourceLangMeta.name}</span>
+              </span>
+              <span className="text-slate-400 font-mono text-[10px]">⇄</span>
+              <span className="flex items-center gap-1">
+                <span>{targetLangMeta.flag}</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-100">{targetLangMeta.name}</span>
+              </span>
+            </div>
+          )}
 
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             <button onClick={onOpenImporter} className="flex items-center gap-1 rounded-lg bg-amber-600 px-1.5 py-0.5 sm:px-2 sm:py-0.5 text-[11px] sm:text-xs font-semibold text-white transition-colors hover:bg-amber-700 shadow-xs whitespace-nowrap shrink-0">

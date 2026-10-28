@@ -41,14 +41,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-      <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+      <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 max-h-[90vh] overflow-y-auto reader-scrollbar">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
           <h3 className="font-serif text-lg font-bold text-slate-900 dark:text-white">
             {t.settingsTitle}
           </h3>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
@@ -57,33 +57,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="mt-4 space-y-5 text-xs">
           {/* UI Language */}
           <div>
-            <label className="font-medium text-slate-700 dark:text-slate-300">
-              {t.uiLanguage}
-            </label>
-            <div className="mt-1.5 grid grid-cols-2 sm:grid-cols-5 gap-1.5">
-              {[
-                { code: 'ru', name: 'Русский', flag: '🇷🇺' },
-                { code: 'uk', name: 'Українська', flag: '🇺🇦' },
-                { code: 'en', name: 'English', flag: '🇬🇧' },
-                { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-                { code: 'es', name: 'Español', flag: '🇪🇸' },
-                { code: 'fr', name: 'Français', flag: '🇫🇷' },
-                { code: 'it', name: 'Italiano', flag: '🇮🇹' },
-                { code: 'pl', name: 'Polski', flag: '🇵🇱' },
-                { code: 'tr', name: 'Türkçe', flag: '🇹🇷' },
-                { code: 'zh', name: '中文', flag: '🇨🇳' },
-              ].map((item) => (
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="font-medium text-slate-700 dark:text-slate-300">
+                {t.uiLanguage}
+              </label>
+              <span className="text-[11px] text-slate-400">
+                {SUPPORTED_LANGUAGES.length} языков
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 max-h-60 overflow-y-auto p-0.5 reader-scrollbar">
+              {SUPPORTED_LANGUAGES.map((item) => (
                 <button
                   key={item.code}
                   onClick={() => onUpdatePreferences({ uiLang: item.code as InterfaceLanguage, targetLang: item.code })}
-                  className={`rounded-lg border py-1.5 px-1 text-center font-medium transition-colors flex items-center justify-center gap-1 text-[11px] ${
+                  className={`rounded-lg border py-1.5 px-2 text-center font-medium transition-colors flex items-center justify-center gap-1.5 text-[11px] cursor-pointer ${
                     preferences.uiLang === item.code
-                      ? 'border-amber-600 bg-amber-50 text-amber-900 font-semibold dark:bg-amber-950/60 dark:text-amber-200'
+                      ? 'border-amber-600 bg-amber-50 text-amber-900 font-semibold dark:bg-amber-950/60 dark:text-amber-200 ring-1 ring-amber-500/50'
                       : 'border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800'
                   }`}
+                  title={`${item.name} (${item.nativeName})`}
                 >
-                  <span>{item.flag}</span>
-                  <span className="truncate">{item.name}</span>
+                  <span className="text-sm leading-none">{item.flag}</span>
+                  <span className="truncate">{item.nativeName}</span>
                 </button>
               ))}
             </div>

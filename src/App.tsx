@@ -34,7 +34,7 @@ const STORAGE_KEYS = {
 const DEFAULT_PREFERENCES: ReadingPreferences = {
   fontSize: 17,
   lineHeight: 'relaxed',
-  theme: 'light',
+  theme: 'dark',
   splitOrientation: 'horizontal',
   syncScroll: true,
   activeMode: 'parallel',
@@ -60,6 +60,11 @@ const DEFAULT_STATS: UserStats = {
 import { useAuth } from './contexts/AuthContext';
 import { dbService } from './services/db';
 
+const isBuiltInDoc = (doc?: ReadingDocument | null): boolean => {
+  if (!doc) return false;
+  return Boolean(doc.isSample || SAMPLE_DOCUMENTS.some((s) => s.id === doc.id));
+};
+
 export default function App() {
   const user = useAuth();
   const [loading, setLoading] = useState(true);
@@ -75,7 +80,14 @@ export default function App() {
   const [activeDocId, setActiveDocId] = useState<string>(SAMPLE_DOCUMENTS[0].id);
 
   const [vocabulary, setVocabulary] = useState<VocabularyEntry[]>([]);
-  const [preferences, setPreferences] = useState<ReadingPreferences>(DEFAULT_PREFERENCES);
+  const [preferences, setPreferences] = useState<ReadingPreferences>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.PREFERENCES);
+      return saved ? JSON.parse(saved) : DEFAULT_PREFERENCES;
+    } catch {
+      return DEFAULT_PREFERENCES;
+    }
+  });
   const [stats, setStats] = useState<UserStats>(DEFAULT_STATS);
 
   useEffect(() => {
@@ -89,7 +101,17 @@ export default function App() {
           dbService.getPreferences(user.uid)
         ]);
         
-        if (docs.length > 0) setDocuments(docs);
+        if (docs.length > 0) {
+          try {
+            const deletedIds: string[] = JSON.parse(localStorage.getItem('linguatwin_deleted_ids_v1') || '[]');
+            const activeSamples = SAMPLE_DOCUMENTS.filter(s => !deletedIds.includes(s.id));
+            const existingIds = new Set(docs.map(d => d.id));
+            const missingSamples = activeSamples.filter(s => !existingIds.has(s.id));
+            setDocuments([...docs, ...missingSamples]);
+          } catch {
+            setDocuments(docs);
+          }
+        }
         setVocabulary(vocab);
         if (statsData) setStats(statsData);
         if (prefsData) setPreferences(prefsData);
@@ -98,6 +120,14 @@ export default function App() {
     };
     loadUserData();
   }, [user]);
+
+  // Persist preferences to Firestore when changed
+  useEffect(() => {
+    if (user && preferences !== DEFAULT_PREFERENCES) {
+      dbService.savePreferences(user.uid, preferences);
+    }
+  }, [preferences, user]);
+
 
 
   const [subscription, setSubscription] = useState<SubscriptionStatus>({
@@ -328,8 +358,10 @@ export default function App() {
     }
   };
 
-  // Update document language pair
+  // Update document language pair (only permitted for built-in library articles)
   const handleChangeLanguages = (docId: string, sourceLang: string, targetLang: string) => {
+    const doc = documents.find((d) => d.id === docId);
+    if (doc && !isBuiltInDoc(doc)) return;
     setDocuments((prev) =>
       prev.map((d) => (d.id === docId ? { ...d, sourceLang, targetLang } : d))
     );
@@ -361,7 +393,7 @@ export default function App() {
     newLang: string
   ) => {
     const doc = documents.find((d) => d.id === docId);
-    if (!doc) return;
+    if (!doc || !isBuiltInDoc(doc)) return;
 
     const currentLang = field === 'source' ? doc.sourceLang : doc.targetLang;
     if (currentLang.toLowerCase() === newLang.toLowerCase()) return;
@@ -390,8 +422,10 @@ export default function App() {
     );
   };
 
-  // Retranslate document into new target language (now lazy)
+  // Retranslate document into new target language (now lazy, only for built-in documents)
   const handleRetranslateDocument = async (docId: string, newTargetLang: string) => {
+    const doc = documents.find((d) => d.id === docId);
+    if (!doc || !isBuiltInDoc(doc)) return;
     await handleTranslateField(docId, 'target', newTargetLang);
   };
 
@@ -454,7 +488,7 @@ export default function App() {
                 const next = { ...prev, ...newPrefs };
                 if (newPrefs.uiLang && newPrefs.uiLang !== prev.uiLang) {
                   next.targetLang = newPrefs.uiLang;
-                  if (activeDocument) {
+                  if (activeDocument && isBuiltInDoc(activeDocument)) {
                     handleChangeLanguages(activeDocument.id, activeDocument.sourceLang, newPrefs.uiLang);
                     handleRetranslateDocument(activeDocument.id, newPrefs.uiLang);
                   }
@@ -478,7 +512,7 @@ export default function App() {
               documents={documents}
               onSelectDocument={(doc) => {
                 setActiveDocId(doc.id);
-                if (doc.targetLang !== preferences.uiLang) {
+                if (isBuiltInDoc(doc) && doc.targetLang !== preferences.uiLang) {
                   handleChangeLanguages(doc.id, doc.sourceLang, preferences.uiLang);
                   handleRetranslateDocument(doc.id, preferences.uiLang);
                 }
@@ -488,6 +522,7 @@ export default function App() {
               onDeleteDocument={handleDeleteDocument}
               uiLang={preferences.uiLang}
               subscription={subscription}
+              onOpenSettings={() => setIsSettingsOpen(true)}
             />
           </div>
         )}
@@ -570,7 +605,7 @@ export default function App() {
               const next = { ...prev, ...newPrefs };
               if (newPrefs.uiLang && newPrefs.uiLang !== prev.uiLang) {
                 next.targetLang = newPrefs.uiLang;
-                if (activeDocument) {
+                if (activeDocument && isBuiltInDoc(activeDocument)) {
                   handleChangeLanguages(activeDocument.id, activeDocument.sourceLang, newPrefs.uiLang);
                   handleRetranslateDocument(activeDocument.id, newPrefs.uiLang);
                 }

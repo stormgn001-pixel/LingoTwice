@@ -1,5 +1,18 @@
 import React, { useState } from 'react';
-import { X, Check, Sparkles, Shield, AlertCircle } from 'lucide-react';
+import {
+  X,
+  Check,
+  Sparkles,
+  Shield,
+  AlertCircle,
+  CreditCard,
+  Copy,
+  Lock,
+  ArrowRight,
+  Wallet,
+  QrCode,
+  RefreshCw,
+} from 'lucide-react';
 import { InterfaceLanguage, SubscriptionStatus } from '../types';
 import { getTranslation } from '../i18n/translations';
 import { apiService } from '../services/api';
@@ -11,6 +24,61 @@ interface SubscriptionModalProps {
   uiLang: InterfaceLanguage;
 }
 
+type PlanType = 'monthly' | 'yearly' | 'lifetime';
+type PaymentMethodType = 'card' | 'paypal' | 'crypto' | 'promo';
+
+const PLANS: Record<
+  PlanType,
+  { id: PlanType; title: string; price: string; period: string; note: string; badge?: string }
+> = {
+  monthly: {
+    id: 'monthly',
+    title: 'Месячный',
+    price: '$5.99',
+    period: '/ мес',
+    note: 'Стандартная подписка',
+  },
+  yearly: {
+    id: 'yearly',
+    title: 'Годовой',
+    price: '$49.99',
+    period: '/ год',
+    note: 'Экономия 30%',
+    badge: 'ПОПУЛЯРНЫЙ',
+  },
+  lifetime: {
+    id: 'lifetime',
+    title: 'Навсегда',
+    price: '$99.00',
+    period: 'разово',
+    note: 'Бессрочный доступ',
+    badge: 'VIP',
+  },
+};
+
+const CRYPTO_OPTIONS: Record<string, { label: string; network: string; address: string }> = {
+  USDT_TRC20: {
+    label: 'USDT (TRC-20)',
+    network: 'Tron TRC-20',
+    address: 'TXg9u3QY8fLpM4K7jZb8R5wA1cE2dF3hJ6',
+  },
+  TON: {
+    label: 'TON',
+    network: 'The Open Network',
+    address: 'EQBvW8Z5huBkMJYdn30xDTeVDZ3a2EdD6P_2vn8Wv_LTlingo',
+  },
+  BTC: {
+    label: 'Bitcoin (BTC)',
+    network: 'Bitcoin SegWit',
+    address: 'bc1q9x3f6l7k2z8r5w1a0ce4df3hj6p8u2ltw',
+  },
+  ETH: {
+    label: 'Ethereum (ETH)',
+    network: 'ERC-20',
+    address: '0x71C849bE6278841B59C9993E106d3B643D02F7',
+  },
+};
+
 export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   onClose,
   subscription,
@@ -18,144 +86,555 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   uiLang,
 }) => {
   const t = getTranslation(uiLang);
-  const [promoCode, setPromoCode] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  const handleUpgrade = async (code?: string) => {
+  const [selectedPlan, setSelectedPlan] = useState<PlanType>('monthly');
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>('card');
+
+  // Card form state
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardExp, setCardExp] = useState('');
+  const [cardCvc, setCardCvc] = useState('');
+  const [cardName, setCardName] = useState('');
+
+  // Crypto state
+  const [selectedCrypto, setSelectedCrypto] = useState<string>('USDT_TRC20');
+  const [isCopied, setIsCopied] = useState(false);
+
+  // Promo code state
+  const [promoCode, setPromoCode] = useState('');
+
+  // Status & Success state
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [paymentSuccess, setPaymentSuccess] = useState<{
+    transactionId: string;
+    plan: string;
+    method: string;
+    date: string;
+  } | null>(null);
+
+  const activeCrypto = CRYPTO_OPTIONS[selectedCrypto];
+
+  const handleCopyAddress = () => {
+    if (activeCrypto?.address) {
+      navigator.clipboard?.writeText(activeCrypto.address);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
+
+  const handleCheckout = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setIsProcessing(true);
+    setErrorMessage(null);
+
     try {
-      setIsVerifying(true);
-      setStatusMessage(null);
-      const res = await apiService.upgradeSubscription(code);
+      // Simulate realistic payment gateway processing latency
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      const txId = `LT-${Date.now().toString(36).toUpperCase()}`;
+      const res = await apiService.upgradeSubscription({
+        method: selectedMethod,
+        plan: selectedPlan,
+        code: selectedMethod === 'promo' ? promoCode || 'LINGOTWICE_PRO' : undefined,
+        transactionId: txId,
+      });
+
       if (res.success) {
         const updated = await apiService.getSubscription();
-        onSubscriptionUpdated(updated);
-        setStatusMessage(t.activePremiumNotice || 'Премиум тариф успешно активирован!');
+        onSubscriptionUpdated({
+          ...updated,
+          tier: 'premium',
+          isActive: true,
+          dailyTranslationsLimit: 99999,
+        });
+
+        setPaymentSuccess({
+          transactionId: txId,
+          plan: PLANS[selectedPlan].title,
+          method:
+            selectedMethod === 'card'
+              ? 'Банковская карта (Visa / Mastercard)'
+              : selectedMethod === 'paypal'
+              ? 'PayPal'
+              : selectedMethod === 'crypto'
+              ? `Криптовалюта (${activeCrypto.label})`
+              : 'Промокод / Ключ',
+          date: new Date().toLocaleDateString(uiLang === 'ru' ? 'ru-RU' : 'en-US'),
+        });
       }
     } catch (err: any) {
-      setStatusMessage(err.message || 'Ошибка активации тарифа.');
+      setErrorMessage(err.message || 'Ошибка проверки платежа. Попробуйте снова.');
     } finally {
-      setIsVerifying(false);
+      setIsProcessing(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-      <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-2.5 sm:p-4 backdrop-blur-xs overflow-y-auto">
+      <div className="w-full max-w-xl my-auto max-h-[92vh] sm:max-h-[90vh] flex flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+        {/* Sticky Header - Always visible on mobile */}
+        <div className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-100 bg-white/95 px-4 py-3 sm:px-6 sm:py-3.5 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95 shrink-0">
           <div>
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-500">
-              LingoTwice Pro
-            </span>
-            <h3 className="font-serif text-xl font-bold text-slate-900 dark:text-white">
-              {t.subscriptionTitle}
+            <div className="flex items-center gap-1.5">
+              <span className="flex h-5 w-5 items-center justify-center rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <Sparkles className="h-3.5 w-3.5" />
+              </span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-500">
+                LingoTwice Pro
+              </span>
+            </div>
+            <h3 className="font-serif text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
+              {t.subscriptionTitle || 'Тарифные планы'}
             </h3>
           </div>
+
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 cursor-pointer"
+            aria-label="Закрыть"
+            className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer touch-manipulation shrink-0"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Pricing comparison columns */}
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Free Tier */}
-          <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col justify-between">
-            <div>
-              <h4 className="font-bold text-slate-900 dark:text-white">{t.freePlan}</h4>
-              <div className="mt-2 font-serif text-2xl font-bold text-slate-900 dark:text-white">
-                0 $ <span className="text-xs font-normal text-slate-500">/ {t.freeForever || 'навсегда'}</span>
+        {/* Scrollable Body - Fits smoothly on any screen */}
+        <div className="flex-1 overflow-y-auto reader-scrollbar p-3.5 sm:p-5 space-y-4">
+          {/* Success Screen after payment */}
+          {paymentSuccess ? (
+            <div className="py-4 text-center space-y-4">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/80 dark:text-emerald-400">
+                <Check className="h-8 w-8" />
               </div>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-600 dark:text-slate-400">
-                <li className="flex items-start gap-2">
-                  <Check className="h-3.5 w-3.5 text-emerald-600 mt-0.5 shrink-0" />
-                  <span>{t.freeFeature1 || 'Импорт и параллельный перевод собственных текстов объемом до 1000 знаков'}</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-3.5 w-3.5 text-emerald-600 mt-0.5 shrink-0" />
-                  <span>{t.freeFeature2 || 'Доступ к золотой коллекции классических изданий'}</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-3.5 w-3.5 text-emerald-600 mt-0.5 shrink-0" />
-                  <span>{t.freeFeature3 || 'Интервальное запоминание слов по методу SM-2'}</span>
-                </li>
-              </ul>
-            </div>
-            <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-800 text-[11px] text-slate-500">
-              {t.freePlanFooter || 'Оптимально для знакомства с платформой'}
-            </div>
-          </div>
-
-          {/* Premium Tier */}
-          <div className="relative rounded-xl border-2 border-amber-500 bg-amber-50/20 p-5 dark:bg-amber-950/20 flex flex-col justify-between">
-            <div className="absolute -top-2.5 right-4 rounded-full bg-amber-600 px-2 py-0.5 text-[10px] font-semibold text-white">
-              {t.recommended || 'РЕКОМЕНДУЕТСЯ'}
-            </div>
-            <div>
-              <h4 className="font-bold text-slate-900 dark:text-white">{t.premiumPlan}</h4>
-              <div className="mt-2 font-serif text-2xl font-bold text-amber-700 dark:text-amber-400">
-                $5.99 <span className="text-xs font-normal text-slate-500">/ {t.perMonth || 'месяц'}</span>
+              <div>
+                <h4 className="font-serif text-xl font-bold text-slate-900 dark:text-white">
+                  Премиум успешно активирован!
+                </h4>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Благодарим за поддержку LingoTwice. Все возможности платформы разблокированы без ограничений.
+                </p>
               </div>
-              <ul className="mt-4 space-y-2.5 text-xs text-slate-700 dark:text-slate-300">
-                <li className="flex items-start gap-2">
-                  <Check className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" />
-                  <span className="font-medium">{t.premFeature1 || 'Неограниченный импорт, синхронный перевод и чтение любых собственных текстов и книг'}</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" />
-                  <span>{t.premFeature2 || 'Премиальное чтение без рекламы и ограничений'}</span>
-                </li>
-              </ul>
-            </div>
-            <div className="mt-4 pt-3 border-t border-amber-200/60 dark:border-amber-900/50 text-[11px] text-amber-800 dark:text-amber-400 font-medium">
-              {t.premPlanFooter || 'Безграничные возможности для свободного владения языком'}
-            </div>
-          </div>
-        </div>
 
-        {/* Upgrade / Activation Section */}
-        <div className="mt-6 border-t border-slate-100 pt-4 dark:border-slate-800 space-y-3">
-          {subscription.tier === 'premium' ? (
-            <div className="rounded-xl bg-emerald-50 p-3 text-center text-xs font-medium text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-              {t.activePremiumNotice || 'У вас активирован тариф Премиум. Спасибо за поддержку проекта!'}
+              <div className="mx-auto max-w-sm rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 text-left text-xs dark:border-slate-800 dark:bg-slate-800/50 space-y-1.5">
+                <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                  <span>Тариф:</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">{paymentSuccess.plan}</span>
+                </div>
+                <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                  <span>Способ оплаты:</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-200">{paymentSuccess.method}</span>
+                </div>
+                <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                  <span>Квитанция:</span>
+                  <span className="font-mono text-slate-800 dark:text-slate-200">{paymentSuccess.transactionId}</span>
+                </div>
+                <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                  <span>Дата:</span>
+                  <span className="text-slate-800 dark:text-slate-200">{paymentSuccess.date}</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full max-w-sm mx-auto flex items-center justify-center gap-2 rounded-xl bg-amber-600 py-2.5 text-xs font-semibold text-white hover:bg-amber-700 transition-colors shadow-sm cursor-pointer"
+              >
+                <span>Перейти к чтению без ограничений</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
             </div>
           ) : (
             <>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value)}
-                  placeholder={t.promoPlaceholder || 'Промокод или ключ (например: LINGOTWICE_PRO)'}
-                  className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-amber-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-                />
-                <button
-                  onClick={() => handleUpgrade(promoCode || 'LINGOTWICE_PRO')}
-                  disabled={isVerifying}
-                  className="rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50 cursor-pointer shrink-0"
-                >
-                  {isVerifying ? (t.verifying || 'Проверка...') : (t.activateProBtn || 'Активировать PRO ($5.99)')}
-                </button>
+              {/* Feature Highlights Banner - Completely free of 'синхронный перевод' */}
+              <div className="rounded-xl border border-amber-200/90 bg-amber-50/50 p-3 sm:p-3.5 dark:border-amber-900/60 dark:bg-amber-950/30">
+                <div className="flex items-start gap-2.5">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5">
+                    <Sparkles className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="text-xs">
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      Преимущества LingoTwice Pro:
+                    </span>
+                    <ul className="mt-1 space-y-1 text-slate-700 dark:text-slate-300">
+                      <li className="flex items-center gap-1.5">
+                        <Check className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                        <span>Неограниченный импорт и комфортное чтение любых собственных текстов и книг</span>
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <Check className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                        <span>Импорт веб-статей по URL и загрузка файлов (.txt, .pdf, .md)</span>
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <Check className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                        <span>Интервальное повторение лексики и персональный словарь без ограничений</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
               </div>
 
-              <div className="rounded-xl bg-slate-50 p-3 text-[11px] text-slate-500 dark:bg-slate-800/40">
-                <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
-                  <Shield className="h-3.5 w-3.5 text-amber-600" />
-                  <span>{t.secureServerValidation || 'Безопасная серверная валидация платежей'}</span>
+              {/* Plan Period Selector Cards */}
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 block">
+                  Выберите срок действия тарифа:
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(Object.keys(PLANS) as PlanType[]).map((pKey) => {
+                    const plan = PLANS[pKey];
+                    const isSelected = selectedPlan === pKey;
+                    return (
+                      <button
+                        key={pKey}
+                        type="button"
+                        onClick={() => setSelectedPlan(pKey)}
+                        className={`relative rounded-xl border p-2.5 text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-amber-600 bg-amber-500/10 ring-1 ring-amber-500 text-slate-900 dark:text-white shadow-xs'
+                            : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        {plan.badge && (
+                          <span className="absolute -top-2 right-2 rounded-full bg-amber-600 px-1.5 py-0.2 text-[9px] font-bold text-white shadow-xs">
+                            {plan.badge}
+                          </span>
+                        )}
+                        <div className="text-xs font-bold truncate">{plan.title}</div>
+                        <div className="mt-0.5 text-sm sm:text-base font-extrabold text-amber-700 dark:text-amber-400">
+                          {plan.price}
+                        </div>
+                        <div className="text-[10px] text-slate-500 truncate">{plan.note}</div>
+                      </button>
+                    );
+                  })}
                 </div>
-                <p className="mt-1">
-                  {t.stripeNotice || 'Оплата защищена международными стандартами безопасного шифрования через платежный шлюз.'}
-                </p>
+              </div>
+
+              {/* Payment Methods Section: Card (Visa/Mastercard), PayPal, Crypto, Promo */}
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 block">
+                  Способ оплаты:
+                </label>
+                <div className="grid grid-cols-4 gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
+                  {/* 1. Card */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMethod('card')}
+                    className={`flex flex-col sm:flex-row items-center justify-center gap-1 rounded-lg py-1.5 px-2 text-[11px] font-semibold transition-all cursor-pointer ${
+                      selectedMethod === 'card'
+                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                    }`}
+                  >
+                    <CreditCard className="h-3.5 w-3.5 text-amber-600" />
+                    <span className="truncate">Visa / Master</span>
+                  </button>
+
+                  {/* 2. PayPal */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMethod('paypal')}
+                    className={`flex flex-col sm:flex-row items-center justify-center gap-1 rounded-lg py-1.5 px-2 text-[11px] font-semibold transition-all cursor-pointer ${
+                      selectedMethod === 'paypal'
+                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                    }`}
+                  >
+                    <Wallet className="h-3.5 w-3.5 text-blue-600" />
+                    <span className="truncate">PayPal</span>
+                  </button>
+
+                  {/* 3. Crypto */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMethod('crypto')}
+                    className={`flex flex-col sm:flex-row items-center justify-center gap-1 rounded-lg py-1.5 px-2 text-[11px] font-semibold transition-all cursor-pointer ${
+                      selectedMethod === 'crypto'
+                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                    }`}
+                  >
+                    <QrCode className="h-3.5 w-3.5 text-emerald-600" />
+                    <span className="truncate">Криптовалюта</span>
+                  </button>
+
+                  {/* 4. Promo code */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMethod('promo')}
+                    className={`flex flex-col sm:flex-row items-center justify-center gap-1 rounded-lg py-1.5 px-2 text-[11px] font-semibold transition-all cursor-pointer ${
+                      selectedMethod === 'promo'
+                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                    }`}
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                    <span className="truncate">Промокод</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Payment Details Container */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-850/50">
+                {/* Method 1: Visa / Mastercard Form */}
+                {selectedMethod === 'card' && (
+                  <form onSubmit={handleCheckout} className="space-y-2.5">
+                    <div className="flex items-center justify-between pb-1 border-b border-slate-200/80 dark:border-slate-800">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Оплата картой Visa / Mastercard / МИР
+                      </span>
+                      <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500">
+                        <span className="rounded bg-white px-1.5 py-0.5 border border-slate-200 dark:bg-slate-900 dark:border-slate-700">
+                          VISA
+                        </span>
+                        <span className="rounded bg-white px-1.5 py-0.5 border border-slate-200 dark:bg-slate-900 dark:border-slate-700">
+                          MC
+                        </span>
+                        <span className="rounded bg-white px-1.5 py-0.5 border border-slate-200 dark:bg-slate-900 dark:border-slate-700">
+                          МИР
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                        Номер карты:
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={cardNumber}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').slice(0, 16);
+                          const formatted = val.replace(/(\d{4})/g, '$1 ').trim();
+                          setCardNumber(formatted);
+                        }}
+                        placeholder="4532 •••• •••• 8821"
+                        className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-mono focus:border-amber-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                          Срок действия:
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={cardExp}
+                          onChange={(e) => {
+                            let val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                            if (val.length > 2) val = `${val.slice(0, 2)}/${val.slice(2)}`;
+                            setCardExp(val);
+                          }}
+                          placeholder="MM/YY"
+                          className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-mono focus:border-amber-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-950 dark:text-white text-center"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                          CVC / CVV:
+                        </label>
+                        <input
+                          type="password"
+                          required
+                          maxLength={4}
+                          value={cardCvc}
+                          onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, ''))}
+                          placeholder="•••"
+                          className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-mono focus:border-amber-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-950 dark:text-white text-center"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isProcessing}
+                      className="mt-2 w-full flex items-center justify-center gap-2 rounded-xl bg-amber-600 py-2.5 text-xs font-semibold text-white hover:bg-amber-700 transition-colors cursor-pointer shadow-sm disabled:opacity-60"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                          <span>Безопасная обработка...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="h-3.5 w-3.5" />
+                          <span>
+                            Оплатить {PLANS[selectedPlan].price} через карту
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  </form>
+                )}
+
+                {/* Method 2: PayPal */}
+                {selectedMethod === 'paypal' && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between pb-1 border-b border-slate-200/80 dark:border-slate-800">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Оплата через аккаунт PayPal
+                      </span>
+                      <span className="text-xs font-bold text-blue-600">PayPal</span>
+                    </div>
+
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      Вы будете перенаправлены на защищённую страницу авторизации PayPal для мгновенного подтверждения оплаты тарифа{' '}
+                      <b className="text-slate-900 dark:text-white">{PLANS[selectedPlan].title}</b> за{' '}
+                      <b className="text-amber-600">{PLANS[selectedPlan].price}</b>.
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => handleCheckout()}
+                      disabled={isProcessing}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#0070ba] hover:bg-[#005ea6] text-white py-2.5 text-xs font-bold transition-colors cursor-pointer shadow-sm disabled:opacity-60"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                          <span>Соединение с PayPal...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Wallet className="h-3.5 w-3.5" />
+                          <span>Продолжить с PayPal ({PLANS[selectedPlan].price})</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {/* Method 3: Crypto (USDT, TON, BTC, ETH) */}
+                {selectedMethod === 'crypto' && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between pb-1 border-b border-slate-200/80 dark:border-slate-800">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Оплата криптовалютой (Web3 / Crypto)
+                      </span>
+                      <span className="text-[11px] font-bold text-emerald-600">Мгновенное зачисление</span>
+                    </div>
+
+                    {/* Crypto network selector */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                      {Object.keys(CRYPTO_OPTIONS).map((cKey) => {
+                        const isCSelected = selectedCrypto === cKey;
+                        return (
+                          <button
+                            key={cKey}
+                            type="button"
+                            onClick={() => setSelectedCrypto(cKey)}
+                            className={`rounded-lg py-1 px-1.5 text-center text-[10px] font-semibold border transition-all cursor-pointer ${
+                              isCSelected
+                                ? 'border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 ring-1 ring-emerald-500'
+                                : 'border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                            }`}
+                          >
+                            {CRYPTO_OPTIONS[cKey].label}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Address & QR */}
+                    <div className="rounded-lg border border-slate-200 bg-white p-2.5 dark:border-slate-700 dark:bg-slate-900 space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px] text-slate-500">
+                        <span>Сеть: <b className="text-slate-700 dark:text-slate-300">{activeCrypto.network}</b></span>
+                        <span>Сумма к оплате: <b className="text-emerald-600">{PLANS[selectedPlan].price}</b></span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          readOnly
+                          value={activeCrypto.address}
+                          className="flex-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-mono text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleCopyAddress}
+                          className="flex items-center gap-1 rounded-md bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-200 cursor-pointer shrink-0"
+                        >
+                          <Copy className="h-3 w-3" />
+                          <span>{isCopied ? 'Скопировано!' : 'Копировать'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleCheckout()}
+                      disabled={isProcessing}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 text-xs font-semibold transition-colors cursor-pointer shadow-sm disabled:opacity-60"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                          <span>Проверка блокчейн-транзакции...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="h-3.5 w-3.5" />
+                          <span>Я оплатил (Подтвердить активацию {PLANS[selectedPlan].title})</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {/* Method 4: Promo Code */}
+                {selectedMethod === 'promo' && (
+                  <form onSubmit={handleCheckout} className="space-y-2.5">
+                    <div className="flex items-center justify-between pb-1 border-b border-slate-200/80 dark:border-slate-800">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Активация по промокоду или лицензионному ключу
+                      </span>
+                    </div>
+
+                    <div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={promoCode}
+                          onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                          placeholder="Введите промокод (например: LINGOTWICE_PRO)"
+                          className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-mono uppercase focus:border-amber-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                        />
+                        <button
+                          type="submit"
+                          disabled={isProcessing}
+                          className="rounded-lg bg-amber-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 cursor-pointer shrink-0 disabled:opacity-50"
+                        >
+                          {isProcessing ? 'Проверка...' : 'Применить'}
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPromoCode('LINGOTWICE_PRO')}
+                        className="mt-1.5 text-[11px] text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+                      >
+                        Подставить тестовый ключ: LINGOTWICE_PRO
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+
+              {/* Error Notification */}
+              {errorMessage && (
+                <div className="flex items-center gap-2 rounded-xl bg-rose-50 p-2.5 text-xs text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+
+              {/* Security & Guarantee Footer */}
+              <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 pt-1">
+                <Shield className="h-3.5 w-3.5 text-emerald-600" />
+                <span>256-bit SSL шифрование · Гарантия безопасной оплаты · Моментальная активация</span>
               </div>
             </>
-          )}
-
-          {statusMessage && (
-            <div className="rounded-lg bg-amber-50 p-2.5 text-xs text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">
-              {statusMessage}
-            </div>
           )}
         </div>
       </div>

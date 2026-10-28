@@ -1,6 +1,8 @@
 import { ReadingDocument } from '../types';
+import { SCHLIEMANN_ARTICLE } from './schliemannArticle';
 
 export const SAMPLE_DOCUMENTS: ReadingDocument[] = [
+  SCHLIEMANN_ARTICLE,
   {
     id: 'future_humanity_tech_001',
     title: 'Будущее человечества и мир новых технологий',

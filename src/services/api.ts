@@ -229,11 +229,22 @@ export const apiService = {
   /**
    * Upgrade subscription tier (verified on backend)
    */
-  async upgradeSubscription(code?: string): Promise<{ success: boolean; tier: 'premium' }> {
+  async upgradeSubscription(params?: {
+    code?: string;
+    method?: 'card' | 'paypal' | 'crypto' | 'promo';
+    plan?: 'monthly' | 'yearly' | 'lifetime';
+    transactionId?: string;
+  } | string): Promise<{ success: boolean; tier: 'premium'; plan?: string; method?: string }> {
+    const payload: {
+      code?: string;
+      method?: 'card' | 'paypal' | 'crypto' | 'promo';
+      plan?: 'monthly' | 'yearly' | 'lifetime';
+      transactionId?: string;
+    } = typeof params === 'string' ? { code: params, method: 'promo' } : (params || { method: 'card' });
     const res = await fetch('/api/subscription/upgrade', {
       method: 'POST',
       headers: this.getHeaders(),
-      body: JSON.stringify({ code }),
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok) {
@@ -241,10 +252,13 @@ export const apiService = {
     }
 
     const data = await res.json();
-    if (data.success && code) {
-      localStorage.setItem('lingotwice_activation_code', code);
-      localStorage.setItem('lingotwin_activation_code', code);
-      localStorage.setItem('linguatwin_activation_code', code);
+    if (data.success) {
+      const activeCode = payload.code || `PAYMENT_${data.transactionId || Date.now()}`;
+      localStorage.setItem('lingotwice_activation_code', activeCode);
+      localStorage.setItem('lingotwin_activation_code', activeCode);
+      localStorage.setItem('linguatwin_activation_code', activeCode);
+      if (payload.plan) localStorage.setItem('lingotwice_subscription_plan', payload.plan);
+      if (payload.method) localStorage.setItem('lingotwice_subscription_method', payload.method);
     }
     return data;
   },
