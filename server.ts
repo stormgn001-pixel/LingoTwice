@@ -415,20 +415,30 @@ app.post('/api/translate', async (req: Request, res: Response) => {
       }
     }
 
-    // 2. If Apertium was not supported or failed, use Free Neural Engine (bingTranslate)
+    // 2. If Apertium was not supported or failed, use Free Neural Engine (bingTranslate) with chunked batching
     if (translatedBatch.length === 0) {
       activeProvider = 'free-neural-engine';
       const fromLang = !sourceLang || sourceLang === 'auto' ? null : sourceLang.toLowerCase();
       const toLang = targetLang.toLowerCase();
 
       try {
-        const promises = missingTexts.map(async (text) => {
-          if (!text.trim()) return '';
-          const r = await bingTranslate(text, fromLang, toLang);
-          return r.translation || text;
-        });
-        const batchResults = await Promise.all(promises);
-        translatedBatch.push(...batchResults);
+        const BATCH_SIZE = 5;
+        for (let i = 0; i < missingTexts.length; i += BATCH_SIZE) {
+          const chunk = missingTexts.slice(i, i + BATCH_SIZE);
+          const chunkResults = await Promise.all(
+            chunk.map(async (text) => {
+              if (!text.trim()) return '';
+              try {
+                const r = await bingTranslate(text, fromLang, toLang);
+                return r.translation || text;
+              } catch (err: any) {
+                console.warn('[BingTranslate] Single text error:', err.message);
+                return text;
+              }
+            })
+          );
+          translatedBatch.push(...chunkResults);
+        }
       } catch (neuralErr: any) {
         console.warn('[NeuralTranslate] Failed, falling back to smart translator:', neuralErr.message);
       }

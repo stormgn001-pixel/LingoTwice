@@ -26,7 +26,7 @@ const mapToIso3 = (lang: string): string => {
 };
 
 // On-device client translation cache in localStorage
-const CACHE_PREFIX = 'lingotwice_client_trans_v2_';
+const CACHE_PREFIX = 'lingotwice_client_trans_v3_';
 
 const getFromClientCache = (key: string): string | null => {
   try {
@@ -52,7 +52,6 @@ export function cleanAndFixApertiumOutput(text: string, sourceLang: string, targ
   let cleaned = text;
 
   // 1. Remove Apertium unknown-word asterisks (*Roma -> Roma, *nessun -> nessun)
-  // Match asterisk attached directly to Unicode letters (\p{L}) to leave standalone math/formatting asterisks untouched
   cleaned = cleaned.replace(/\*([\p{L}\p{M}]+)/gu, '$1');
 
   // 2. Fix Apertium transfer hashes prepended to lemmas (#Be -> is, #seem -> seems, #look like -> seems)
@@ -178,7 +177,7 @@ export async function translateOnDevice(
 
   // 1. Check on-device localStorage cache
   paragraphs.forEach((p, idx) => {
-    const cacheKey = `${pairKey}_${p.trim()}`;
+    const cacheKey = `${sourceLang}_${targetLang}_${p.trim()}`;
     const cached = getFromClientCache(cacheKey);
     if (cached) {
       results[idx] = cached;
@@ -209,6 +208,8 @@ export async function translateOnDevice(
       }
 
       let translated = '';
+
+      // A. Try Apertium Client API if applicable
       try {
         const url = `https://beta.apertium.org/apy/translate?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(pairKey)}&markUnknown=no`;
         const controller = new AbortController();
@@ -219,15 +220,35 @@ export async function translateOnDevice(
 
         if (response.ok) {
           const data = await response.json();
-          if (data?.responseData?.translatedText) {
+          if (data?.responseData?.translatedText && !data.responseData.translatedText.includes('Unknown language pair')) {
             translated = cleanAndFixApertiumOutput(data.responseData.translatedText, sourceLang, targetLang);
           }
         }
-      } catch (clientErr) {
-        // Apertium failed or pair unsupported for this text
+      } catch (clientErr) {}
+
+      // B. If Apertium is unsupported for this pair (e.g. en->ru, en->uk, ru->de), try Lingva Neural API
+      if (!translated) {
+        try {
+          const s = sourceLang || 'auto';
+          const t = targetLang || 'ru';
+          const url = `https://lingva.ml/api/v1/${encodeURIComponent(s)}/${encodeURIComponent(t)}/${encodeURIComponent(text)}`;
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+          const response = await fetch(url, { signal: controller.signal });
+          clearTimeout(timeoutId);
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data?.translation && data.translation !== text) {
+              translated = data.translation;
+              providerName = 'client-neural-api';
+            }
+          }
+        } catch {}
       }
 
-      // If client fetch returned empty or unsupported, use local on-device rule engine
+      // C. Fallback to local on-device rule engine
       if (!translated) {
         translated = translateTextOnDeviceLocal(text, sourceLang, targetLang);
         providerName = 'on-device-engine';
@@ -247,7 +268,7 @@ export async function translateOnDevice(
   missingIndices.forEach((origIdx, batchIdx) => {
     const trans = translatedBatch[batchIdx] || missingTexts[batchIdx];
     results[origIdx] = trans;
-    const cacheKey = `${pairKey}_${paragraphs[origIdx].trim()}`;
+    const cacheKey = `${sourceLang}_${targetLang}_${paragraphs[origIdx].trim()}`;
     saveToClientCache(cacheKey, trans);
   });
 
