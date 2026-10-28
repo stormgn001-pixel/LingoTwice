@@ -1,8 +1,4 @@
-/**
- * Pure Client-Side On-Device Translation Engine for LingoTwice
- * Performs 100% of translations directly in the user's browser on their device.
- * No backend server, no cloud dependencies, no API keys, works on any custom domain.
- */
+import { translateLocalByDictionary } from './localTranslationDatabase';
 
 // ISO 639-1 to ISO 639-3 mapping for Apertium client API
 const ISO1_TO_ISO3: Record<string, string> = {
@@ -274,6 +270,9 @@ const translateTextOnDeviceLocal = (text: string, sourceLang: string, targetLang
     ];
     ruEsPhrases.forEach(([pat, rep]) => { result = result.replace(pat, rep); });
   }
+
+  // Fallback to built-in local translation dictionary database
+  result = translateLocalByDictionary(result, sourceLang, targetLang);
 
   return cleanAndFixApertiumOutput(result, sourceLang, targetLang);
 };
