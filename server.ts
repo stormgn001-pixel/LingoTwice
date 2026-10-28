@@ -261,9 +261,39 @@ const getApertiumPairs = async (): Promise<Set<string>> => {
   return apertiumPairsSet;
 };
 
+const cleanAndFixApertiumOutput = (text: string, sourceLang: string, targetLang: string): string => {
+  if (!text) return '';
+
+  let cleaned = text;
+
+  // 1. Remove Apertium unknown-word asterisks (*Roma -> Roma, *nessun -> nessun)
+  cleaned = cleaned.replace(/\*([\p{L}\p{M}]+)/gu, '$1');
+
+  // 2. Fix Apertium transfer hashes prepended to lemmas (#Be -> is, #seem -> seems, #look like -> seems)
+  cleaned = cleaned.replace(/#look\s+like\b/gi, 'seems');
+  cleaned = cleaned.replace(/#Be\b/g, 'is');
+  cleaned = cleaned.replace(/#be\b/g, 'is');
+  cleaned = cleaned.replace(/#seem\b/g, 'seems');
+  cleaned = cleaned.replace(/#([\p{L}\p{M}]+)/gu, '$1');
+
+  // 3. Language-specific lexicon enhancements for unhandled Apertium lemmas
+  const src = (sourceLang || '').toLowerCase().split('-')[0];
+  const tgt = (targetLang || '').toLowerCase().split('-')[0];
+
+  if ((src === 'it' || src === 'ita') && (tgt === 'en' || tgt === 'eng')) {
+    cleaned = cleaned.replace(/\btramonto\b/gi, 'sunset');
+    cleaned = cleaned.replace(/\bnessun\b/gi, 'no');
+    cleaned = cleaned.replace(/\bnessuna\b/gi, 'no');
+    cleaned = cleaned.replace(/\bnessuno\b/gi, 'no one');
+    cleaned = cleaned.replace(/\bRoma\b/g, 'Rome');
+  }
+
+  return cleaned;
+};
+
 const translateWithApertiumText = async (text: string, srcIso3: string, tgtIso3: string): Promise<string> => {
   const langpair = `${srcIso3}|${tgtIso3}`;
-  const url = `https://beta.apertium.org/apy/translate?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(langpair)}`;
+  const url = `https://beta.apertium.org/apy/translate?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(langpair)}&markUnknown=no`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 12000);
@@ -282,7 +312,7 @@ const translateWithApertiumText = async (text: string, srcIso3: string, tgtIso3:
 
     const data = await response.json();
     if (data?.responseData?.translatedText) {
-      return data.responseData.translatedText;
+      return cleanAndFixApertiumOutput(data.responseData.translatedText, srcIso3, tgtIso3);
     }
     throw new Error(data?.responseDetails || 'Empty translation from Apertium');
   } catch (err: any) {

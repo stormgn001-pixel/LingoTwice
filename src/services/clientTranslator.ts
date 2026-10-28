@@ -26,7 +26,7 @@ const mapToIso3 = (lang: string): string => {
 };
 
 // On-device client translation cache in localStorage
-const CACHE_PREFIX = 'lingotwice_client_trans_v1_';
+const CACHE_PREFIX = 'lingotwice_client_trans_v2_';
 
 const getFromClientCache = (key: string): string | null => {
   try {
@@ -41,6 +41,41 @@ const saveToClientCache = (key: string, value: string) => {
     localStorage.setItem(CACHE_PREFIX + key, value);
   } catch {}
 };
+
+/**
+ * Post-processor for Apertium raw outputs to eliminate unknown markers (*Roma) and transfer hashes (#look like)
+ * while preserving formatting, quotes, apostrophes and dashes.
+ */
+export function cleanAndFixApertiumOutput(text: string, sourceLang: string, targetLang: string): string {
+  if (!text) return '';
+
+  let cleaned = text;
+
+  // 1. Remove Apertium unknown-word asterisks (*Roma -> Roma, *nessun -> nessun)
+  // Match asterisk attached directly to Unicode letters (\p{L}) to leave standalone math/formatting asterisks untouched
+  cleaned = cleaned.replace(/\*([\p{L}\p{M}]+)/gu, '$1');
+
+  // 2. Fix Apertium transfer hashes prepended to lemmas (#Be -> is, #seem -> seems, #look like -> seems)
+  cleaned = cleaned.replace(/#look\s+like\b/gi, 'seems');
+  cleaned = cleaned.replace(/#Be\b/g, 'is');
+  cleaned = cleaned.replace(/#be\b/g, 'is');
+  cleaned = cleaned.replace(/#seem\b/g, 'seems');
+  cleaned = cleaned.replace(/#([\p{L}\p{M}]+)/gu, '$1');
+
+  // 3. Language-specific lexicon enhancements for unhandled Apertium lemmas
+  const src = (sourceLang || '').toLowerCase().split('-')[0];
+  const tgt = (targetLang || '').toLowerCase().split('-')[0];
+
+  if ((src === 'it' || src === 'ita') && (tgt === 'en' || tgt === 'eng')) {
+    cleaned = cleaned.replace(/\btramonto\b/gi, 'sunset');
+    cleaned = cleaned.replace(/\bnessun\b/gi, 'no');
+    cleaned = cleaned.replace(/\bnessuna\b/gi, 'no');
+    cleaned = cleaned.replace(/\bnessuno\b/gi, 'no one');
+    cleaned = cleaned.replace(/\bRoma\b/g, 'Rome');
+  }
+
+  return cleaned;
+}
 
 /**
  * On-device dictionary and linguistic rule engine for offline translation
@@ -71,7 +106,7 @@ const translateTextOnDeviceLocal = (text: string, sourceLang: string, targetLang
     },
     de: {
       "language learning is a process of expanding your vision.": "Sprachenlernen ist ein Prozess, in dem man seine Sichtweise erweitert.",
-      "it allows you to communicate with people across different cultures.": "Es ermöglicht Ihnen, с людьми из разных культур общаться.",
+      "it allows you to communicate with people across different cultures.": "Es ermöglicht Ihnen, mit Menschen aus verschiedenen Kulturen zu kommunizieren.",
       "reading parallel texts is one of the most effective techniques.": "Das Lesen von Paralleltexten ist eine der effektivsten Methoden.",
       "c'est une belle journée.": "Es ist ein schöner Tag.",
     },
@@ -117,7 +152,7 @@ const translateTextOnDeviceLocal = (text: string, sourceLang: string, targetLang
     });
   }
 
-  return result;
+  return cleanAndFixApertiumOutput(result, sourceLang, targetLang);
 };
 
 /**
@@ -165,7 +200,7 @@ export async function translateOnDevice(
   const translatedBatch: string[] = [];
   let providerName = 'on-device-apertium';
 
-  // 2. Try direct client-side fetch to free Apertium Client API directly from user's browser
+  // 2. Try direct client-side fetch to free Apertium Client API directly from user's browser with markUnknown=no
   try {
     for (const text of missingTexts) {
       if (!text.trim()) {
@@ -175,7 +210,7 @@ export async function translateOnDevice(
 
       let translated = '';
       try {
-        const url = `https://beta.apertium.org/apy/translate?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(pairKey)}`;
+        const url = `https://beta.apertium.org/apy/translate?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(pairKey)}&markUnknown=no`;
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 6000);
 
@@ -185,7 +220,7 @@ export async function translateOnDevice(
         if (response.ok) {
           const data = await response.json();
           if (data?.responseData?.translatedText) {
-            translated = data.responseData.translatedText;
+            translated = cleanAndFixApertiumOutput(data.responseData.translatedText, sourceLang, targetLang);
           }
         }
       } catch (clientErr) {
