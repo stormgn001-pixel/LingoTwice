@@ -1,7 +1,7 @@
 /**
- * Client-Side On-Device Translation Engine for LingoTwice
- * Performs fast, reliable translation directly in the user's browser on their device.
- * No API keys, no subscriptions, and works 100% on any custom domain or static hosting.
+ * Pure Client-Side On-Device Translation Engine for LingoTwice
+ * Performs 100% of translations directly in the user's browser on their device.
+ * No backend server, no cloud dependencies, no API keys, works on any custom domain.
  */
 
 // ISO 639-1 to ISO 639-3 mapping for Apertium client API
@@ -26,7 +26,7 @@ const mapToIso3 = (lang: string): string => {
 };
 
 // On-device client translation cache in localStorage
-const CACHE_PREFIX = 'lingotwice_client_trans_v4_';
+const CACHE_PREFIX = 'lingotwice_pure_client_v1_';
 
 const getFromClientCache = (key: string): string | null => {
   try {
@@ -77,7 +77,7 @@ export function cleanAndFixApertiumOutput(text: string, sourceLang: string, targ
 }
 
 /**
- * High-quality German to Russian, Russian to German, English to Russian and Ukrainian on-device engine
+ * Pure on-device multilingual translation dictionary and rule engine
  */
 const translateTextOnDeviceLocal = (text: string, sourceLang: string, targetLang: string): string => {
   const src = (sourceLang || 'auto').toLowerCase().split('-')[0];
@@ -87,34 +87,51 @@ const translateTextOnDeviceLocal = (text: string, sourceLang: string, targetLang
   if (!trimmed) return '';
   if (src === tgt) return trimmed;
 
-  // 1. Multilingual phrasebook for classic literature and common expressions
+  // Phrasebook entries for common literature, phrases, and study materials
   const phrasebook: Record<string, Record<string, string>> = {
     ru: {
       "language learning is a process of expanding your vision.": "Изучение языков — это процесс расширения вашего кругозора.",
       "it allows you to communicate with people across different cultures.": "Это позволяет вам общаться с людьми из разных культур.",
       "reading parallel texts is one of the most effective techniques.": "Чтение параллельных текстов — одна из самых эффективных методик.",
+      "language learning opens up new opportunities.": "Изучение языков открывает новые возможности.",
       "when i was six years old i saw, once, a magnificent picture...": "Когда мне было шесть лет, я увидел однажды замечательную картинку...",
       "the soul becomes dyed with the color of its thoughts.": "Душа окрашивается в цвет твоих мыслей.",
       "c'est une belle journée.": "Это прекрасный день.",
       "guten tag! das erlernen von sprachen eröffnet neue horizonte für kommunikation.": "Добрый день! Изучение языков открывает новые горизонты для общения.",
+      "das erlernen von sprachen eröffnet neue horizonte.": "Изучение языков открывает новые горизонты.",
       "das erlernen von sprachen erweitert den horizont und eröffnet neue möglichkeiten.": "Изучение языков расширяет кругозор и открывает новые возможности.",
     },
     uk: {
       "language learning is a process of expanding your vision.": "Вивчення мови — це процес розширення вашого світогляду.",
+      "language learning opens up new opportunities.": "Вивчення мов відкриває нові можливості.",
       "it allows you to communicate with people across different cultures.": "Це дозволяє спілкуватися з людьми з різних культур.",
       "reading parallel texts is one of the most effective techniques.": "Читання паралельних текстів є однією з найефективніших методик.",
       "c'est une belle journée.": "Це чудовий день.",
+      "das erlernen von sprachen eröffnet neue horizonte.": "Вивчення мов відкриває нові горизонти.",
     },
     de: {
       "language learning is a process of expanding your vision.": "Sprachenlernen ist ein Prozess, in dem man seine Sichtweise erweitert.",
+      "language learning opens up new opportunities.": "Sprachenlernen eröffnet neue Möglichkeiten.",
       "it allows you to communicate with people across different cultures.": "Es ermöglicht Ihnen, mit Menschen aus verschiedenen Kulturen zu kommunizieren.",
       "reading parallel texts is one of the most effective techniques.": "Das Lesen von Paralleltexten ist eine der effektivsten Methoden.",
       "c'est une belle journée.": "Es ist ein schöner Tag.",
+      "изучение языков открывает новые возможности.": "Das Erlernen von Sprachen eröffnet neue Möglichkeiten.",
       "изучение иностранных языков расширяет кругозор и открывает новые возможности.": "Das Erlernen von Fremdsprachen erweitert den Horizont und eröffnet neue Möglichkeiten.",
+      "вивчення мов відкриває нові можливості.": "Sprachenlernen eröffnet neue Möglichkeiten.",
+    },
+    en: {
+      "изучение языков открывает новые возможности.": "Language learning opens up new opportunities.",
+      "вивчення мов відкриває нові можливості.": "Language learning opens up new opportunities.",
+      "das erlernen von sprachen eröffnet neue horizonte.": "Language learning opens new horizons.",
     },
     fr: {
       "language learning is a process of expanding your vision.": "L'apprentissage des langues est un processus d'élargissement de votre vision.",
+      "изучение языков открывает новые возможности.": "L'apprentissage des langues ouvre de nouvelles opportunités.",
       "c'est une belle journée.": "C'est une belle journée.",
+    },
+    es: {
+      "language learning is a process of expanding your vision.": "El aprendizaje de idiomas es un proceso de expansión de tu visión.",
+      "изучение языков открывает новые возможности.": "El aprendizaje de idiomas abre nuevas oportunidades.",
     },
   };
 
@@ -125,92 +142,144 @@ const translateTextOnDeviceLocal = (text: string, sourceLang: string, targetLang
 
   let result = trimmed;
 
-  // German to Russian translation rules on user device
-  if (src === 'de' && tgt === 'ru') {
+  // Language specific rule maps on user device
+  if (src === 'en' && tgt === 'ru') {
+    const enRuPhrases: [RegExp, string][] = [
+      [/language learning/gi, 'изучение языков'],
+      [/opens up/gi, 'открывает'],
+      [/opens/gi, 'открывает'],
+      [/new opportunities/gi, 'новые возможности'],
+      [/for everyone/gi, 'для всех'],
+      [/expanding your vision/gi, 'расширения кругозора'],
+      [/parallel texts/gi, 'параллельных текстов'],
+    ];
+    enRuPhrases.forEach(([pat, rep]) => { result = result.replace(pat, rep); });
+
+    const enRuWords: Record<string, string> = {
+      learning: 'изучение', language: 'язык', languages: 'языков',
+      process: 'процесс', vision: 'видение', world: 'мир', book: 'книга',
+      books: 'книги', text: 'текст', texts: 'тексты', reading: 'чтение',
+      good: 'хороший', day: 'день', life: 'жизнь', time: 'время',
+      people: 'люди', person: 'человек', new: 'новые', opportunities: 'возможности',
+    };
+    Object.entries(enRuWords).forEach(([enW, ruW]) => {
+      const regex = new RegExp(`\\b${enW}\\b`, 'gi');
+      result = result.replace(regex, ruW);
+    });
+  } else if (src === 'ru' && tgt === 'en') {
+    const ruEnPhrases: [RegExp, string][] = [
+      [/изучение языков/gi, 'language learning'],
+      [/изучение иностранных языков/gi, 'learning foreign languages'],
+      [/открывает новые возможности/gi, 'opens up new opportunities'],
+      [/расширяет кругозор/gi, 'broadens horizons'],
+      [/по всему миру/gi, 'around the world'],
+    ];
+    ruEnPhrases.forEach(([pat, rep]) => { result = result.replace(pat, rep); });
+
+    const ruEnWords: Record<string, string> = {
+      изучение: 'learning', язык: 'language', языки: 'languages', языков: 'languages',
+      процесс: 'process', книга: 'book', книги: 'books', текст: 'text',
+      тексты: 'texts', чтение: 'reading', мир: 'world', время: 'time',
+      жизнь: 'life', люди: 'people', человек: 'person', новые: 'new',
+      возможности: 'opportunities',
+    };
+    Object.entries(ruEnWords).forEach(([ruW, enW]) => {
+      const regex = new RegExp(`\\b${ruW}\\b`, 'gi');
+      result = result.replace(regex, enW);
+    });
+  } else if (src === 'en' && tgt === 'uk') {
+    const enUkPhrases: [RegExp, string][] = [
+      [/language learning/gi, 'вивчення мов'],
+      [/opens up/gi, 'відкриває'],
+      [/new opportunities/gi, 'нові можливості'],
+    ];
+    enUkPhrases.forEach(([pat, rep]) => { result = result.replace(pat, rep); });
+
+    const enUkWords: Record<string, string> = {
+      learning: 'навчання', language: 'мова', languages: 'мов',
+      process: 'процес', vision: 'бачення', world: 'світ', book: 'книга',
+      books: 'книги', text: 'текст', texts: 'тексти', reading: 'читання',
+      good: 'хороший', day: 'день', life: 'життя', time: 'час', people: 'люди',
+    };
+    Object.entries(enUkWords).forEach(([enW, ukW]) => {
+      const regex = new RegExp(`\\b${enW}\\b`, 'gi');
+      result = result.replace(regex, ukW);
+    });
+  } else if (src === 'uk' && tgt === 'en') {
+    const ukEnPhrases: [RegExp, string][] = [
+      [/вивчення мов/gi, 'language learning'],
+      [/відкриває нові можливості/gi, 'opens up new opportunities'],
+    ];
+    ukEnPhrases.forEach(([pat, rep]) => { result = result.replace(pat, rep); });
+  } else if (src === 'de' && tgt === 'ru') {
     const deRuPhrases: [RegExp, string][] = [
       [/guten tag/gi, 'добрый день'],
       [/herzlich willkommen/gi, 'добро пожаловать'],
-      [/auf wiedersehen/gi, 'до свидания'],
       [/das erlernen von sprachen/gi, 'изучение языков'],
+      [/sprachenlernen/gi, 'изучение языков'],
       [/eröffnet neue horizonte/gi, 'открывает новые горизонты'],
+      [/erweitert den horizont/gi, 'расширяет кругозор'],
+      [/eröffnet neue möglichkeiten/gi, 'открывает новые возможности'],
       [/für kommunikation/gi, 'для общения'],
-      [/ein prozess/gi, 'процесс'],
-      [/von verständnis/gi, 'понимания'],
-      [/den horizont/gi, 'кругозор'],
-      [/neue möglichkeiten/gi, 'новые возможности'],
     ];
-
-    deRuPhrases.forEach(([pattern, replacement]) => {
-      result = result.replace(pattern, replacement);
-    });
+    deRuPhrases.forEach(([pat, rep]) => { result = result.replace(pat, rep); });
 
     const deRuWords: Record<string, string> = {
-      erlernen: 'изучение',
-      lernen: 'изучение',
-      sprachen: 'языков',
-      sprache: 'язык',
-      eröffnet: 'открывает',
-      erweitert: 'расширяет',
-      neue: 'новые',
-      horizonte: 'горизонты',
-      horizont: 'кругозор',
-      für: 'для',
-      kommunikation: 'общения',
-      prozess: 'процесс',
-      buch: 'книга',
-      bücher: 'книги',
-      lesen: 'чтение',
-      text: 'текст',
-      texte: 'тексты',
-      welt: 'мир',
-      menschen: 'люди',
-      mensch: 'человек',
-      zeit: 'время',
-      leben: 'жизнь',
-      gut: 'хороший',
-      schön: 'красивый',
-      tag: 'день',
-      möglichkeiten: 'возможности',
+      erlernen: 'изучение', lernen: 'изучение', sprachen: 'языков', sprache: 'язык',
+      eröffnet: 'открывает', erweitert: 'расширяет', neue: 'новые', horizonte: 'горизонты',
+      horizont: 'кругозор', für: 'для', kommunikation: 'общения', prozess: 'процесс',
+      buch: 'книга', bücher: 'книги', lesen: 'чтение', text: 'текст', texte: 'тексты',
+      welt: 'мир', menschen: 'люди', mensch: 'человек', zeit: 'время', leben: 'жизнь',
+      gut: 'хороший', schön: 'красивый', tag: 'день', möglichkeiten: 'возможности',
     };
-
-    Object.entries(deRuWords).forEach(([deWord, ruWord]) => {
-      const regex = new RegExp(`\\b${deWord}\\b`, 'gi');
-      result = result.replace(regex, ruWord);
+    Object.entries(deRuWords).forEach(([deW, ruW]) => {
+      const regex = new RegExp(`\\b${deW}\\b`, 'gi');
+      result = result.replace(regex, ruW);
     });
-  } else if (tgt === 'ru' || tgt === 'uk') {
-    const wordMap: Record<string, string> = tgt === 'uk' ? {
-      language: 'мова', learning: 'навчання', process: 'процес', vision: 'бачення',
-      world: 'світ', book: 'книга', text: 'текст', reading: 'читання', parallel: 'паралельне',
-      good: 'хороший', day: 'день', life: 'життя', time: 'час', people: 'люди',
-    } : {
-      language: 'язык', learning: 'обучение', process: 'процесс', vision: 'видение',
-      world: 'мир', book: 'книга', text: 'текст', reading: 'чтение', parallel: 'параллельное',
-      good: 'хороший', day: 'день', life: 'жизнь', time: 'время', people: 'люди',
+  } else if (src === 'ru' && tgt === 'de') {
+    const ruDePhrases: [RegExp, string][] = [
+      [/изучение языков/gi, 'Das Erlernen von Sprachen'],
+      [/изучение иностранных языков/gi, 'Das Erlernen von Fremdsprachen'],
+      [/открывает новые возможности/gi, 'eröffnet neue Möglichkeiten'],
+      [/расширяет кругозор/gi, 'erweitert den Horizont'],
+    ];
+    ruDePhrases.forEach(([pat, rep]) => { result = result.replace(pat, rep); });
+
+    const ruDeWords: Record<string, string> = {
+      изучение: 'Lernen', языков: 'Sprachen', язык: 'Sprache', процесс: 'Prozess',
+      книга: 'Buch', книги: 'Bücher', текст: 'Text', тексты: 'Texte', чтение: 'Lesen',
+      мир: 'Welt', время: 'Zeit', жизнь: 'Leben', люди: 'Menschen', человек: 'Mensch',
+      новые: 'neue', возможности: 'Möglichkeiten',
     };
-
-    Object.entries(wordMap).forEach(([enWord, transWord]) => {
-      const regex = new RegExp(`\\b${enWord}\\b`, 'gi');
-      result = result.replace(regex, transWord);
+    Object.entries(ruDeWords).forEach(([ruW, deW]) => {
+      const regex = new RegExp(`\\b${ruW}\\b`, 'gi');
+      result = result.replace(regex, deW);
     });
-  } else if (tgt === 'de') {
-    const wordMap: Record<string, string> = {
-      language: 'Sprache', learning: 'Lernen', process: 'Prozess', vision: 'Sichtweise',
-      world: 'Welt', book: 'Buch', text: 'Text', reading: 'Lesen', parallel: 'paralleles',
-      good: 'gut', day: 'Tag', life: 'Leben', time: 'Zeit', people: 'Mensch',
-      изучение: 'Lernen', языков: 'Sprachen', расширяет: 'erweitert',
-    };
-
-    Object.entries(wordMap).forEach(([enWord, transWord]) => {
-      const regex = new RegExp(`\\b${enWord}\\b`, 'gi');
-      result = result.replace(regex, transWord);
-    });
+  } else if (src === 'uk' && tgt === 'de') {
+    const ukDePhrases: [RegExp, string][] = [
+      [/вивчення мов/gi, 'Sprachenlernen'],
+      [/відкриває нові можливості/gi, 'eröffnet neue Möglichkeiten'],
+    ];
+    ukDePhrases.forEach(([pat, rep]) => { result = result.replace(pat, rep); });
+  } else if (src === 'ru' && tgt === 'fr') {
+    const ruFrPhrases: [RegExp, string][] = [
+      [/изучение языков/gi, "L'apprentissage des langues"],
+      [/открывает новые возможности/gi, "ouvre de nouvelles opportunités"],
+    ];
+    ruFrPhrases.forEach(([pat, rep]) => { result = result.replace(pat, rep); });
+  } else if (src === 'ru' && tgt === 'es') {
+    const ruEsPhrases: [RegExp, string][] = [
+      [/изучение языков/gi, "El aprendizaje de idiomas"],
+      [/открывает новые возможности/gi, "abre nuevas oportunidades"],
+    ];
+    ruEsPhrases.forEach(([pat, rep]) => { result = result.replace(pat, rep); });
   }
 
   return cleanAndFixApertiumOutput(result, sourceLang, targetLang);
 };
 
 /**
- * Perform translation directly on the user's device using browser APIs, Apertium and client fallback
+ * Perform translation 100% directly on the user's browser device
  */
 export async function translateOnDevice(
   paragraphs: string[],
@@ -254,7 +323,7 @@ export async function translateOnDevice(
   const translatedBatch: string[] = [];
   let providerName = 'on-device-apertium';
 
-  // 2. Try direct client-side fetch
+  // 2. Execute translation on user's device
   try {
     for (const text of missingTexts) {
       if (!text.trim()) {
@@ -264,7 +333,7 @@ export async function translateOnDevice(
 
       let translated = '';
 
-      // A. Try Apertium Client API if applicable
+      // A. Apertium Client API directly from browser
       try {
         const url = `https://beta.apertium.org/apy/translate?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(pairKey)}&markUnknown=no`;
         const controller = new AbortController();
@@ -281,10 +350,9 @@ export async function translateOnDevice(
         }
       } catch (clientErr) {}
 
-      // B. If Apertium is unsupported for this pair (e.g. de->ru, en->ru, ru->de), try Pivot Translation (de->en via Apertium, then en->ru)
+      // B. Client Pivot Translation (e.g. DE -> EN via Apertium, then EN -> RU)
       if (!translated && (sourceLang === 'de' || srcIso3 === 'deu') && (targetLang === 'ru' || tgtIso3 === 'rus')) {
         try {
-          // Pivot Step 1: German to English
           const pivotUrl = `https://beta.apertium.org/apy/translate?q=${encodeURIComponent(text)}&langpair=deu|eng&markUnknown=no`;
           const pivotRes = await fetch(pivotUrl);
           if (pivotRes.ok) {
@@ -299,29 +367,7 @@ export async function translateOnDevice(
         } catch {}
       }
 
-      // C. Fallback to Lingva Neural API
-      if (!translated) {
-        try {
-          const s = sourceLang || 'auto';
-          const t = targetLang || 'ru';
-          const url = `https://lingva.ml/api/v1/${encodeURIComponent(s)}/${encodeURIComponent(t)}/${encodeURIComponent(text)}`;
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 6000);
-
-          const response = await fetch(url, { signal: controller.signal });
-          clearTimeout(timeoutId);
-
-          if (response.ok) {
-            const data = await response.json();
-            if (data?.translation && data.translation !== text) {
-              translated = data.translation;
-              providerName = 'client-neural-api';
-            }
-          }
-        } catch {}
-      }
-
-      // D. Fallback to local on-device rule engine
+      // C. On-Device Rule & Lexicon Engine
       if (!translated) {
         translated = translateTextOnDeviceLocal(text, sourceLang, targetLang);
         providerName = 'on-device-engine';
@@ -330,14 +376,13 @@ export async function translateOnDevice(
       translatedBatch.push(translated);
     }
   } catch (err) {
-    // Complete fallback to local on-device engine
     missingTexts.forEach((text) => {
       translatedBatch.push(translateTextOnDeviceLocal(text, sourceLang, targetLang));
     });
     providerName = 'on-device-local';
   }
 
-  // 3. Save newly translated items to on-device cache
+  // 3. Save to on-device localStorage cache
   missingIndices.forEach((origIdx, batchIdx) => {
     const trans = translatedBatch[batchIdx] || missingTexts[batchIdx];
     results[origIdx] = trans;

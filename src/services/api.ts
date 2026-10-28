@@ -40,25 +40,10 @@ export const apiService = {
   },
 
   /**
-   * Translate paragraphs on the user's device (client-side execution)
+   * Translate paragraphs purely on the user's device (client-side browser execution)
    */
   async translate(req: TranslateRequest): Promise<TranslateResponse> {
-    try {
-      // First attempt backend server route if available
-      const res = await fetch('/api/translate', {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify(req),
-      });
-
-      if (res.ok) {
-        return await res.json();
-      }
-    } catch (serverErr) {
-      console.warn('Backend server translation unavailable, executing translation on user device...');
-    }
-
-    // Direct fallback to on-device translation in user browser
+    // Pure client-side execution on user's device
     const onDeviceRes = await translateOnDevice(req.paragraphs, req.sourceLang, req.targetLang);
     return {
       translatedParagraphs: onDeviceRes.translatedParagraphs,
