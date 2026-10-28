@@ -27,6 +27,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const t = getTranslation(preferences.uiLang);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [adsensePubId, setAdsensePubId] = useState(() => {
+    return localStorage.getItem('lingotwice_adsense_pub_id') || '';
+  });
+
+  const handleSaveAdsense = (e: React.FormEvent) => {
+    e.preventDefault();
+    localStorage.setItem('lingotwice_adsense_pub_id', adsensePubId.trim());
+    alert('Google AdSense Publisher ID успешно сохранен!');
+  };
 
   const handleExportData = () => {
     const jsonStr = JSON.stringify(allData, null, 2);
@@ -156,6 +165,34 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Google AdSense Integration */}
+          <div className="border-t border-slate-100 pt-4 dark:border-slate-800">
+            <form onSubmit={handleSaveAdsense} className="rounded-xl border border-amber-200 bg-amber-50/50 p-3.5 dark:border-amber-900/60 dark:bg-amber-950/30 space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-300">
+                <Globe className="h-4 w-4 text-amber-600" />
+                <span>Монетизация Google AdSense</span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                Введите ваш издательский ID для показа рекламы Google AdSense и получения выплат на ваш аккаунт.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={adsensePubId}
+                  onChange={(e) => setAdsensePubId(e.target.value)}
+                  placeholder="ca-pub-XXXXXXXXXXXXXXXX"
+                  className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-mono focus:border-amber-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                />
+                <button
+                  type="submit"
+                  className="rounded-lg bg-amber-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 cursor-pointer"
+                >
+                  Сохранить
+                </button>
+              </div>
+            </form>
           </div>
 
           {/* Legal Pages & Privacy */}

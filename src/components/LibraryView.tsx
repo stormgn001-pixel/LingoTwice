@@ -4,6 +4,7 @@ import { InterfaceLanguage, ReadingDocument, SubscriptionStatus } from '../types
 import { getTranslation, getDocTitle } from '../i18n/translations';
 import { getLanguageByCode } from '../constants/languages';
 import { SAMPLE_DOCUMENTS } from '../constants/sampleLibrary';
+import { AdSenseBanner } from './AdSenseBanner';
 
 interface LibraryViewProps {
   documents: ReadingDocument[];
@@ -307,16 +308,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         </div>
       )}
 
-      {/* Google AdSense Readiness Slot (Clean, non-intrusive, Ad-Free for PRO) */}
+      {/* Google AdSense Ad Unit & Monetization Slot */}
       {subscription.tier === 'free' && (
-        <div className="mt-12 rounded-2xl border border-slate-200 bg-slate-50/70 p-6 text-center dark:border-slate-800 dark:bg-slate-900/40">
-          <div className="flex items-center justify-center gap-2 text-xs text-slate-400">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            <span>Информационный блок партнёров LingoTwice (AdSense Ready)</span>
-          </div>
-          <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto">
-            Бесплатная версия поддерживается ненавязчивыми спонсорскими публикациями. В тарифе Премиум чтение полностью свободно от рекламы.
-          </p>
+        <div className="mt-10">
+          <AdSenseBanner />
         </div>
       )}
     </div>
