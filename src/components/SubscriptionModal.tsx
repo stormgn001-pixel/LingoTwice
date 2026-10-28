@@ -60,22 +60,22 @@ const CRYPTO_OPTIONS: Record<string, { label: string; network: string; address: 
   USDT_TRC20: {
     label: 'USDT (TRC-20)',
     network: 'Tron TRC-20',
-    address: 'TXg9u3QY8fLpM4K7jZb8R5wA1cE2dF3hJ6',
+    address: 'TBnztbz23R1bGTYbmn68bmcVVoVJ8rfS3m',
   },
-  TON: {
-    label: 'TON',
-    network: 'The Open Network',
-    address: 'EQBvW8Z5huBkMJYdn30xDTeVDZ3a2EdD6P_2vn8Wv_LTlingo',
+  SOL: {
+    label: 'Solana (SOL)',
+    network: 'Solana Mainnet',
+    address: 'D6XshRX52Y55C5yKQtLqVqFMnPrWvxFoAHDGMnEHNpLn',
   },
   BTC: {
     label: 'Bitcoin (BTC)',
     network: 'Bitcoin SegWit',
-    address: 'bc1q9x3f6l7k2z8r5w1a0ce4df3hj6p8u2ltw',
+    address: 'bc1q0hkkwgakxp50cr0qah04dtljjmltmmeyf93ksv',
   },
   ETH: {
     label: 'Ethereum (ETH)',
-    network: 'ERC-20',
-    address: '0x71C849bE6278841B59C9993E106d3B643D02F7',
+    network: 'ERC-20 / EVM',
+    address: '0x94025a59Fb8113DC51e762d0d42ca13025f4bd96',
   },
 };
 
@@ -309,337 +309,79 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 </div>
               </div>
 
-              {/* Payment Methods Section: Card (Visa/Mastercard), PayPal, Crypto, Promo */}
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 block">
-                  Способ оплаты:
-                </label>
-                <div className="grid grid-cols-4 gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
-                  {/* 1. Card */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedMethod('card')}
-                    className={`flex flex-col sm:flex-row items-center justify-center gap-1 rounded-lg py-1.5 px-2 text-[11px] font-semibold transition-all cursor-pointer ${
-                      selectedMethod === 'card'
-                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
-                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                    }`}
-                  >
-                    <CreditCard className="h-3.5 w-3.5 text-amber-600" />
-                    <span className="truncate">Visa / Master</span>
-                  </button>
-
-                  {/* 2. PayPal */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedMethod('paypal')}
-                    className={`flex flex-col sm:flex-row items-center justify-center gap-1 rounded-lg py-1.5 px-2 text-[11px] font-semibold transition-all cursor-pointer ${
-                      selectedMethod === 'paypal'
-                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
-                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                    }`}
-                  >
-                    <Wallet className="h-3.5 w-3.5 text-blue-600" />
-                    <span className="truncate">PayPal</span>
-                  </button>
-
-                  {/* 3. Crypto */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedMethod('crypto')}
-                    className={`flex flex-col sm:flex-row items-center justify-center gap-1 rounded-lg py-1.5 px-2 text-[11px] font-semibold transition-all cursor-pointer ${
-                      selectedMethod === 'crypto'
-                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
-                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                    }`}
-                  >
-                    <QrCode className="h-3.5 w-3.5 text-emerald-600" />
-                    <span className="truncate">Криптовалюта</span>
-                  </button>
-
-                  {/* 4. Promo code */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedMethod('promo')}
-                    className={`flex flex-col sm:flex-row items-center justify-center gap-1 rounded-lg py-1.5 px-2 text-[11px] font-semibold transition-all cursor-pointer ${
-                      selectedMethod === 'promo'
-                        ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
-                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                    }`}
-                  >
-                    <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                    <span className="truncate">Промокод</span>
-                  </button>
+              {/* Payment Details Container: Cryptocurrency Only */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-850/50 space-y-3">
+                <div className="flex items-center justify-between pb-1 border-b border-slate-200/80 dark:border-slate-800">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    Оплата криптовалютой (Web3 / Crypto)
+                  </span>
+                  <span className="text-[11px] font-bold text-emerald-600">Мгновенное зачисление</span>
                 </div>
-              </div>
 
-              {/* Payment Details Container */}
-              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-850/50">
-                {/* Method 1: Visa / Mastercard Form */}
-                {selectedMethod === 'card' && (
-                  <form onSubmit={handleCheckout} className="space-y-2.5">
-                    <div className="flex items-center justify-between pb-1 border-b border-slate-200/80 dark:border-slate-800">
-                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                        Оплата картой Visa / Mastercard / МИР
-                      </span>
-                      <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500">
-                        <span className="rounded bg-white px-1.5 py-0.5 border border-slate-200 dark:bg-slate-900 dark:border-slate-700">
-                          VISA
-                        </span>
-                        <span className="rounded bg-white px-1.5 py-0.5 border border-slate-200 dark:bg-slate-900 dark:border-slate-700">
-                          MC
-                        </span>
-                        <span className="rounded bg-white px-1.5 py-0.5 border border-slate-200 dark:bg-slate-900 dark:border-slate-700">
-                          МИР
-                        </span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400">
-                        Номер карты:
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={cardNumber}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '').slice(0, 16);
-                          const formatted = val.replace(/(\d{4})/g, '$1 ').trim();
-                          setCardNumber(formatted);
-                        }}
-                        placeholder="4532 •••• •••• 8821"
-                        className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-mono focus:border-amber-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400">
-                          Срок действия:
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={cardExp}
-                          onChange={(e) => {
-                            let val = e.target.value.replace(/\D/g, '').slice(0, 4);
-                            if (val.length > 2) val = `${val.slice(0, 2)}/${val.slice(2)}`;
-                            setCardExp(val);
-                          }}
-                          placeholder="MM/YY"
-                          className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-mono focus:border-amber-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-950 dark:text-white text-center"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400">
-                          CVC / CVV:
-                        </label>
-                        <input
-                          type="password"
-                          required
-                          maxLength={4}
-                          value={cardCvc}
-                          onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, ''))}
-                          placeholder="•••"
-                          className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-mono focus:border-amber-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-950 dark:text-white text-center"
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={isProcessing}
-                      className="mt-2 w-full flex items-center justify-center gap-2 rounded-xl bg-amber-600 py-2.5 text-xs font-semibold text-white hover:bg-amber-700 transition-colors cursor-pointer shadow-sm disabled:opacity-60"
-                    >
-                      {isProcessing ? (
-                        <>
-                          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                          <span>Безопасная обработка...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="h-3.5 w-3.5" />
-                          <span>
-                            Оплатить {PLANS[selectedPlan].price} через карту
-                          </span>
-                        </>
-                      )}
-                    </button>
-                  </form>
-                )}
-
-                {/* Method 2: PayPal */}
-                {selectedMethod === 'paypal' && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between pb-1 border-b border-slate-200/80 dark:border-slate-800">
-                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                        Оплата через PayPal (kovaligor2016@gmail.com)
-                      </span>
-                      <span className="text-xs font-bold text-blue-600">PayPal Verified</span>
-                    </div>
-
-                    <div className="rounded-lg border border-blue-200 bg-blue-50/70 p-3 text-xs text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200 space-y-1">
-                      <div className="flex justify-between items-center">
-                        <span>Получатель:</span>
-                        <strong className="font-mono text-slate-900 dark:text-white">kovaligor2016@gmail.com</strong>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span>Тариф и сумма:</span>
-                        <strong className="text-amber-600 dark:text-amber-400">{PLANS[selectedPlan].title} ({PLANS[selectedPlan].price})</strong>
-                      </div>
-                    </div>
-
-                    <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                      Нажмите кнопку ниже для перевода на аккаунт kovaligor2016@gmail.com в PayPal. После перевода нажмите кнопку подтверждения.
-                    </p>
-
-                    <div className="flex flex-col gap-2">
-                      <a
-                        href={`https://www.paypal.com/paypalme/kovaligor2016/${PLANS[selectedPlan].price.replace('$', '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#0070ba] hover:bg-[#005ea6] text-white py-2.5 text-xs font-bold transition-colors shadow-sm"
-                      >
-                        <Wallet className="h-4 w-4" />
-                        <span>Оплатить в PayPal ({PLANS[selectedPlan].price})</span>
-                      </a>
-
+                {/* Crypto network selector */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                  {Object.keys(CRYPTO_OPTIONS).map((cKey) => {
+                    const isCSelected = selectedCrypto === cKey;
+                    return (
                       <button
+                        key={cKey}
                         type="button"
-                        onClick={() => handleCheckout()}
-                        disabled={isProcessing}
-                        className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-2 text-xs font-semibold transition-colors cursor-pointer shadow-sm disabled:opacity-60"
+                        onClick={() => setSelectedCrypto(cKey)}
+                        className={`rounded-lg py-1 px-1.5 text-center text-[10px] font-semibold border transition-all cursor-pointer ${
+                          isCSelected
+                            ? 'border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 ring-1 ring-emerald-500'
+                            : 'border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                        }`}
                       >
-                        {isProcessing ? (
-                          <>
-                            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                            <span>Проверка платежа PayPal...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Check className="h-3.5 w-3.5" />
-                            <span>Я оплатил через PayPal (Активировать PRO)</span>
-                          </>
-                        )}
+                        {CRYPTO_OPTIONS[cKey].label}
                       </button>
-                    </div>
+                    );
+                  })}
+                </div>
+
+                {/* Address & QR */}
+                <div className="rounded-lg border border-slate-200 bg-white p-2.5 dark:border-slate-700 dark:bg-slate-900 space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] text-slate-500">
+                    <span>Сеть: <b className="text-slate-700 dark:text-slate-300">{activeCrypto.network}</b></span>
+                    <span>Сумма к оплате: <b className="text-emerald-600">{PLANS[selectedPlan].price}</b></span>
                   </div>
-                )}
 
-                {/* Method 3: Crypto (USDT, TON, BTC, ETH) */}
-                {selectedMethod === 'crypto' && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between pb-1 border-b border-slate-200/80 dark:border-slate-800">
-                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                        Оплата криптовалютой (Web3 / Crypto)
-                      </span>
-                      <span className="text-[11px] font-bold text-emerald-600">Мгновенное зачисление</span>
-                    </div>
-
-                    {/* Crypto network selector */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                      {Object.keys(CRYPTO_OPTIONS).map((cKey) => {
-                        const isCSelected = selectedCrypto === cKey;
-                        return (
-                          <button
-                            key={cKey}
-                            type="button"
-                            onClick={() => setSelectedCrypto(cKey)}
-                            className={`rounded-lg py-1 px-1.5 text-center text-[10px] font-semibold border transition-all cursor-pointer ${
-                              isCSelected
-                                ? 'border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 ring-1 ring-emerald-500'
-                                : 'border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
-                            }`}
-                          >
-                            {CRYPTO_OPTIONS[cKey].label}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Address & QR */}
-                    <div className="rounded-lg border border-slate-200 bg-white p-2.5 dark:border-slate-700 dark:bg-slate-900 space-y-1.5">
-                      <div className="flex items-center justify-between text-[11px] text-slate-500">
-                        <span>Сеть: <b className="text-slate-700 dark:text-slate-300">{activeCrypto.network}</b></span>
-                        <span>Сумма к оплате: <b className="text-emerald-600">{PLANS[selectedPlan].price}</b></span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="text"
-                          readOnly
-                          value={activeCrypto.address}
-                          className="flex-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-mono text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleCopyAddress}
-                          className="flex items-center gap-1 rounded-md bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-200 cursor-pointer shrink-0"
-                        >
-                          <Copy className="h-3 w-3" />
-                          <span>{isCopied ? 'Скопировано!' : 'Копировать'}</span>
-                        </button>
-                      </div>
-                    </div>
-
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      readOnly
+                      value={activeCrypto.address}
+                      className="flex-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-mono text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"
+                    />
                     <button
                       type="button"
-                      onClick={() => handleCheckout()}
-                      disabled={isProcessing}
-                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 text-xs font-semibold transition-colors cursor-pointer shadow-sm disabled:opacity-60"
+                      onClick={handleCopyAddress}
+                      className="flex items-center gap-1 rounded-md bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-200 cursor-pointer shrink-0"
                     >
-                      {isProcessing ? (
-                        <>
-                          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                          <span>Проверка блокчейн-транзакции...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Check className="h-3.5 w-3.5" />
-                          <span>Я оплатил (Подтвердить активацию {PLANS[selectedPlan].title})</span>
-                        </>
-                      )}
+                      <Copy className="h-3 w-3" />
+                      <span>{isCopied ? 'Скопировано!' : 'Копировать'}</span>
                     </button>
                   </div>
-                )}
+                </div>
 
-                {/* Method 4: Promo Code */}
-                {selectedMethod === 'promo' && (
-                  <form onSubmit={handleCheckout} className="space-y-2.5">
-                    <div className="flex items-center justify-between pb-1 border-b border-slate-200/80 dark:border-slate-800">
-                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                        Активация по промокоду или лицензионному ключу
-                      </span>
-                    </div>
-
-                    <div>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={promoCode}
-                          onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                          placeholder="Введите промокод (например: LINGOTWICE_PRO)"
-                          className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-mono uppercase focus:border-amber-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-                        />
-                        <button
-                          type="submit"
-                          disabled={isProcessing}
-                          className="rounded-lg bg-amber-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 cursor-pointer shrink-0 disabled:opacity-50"
-                        >
-                          {isProcessing ? 'Проверка...' : 'Применить'}
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setPromoCode('LINGOTWICE_PRO')}
-                        className="mt-1.5 text-[11px] text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
-                      >
-                        Подставить тестовый ключ: LINGOTWICE_PRO
-                      </button>
-                    </div>
-                  </form>
-                )}
+                <button
+                  type="button"
+                  onClick={() => handleCheckout()}
+                  disabled={isProcessing}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 text-xs font-semibold transition-colors cursor-pointer shadow-sm disabled:opacity-60"
+                >
+                  {isProcessing ? (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                      <span>Проверка блокчейн-транзакции...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-3.5 w-3.5" />
+                      <span>Я оплатил (Подтвердить активацию {PLANS[selectedPlan].title})</span>
+                    </>
+                  )}
+                </button>
               </div>
 
               {/* Error Notification */}
