@@ -57,7 +57,13 @@ const DEFAULT_STATS: UserStats = {
   todayWordsLearned: 5,
 };
 
+import { useAuth } from './contexts/AuthContext';
+import { dbService } from './services/db';
+
 export default function App() {
+  const user = useAuth();
+  const [loading, setLoading] = useState(true);
+  
   // Navigation & View state
   const [currentView, setCurrentView] = useState<
     'read' | 'library' | 'vocabulary' | 'review' | 'progress'
@@ -65,117 +71,34 @@ export default function App() {
   const [isDistractionFree, setIsDistractionFree] = useState(false);
 
   // Core Data
-  const [documents, setDocuments] = useState<ReadingDocument[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.DOCUMENTS);
-      const deletedIdsStr = localStorage.getItem('linguatwin_deleted_ids_v1');
-      const deletedIds = new Set<string>(deletedIdsStr ? JSON.parse(deletedIdsStr) : []);
+  const [documents, setDocuments] = useState<ReadingDocument[]>(SAMPLE_DOCUMENTS);
+  const [activeDocId, setActiveDocId] = useState<string>(SAMPLE_DOCUMENTS[0].id);
 
-      if (saved) {
-        const parsed: ReadingDocument[] = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const existingIds = new Set(parsed.map((d) => d.id));
-          const newSamples = SAMPLE_DOCUMENTS.filter(
-            (s) => !existingIds.has(s.id) && !deletedIds.has(s.id)
-          );
+  const [vocabulary, setVocabulary] = useState<VocabularyEntry[]>([]);
+  const [preferences, setPreferences] = useState<ReadingPreferences>(DEFAULT_PREFERENCES);
+  const [stats, setStats] = useState<UserStats>(DEFAULT_STATS);
 
-          // Update existing sample documents with newer covers or texts if updated
-          const updatedExisting = parsed.map((doc) => {
-            if (doc.isSample) {
-              const fresh = SAMPLE_DOCUMENTS.find((s) => s.id === doc.id);
-              if (fresh) {
-                return {
-                  ...fresh,
-                  readingProgress: doc.readingProgress ?? fresh.readingProgress,
-                  lastReadAt: doc.lastReadAt ?? fresh.lastReadAt,
-                };
-              }
-            }
-            return doc;
-          });
-
-          return [...updatedExisting, ...newSamples];
-        }
+  useEffect(() => {
+    const loadUserData = async () => {
+      setLoading(true);
+      if (user) {
+        const [docs, vocab, statsData, prefsData] = await Promise.all([
+          dbService.getDocuments(user.uid),
+          dbService.getVocabulary(user.uid),
+          dbService.getStats(user.uid),
+          dbService.getPreferences(user.uid)
+        ]);
+        
+        if (docs.length > 0) setDocuments(docs);
+        setVocabulary(vocab);
+        if (statsData) setStats(statsData);
+        if (prefsData) setPreferences(prefsData);
       }
-    } catch {}
-    return SAMPLE_DOCUMENTS;
-  });
+      setLoading(false);
+    };
+    loadUserData();
+  }, [user]);
 
-  const [activeDocId, setActiveDocId] = useState<string>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.ACTIVE_DOC_ID);
-      if (saved) return saved;
-    } catch {}
-    return SAMPLE_DOCUMENTS[0].id;
-  });
-
-
-  const [vocabulary, setVocabulary] = useState<VocabularyEntry[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.VOCABULARY);
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return [
-      {
-        id: 'v-1',
-        word: 'apprivoiser',
-        translation: 'приручать, создавать взаимные узы',
-        contextSentence: 'Ça signifie « créer des liens... »',
-        sourceLang: 'fr',
-        targetLang: 'ru',
-        box: 3,
-        interval: 6,
-        repetitionCount: 2,
-        easeFactor: 2.5,
-        nextReviewDate: Date.now() - 3600000, // due for review
-        correctCount: 2,
-        incorrectCount: 0,
-        createdAt: Date.now() - 86400000 * 5,
-        grammar: {
-          partOfSpeech: 'Глагол (1-я группа)',
-          cefrLevel: 'B1',
-        },
-      },
-      {
-        id: 'v-2',
-        word: 'die Melange',
-        translation: 'венский кофе с молочной пенкой',
-        contextSentence: 'Bringen Sie mir bitte auch eine Wiener Melange.',
-        sourceLang: 'de',
-        targetLang: 'ru',
-        box: 2,
-        interval: 2,
-        repetitionCount: 1,
-        easeFactor: 2.5,
-        nextReviewDate: Date.now() - 7200000, // due
-        correctCount: 1,
-        incorrectCount: 0,
-        createdAt: Date.now() - 86400000 * 3,
-        grammar: {
-          partOfSpeech: 'Существительное',
-          gender: 'die (f)',
-          plural: 'Melangen',
-          cefrLevel: 'A2',
-        },
-      },
-    ];
-  });
-
-  const [preferences, setPreferences] = useState<ReadingPreferences>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.PREFERENCES);
-      if (saved) return { ...DEFAULT_PREFERENCES, ...JSON.parse(saved) };
-    } catch {}
-    return DEFAULT_PREFERENCES;
-  });
-
-  const [stats, setStats] = useState<UserStats>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.STATS);
-      if (saved) return { ...DEFAULT_STATS, ...JSON.parse(saved) };
-    } catch {}
-    return DEFAULT_STATS;
-  });
 
   const [subscription, setSubscription] = useState<SubscriptionStatus>({
     tier: 'free',
@@ -319,6 +242,9 @@ export default function App() {
     };
 
     setVocabulary((prev) => [newEntry, ...prev]);
+    if (user) {
+      dbService.saveVocabularyEntry(user.uid, newEntry);
+    }
     setStats((prev) => ({
       ...prev,
       totalWordsLearned: prev.totalWordsLearned + 1,

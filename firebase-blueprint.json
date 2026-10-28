@@ -1,0 +1,43 @@
+{
+  "entities": {
+    "VocabularyEntry": {
+      "title": "VocabularyEntry",
+      "description": "User vocabulary entry for spaced repetition.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "word": { "type": "string" },
+        "translation": { "type": "string" },
+        "contextSentence": { "type": "string" },
+        "sourceLang": { "type": "string" },
+        "targetLang": { "type": "string" },
+        "box": { "type": "number" },
+        "interval": { "type": "number" },
+        "repetitionCount": { "type": "number" },
+        "nextReviewDate": { "type": "number" }
+      },
+      "required": ["id", "word", "translation", "sourceLang", "targetLang", "box", "interval", "repetitionCount", "nextReviewDate"]
+    },
+    "UserStats": {
+      "title": "UserStats",
+      "description": "User reading progress and statistics.",
+      "type": "object",
+      "properties": {
+        "streakDays": { "type": "number" },
+        "totalReadingMinutes": { "type": "number" },
+        "totalWordsLearned": { "type": "number" }
+      },
+      "required": ["streakDays", "totalReadingMinutes", "totalWordsLearned"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/vocabulary/{vocabularyId}": {
+      "schema": "VocabularyEntry",
+      "description": "User vocabulary entries."
+    },
+    "/users/{userId}/stats/data": {
+      "schema": "UserStats",
+      "description": "User reading statistics."
+    }
+  }
+}
