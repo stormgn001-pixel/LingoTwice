@@ -35,8 +35,7 @@ import {
   ReadingMode,
   ReadingPreferences,
   SplitOrientation,
-  InterfaceLanguage,
-  ComprehensionQuestion
+  InterfaceLanguage
 } from '../types';
 import { SUPPORTED_LANGUAGES, getLanguageByCode } from '../constants/languages';
 import { SAMPLE_DOCUMENTS } from '../constants/sampleLibrary';
@@ -82,7 +81,11 @@ const SourcePassage = React.memo(({
   lineHeightClass, 
   sourceTextColorClass,
   t,
-  theme
+  theme,
+  isHiddenInImmersion,
+  isRevealed,
+  toggleReveal,
+  mode,
 }: { 
   passage: AlignedPassage;
   isActive: boolean;
@@ -99,6 +102,10 @@ const SourcePassage = React.memo(({
   sourceTextColorClass: string;
   t: any;
   theme: string;
+  isHiddenInImmersion?: boolean;
+  isRevealed?: boolean;
+  toggleReveal?: (id: string) => void;
+  mode?: ReadingMode;
 }) => {
   const tokens = React.useMemo(() => {
     return passage.sourceText.split(/(\s+)/);
@@ -114,6 +121,15 @@ const SourcePassage = React.memo(({
       }`}
     >
       <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {mode === 'immersion' && toggleReveal && (
+          <button
+            onClick={() => toggleReveal(passage.id)}
+            title={isRevealed ? (t.hideOriginal || 'Скрыть оригинал') : (t.revealOriginal || 'Показать оригинал')}
+            className="rounded p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
+          >
+            {isRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+          </button>
+        )}
         <button
           onClick={() => playAudio(passage.sourceText)}
           title={t.listenSource}
@@ -146,6 +162,14 @@ const SourcePassage = React.memo(({
               {t.cancel}
             </button>
           </div>
+        </div>
+      ) : isHiddenInImmersion ? (
+        <div
+          onClick={() => toggleReveal && toggleReveal(passage.id)}
+          className="cursor-pointer rounded-xl border-2 border-dashed border-amber-300 bg-amber-50/50 p-5 text-center text-xs sm:text-sm font-bold text-amber-900 hover:border-amber-500 hover:bg-amber-100/80 transition-all dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300 shadow-xs group-hover:scale-[1.005]"
+        >
+          <Eye className="mx-auto mb-2 h-5 w-5 text-amber-600 dark:text-amber-500" />
+          <span>{t.revealOriginal || 'Показать оригинал'}</span>
         </div>
       ) : (
         <p style={fontSizeStyle} className={`reading-text ${lineHeightClass} ${sourceTextColorClass}`}>
@@ -180,10 +204,7 @@ const TargetPassage = React.memo(({
   isEditing, 
   editTargetText, 
   setEditTargetText, 
-  isRevealed, 
-  toggleReveal, 
   playAudio, 
-  isHiddenInImmersion,
   isTranslating,
   translationError,
   onRetry,
@@ -191,17 +212,13 @@ const TargetPassage = React.memo(({
   lineHeightClass, 
   targetTextColorClass,
   t,
-  mode
 }: { 
   passage: AlignedPassage;
   isActive: boolean;
   isEditing: boolean;
   editTargetText: string;
   setEditTargetText: (val: string) => void;
-  isRevealed: boolean;
-  toggleReveal: (id: string) => void;
   playAudio: (text: string) => void;
-  isHiddenInImmersion: boolean;
   isTranslating: boolean;
   translationError?: string | null;
   onRetry?: () => void;
@@ -209,7 +226,6 @@ const TargetPassage = React.memo(({
   lineHeightClass: string;
   targetTextColorClass: string;
   t: any;
-  mode: string;
 }) => {
   return (
     <div
@@ -221,15 +237,6 @@ const TargetPassage = React.memo(({
       }`}
     >
       <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {mode === 'immersion' && !isTranslating && passage.targetText && (
-          <button
-            onClick={() => toggleReveal(passage.id)}
-            title={isRevealed ? t.hideTranslation : t.revealTranslation}
-            className="rounded p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
-          >
-            {isRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-          </button>
-        )}
         {!isTranslating && passage.targetText && (
           <button
             onClick={() => playAudio(passage.targetText)}
@@ -284,14 +291,6 @@ const TargetPassage = React.memo(({
             <span>Ожидание перевода...</span>
           </div>
         )
-      ) : isHiddenInImmersion ? (
-        <div
-          onClick={() => toggleReveal(passage.id)}
-          className="cursor-pointer rounded-xl border-2 border-dashed border-amber-300 bg-amber-50/50 p-6 text-center text-sm font-bold text-amber-900 hover:border-amber-500 hover:bg-amber-100/80 transition-all dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300 shadow-md group-hover:scale-[1.01]"
-        >
-          <Eye className="mx-auto mb-2.5 h-6 w-6 text-amber-600 dark:text-amber-500" />
-          <span>{t.revealTranslation}</span>
-        </div>
       ) : (
         <p style={fontSizeStyle} className={`reading-text ${lineHeightClass} ${targetTextColorClass}`}>
           {passage.targetText}
@@ -349,11 +348,6 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
     error: null,
   });
 
-  // Recall mode quiz state
-  const [quizQuestions, setQuizQuestions] = useState<ComprehensionQuestion[]>([]);
-  const [quizLoading, setQuizLoading] = useState<boolean>(false);
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
-  const [showQuizResults, setShowQuizResults] = useState<boolean>(false);
 
   // Pagination for large documents
   const [visibleCount, setVisibleCount] = useState(100);
@@ -425,26 +419,6 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
     return speechService.subscribe(setSpeechState);
   }, []);
 
-  // Load recall questions when entering recall mode
-  useEffect(() => {
-    if (preferences.activeMode === 'recall' && document.passages.length > 0) {
-      const activePassage =
-        document.passages.find((p) => p.id === activePassageId) || document.passages[0];
-      setQuizLoading(true);
-      apiService
-        .generateComprehensionQuiz({
-          sourceText: activePassage.sourceText,
-          sourceLang: document.sourceLang,
-          targetLang: document.targetLang,
-        })
-        .then((res) => {
-          setQuizQuestions(res.questions);
-          setSelectedAnswers({});
-          setShowQuizResults(false);
-        })
-        .finally(() => setQuizLoading(false));
-    }
-  }, [preferences.activeMode, activePassageId, document.id]);
 
   const playAudio = React.useCallback((text: string, lang: string) => {
     speechService.speak(text, lang, preferences.speechRate);
@@ -612,6 +586,10 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
                 sourceTextColorClass={sourceTextColorClass}
                 t={t}
                 theme={preferences.theme}
+                isHiddenInImmersion={preferences.activeMode === 'immersion' && !revealedPassageIds.has(passage.id)}
+                isRevealed={revealedPassageIds.has(passage.id)}
+                toggleReveal={toggleReveal}
+                mode={preferences.activeMode}
               />
             );
           })}
@@ -707,75 +685,15 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
                 isEditing={editingPassageId === passage.id}
                 editTargetText={editTargetText}
                 setEditTargetText={setEditTargetText}
-                isRevealed={revealedPassageIds.has(passage.id)}
-                toggleReveal={toggleReveal}
                 playAudio={playTargetAudio}
-                isHiddenInImmersion={preferences.activeMode === 'immersion' && !revealedPassageIds.has(passage.id)}
                 isTranslating={false}
                 fontSizeStyle={fontSizeStyle}
                 lineHeightClass={lineHeightClass}
                 targetTextColorClass={targetTextColorClass}
                 t={t}
-                mode={preferences.activeMode}
               />
             );
           })}
-
-          {preferences.activeMode === 'recall' && (
-            <div className="rounded-2xl border border-amber-200/80 bg-amber-50/40 p-4 sm:p-5 dark:border-amber-900/60 dark:bg-amber-950/30">
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                <h4 className="font-serif text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-                  Проверка понимания прочитанного (Recall Mode)
-                </h4>
-              </div>
-
-              {quizLoading ? (
-                <div className="flex items-center gap-2 py-4 text-xs text-slate-500">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-600 border-t-transparent"></div>
-                  <span>Генерация контрольных вопросов по тексту...</span>
-                </div>
-              ) : quizQuestions.length > 0 ? (
-                <div className="space-y-4">
-                  {quizQuestions.map((q, qIndex) => {
-                    const userSelection = selectedAnswers[q.id];
-                    return (
-                      <div key={q.id} className="space-y-2 border-b border-amber-100 pb-3 last:border-b-0 dark:border-amber-900/40">
-                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{qIndex + 1}. {q.question}</p>
-                        <div className="space-y-1.5">
-                          {q.options.map((opt, optIndex) => {
-                            const isSelected = userSelection === optIndex;
-                            const isCorrect = optIndex === q.correctOptionIndex;
-                            let optClass = 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300';
-                            if (showQuizResults) {
-                              if (isCorrect) optClass = 'border-emerald-500 bg-emerald-50 text-emerald-800 font-medium dark:bg-emerald-950/60 dark:text-emerald-300';
-                              else if (isSelected) optClass = 'border-rose-400 bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300';
-                            } else if (isSelected) optClass = 'border-amber-600 bg-amber-50 text-amber-900 font-medium dark:bg-amber-950/60 dark:text-amber-200';
-                            return (
-                              <button key={optIndex} onClick={() => !showQuizResults && setSelectedAnswers(prev => ({ ...prev, [q.id]: optIndex }))}
-                                className={`w-full text-left rounded-lg border px-3 py-1.5 text-xs transition-colors ${optClass}`}>
-                                {opt}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        {showQuizResults && <p className="mt-1 text-[11px] text-slate-500 italic dark:text-slate-400">Пояснение: {q.explanation}</p>}
-                      </div>
-                    );
-                  })}
-                  <div className="pt-2 flex items-center justify-between">
-                    {!showQuizResults ? (
-                      <button onClick={() => setShowQuizResults(true)} disabled={Object.keys(selectedAnswers).length === 0}
-                        className="rounded-lg bg-amber-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50">Проверить ответы</button>
-                    ) : (
-                      <button onClick={() => { setSelectedAnswers({}); setShowQuizResults(false); }}
-                        className="flex items-center gap-1 text-xs text-amber-700 hover:underline dark:text-amber-400"><RotateCcw className="h-3 w-3" /> Попробовать снова</button>
-                    )}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          )}
 
           {hasMore && (
             <div className="flex justify-center py-8">
@@ -874,18 +792,16 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
 
         <div className="mt-1.5 flex items-center justify-between gap-1.5 sm:gap-2 text-xs overflow-x-auto no-scrollbar touch-pan-x py-0.5">
           <div className="flex items-center rounded-lg border border-slate-200 bg-white p-0.5 dark:border-slate-800 dark:bg-slate-950 shrink-0">
-            {(['parallel', 'immersion', 'recall'] as ReadingMode[]).map((mode) => (
+            {(['parallel', 'immersion'] as ReadingMode[]).map((mode) => (
               <button key={mode} onClick={() => onUpdatePreferences({ activeMode: mode })}
                 className={`px-1.5 sm:px-2.5 py-1 font-medium transition-all rounded-md whitespace-nowrap shrink-0 text-xs ${preferences.activeMode === mode ? 'bg-amber-600 text-white shadow-xs dark:bg-amber-500' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'}`}>
                 <span className="hidden sm:inline">
                   {mode === 'parallel' && t.modeParallel}
                   {mode === 'immersion' && t.modeImmersion}
-                  {mode === 'recall' && t.modeRecall}
                 </span>
                 <span className="sm:hidden">
                   {mode === 'parallel' && 'Параллель'}
                   {mode === 'immersion' && 'Погружение'}
-                  {mode === 'recall' && 'Тест'}
                 </span>
               </button>
             ))}

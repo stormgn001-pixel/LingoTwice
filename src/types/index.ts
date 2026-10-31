@@ -2,7 +2,7 @@
  * LingoTwice Type Definitions
  */
 
-export type ReadingMode = 'parallel' | 'immersion' | 'recall';
+export type ReadingMode = 'parallel' | 'immersion';
 export type SplitOrientation = 'horizontal' | 'vertical';
 export type ReadingTheme = 'light' | 'dark' | 'sepia';
 export type InterfaceLanguage =

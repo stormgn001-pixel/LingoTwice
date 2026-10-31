@@ -2319,7 +2319,13 @@ export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> 
 };
 
 export const getTranslation = (lang: InterfaceLanguage) => {
-  return UI_TRANSLATIONS[lang] || UI_TRANSLATIONS.ru;
+  const base = UI_TRANSLATIONS[lang] || UI_TRANSLATIONS.ru;
+  return {
+    ...UI_TRANSLATIONS.ru,
+    ...base,
+    revealOriginal: base.revealOriginal || (lang === 'en' ? 'Reveal original' : lang === 'uk' ? 'Показати оригінал' : lang === 'de' ? 'Original anzeigen' : 'Показать оригинал'),
+    hideOriginal: base.hideOriginal || (lang === 'en' ? 'Hide original' : lang === 'uk' ? 'Сховати оригінал' : lang === 'de' ? 'Original verbergen' : 'Скрыть оригинал'),
+  };
 };
 
 export function getDocTitle(doc: ReadingDocument, uiLang: InterfaceLanguage): string {
