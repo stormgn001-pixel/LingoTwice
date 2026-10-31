@@ -132,6 +132,21 @@ export default function App() {
   });
   const [stats, setStats] = useState<UserStats>(DEFAULT_STATS);
 
+  // Dynamic Google Analytics GA4 Page View tracking for SPA view transitions
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && typeof (window as any).gtag === 'function') {
+        (window as any).gtag('event', 'page_view', {
+          page_title: `LingoTwice — ${currentView}`,
+          page_location: window.location.href,
+          page_path: `/${currentView}`,
+        });
+      }
+    } catch (e) {
+      console.warn('GA4 page_view tracking error:', e);
+    }
+  }, [currentView]);
+
   useEffect(() => {
     const loadUserData = async () => {
       setLoading(true);
