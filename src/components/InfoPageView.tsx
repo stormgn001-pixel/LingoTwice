@@ -19,6 +19,7 @@ interface PageTranslations {
   methodText: string;
   featuresTitle: string;
   features: string[];
+  philosophyQuote: string;
   contactBadge: string;
   contactTitle: string;
   contactSubtitle: string;
@@ -56,19 +57,21 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
   en: {
     returnToReader: 'Return to reader',
     aboutBadge: 'E-E-A-T About',
-    aboutTitle: 'About LingoTwice',
-    aboutSubtitle: 'Bilingual parallel reading browser and contextual language learning platform.',
-    missionTitle: 'Our Mission',
-    missionText: 'LingoTwice (https://lingotwice.com) is designed to help language learners break the language barrier through natural immersion in original texts. We eliminate the tedious need to constantly switch to an external dictionary by uniting original text and translation in a single synchronized workspace.',
-    methodTitle: 'Parallel Reading Method (Schliemann Method)',
-    methodText: 'Our service is built on the compression input concept and polyglot Heinrich Schliemann’s historical method. By reading material side-by-side or comparing paragraphs in real-time, you instantly grasp context, plot, and sentence structure, enabling your brain to effortlessly absorb new grammar and vocabulary in context.',
-    featuresTitle: 'Key Features',
+    aboutTitle: 'Lingotwice — Learn Languages Through Connected Knowledge',
+    aboutSubtitle: 'A new language becomes clearer when you connect it with what you already know.',
+    missionTitle: 'The LingoTwice Concept',
+    missionText: 'Lingotwice offers a unique approach to learning foreign languages based on context, associations, and the connection between your native language and the language you are learning.',
+    methodTitle: 'Simple and Effective Method',
+    methodText: 'The method is simple: first, you read the text in your native language, fully understanding its context and meaning. Then you transition to the same text in the foreign language. Your brain is now already familiar with the information. You do not need to decipher the story line again — you can focus entirely on foreign words, expressions, and grammatical structures. Gradually, new words associate with familiar meanings, and foreign expressions become understandable through established context.',
+    featuresTitle: 'Why Does It Work?',
     features: [
-      'Synchronous Scrolling: Original and translation move together without losing focus.',
-      'Contextual AI Dictionary: Instant breakdown of any word on click (translation, grammar, gender, verb forms, examples).',
-      'Spaced Repetition (SRS): Smart retention based on the SM-2 algorithm.',
-      'Public Domain & Custom Imports: Reading classic literature and importing your own materials.'
+      'Familiar Context: Understanding the content helps absorb the foreign text naturally.',
+      'Semantic Associations: New words connect to familiar, pre-existing concepts.',
+      'Learning in Context: Vocabulary is acquired within meaningful sentences rather than in isolation.',
+      'Knowledge Reinforcement: Re-engaging with content solidifies linguistic associations in memory.',
+      'Natural Skill Growth: Step by step, you gain deep comprehension of foreign speech and texts.'
     ],
+    philosophyQuote: 'A new approach to language learning. From the familiar to the new. From comprehension to fluency.',
     contactBadge: 'Get in Touch',
     contactTitle: 'Contact Us',
     contactSubtitle: 'We are always happy to answer your questions, help with technical support, or discuss partnership.',
@@ -104,19 +107,21 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
   ru: {
     returnToReader: 'Вернуться в читалку',
     aboutBadge: 'О проекте E-E-A-T',
-    aboutTitle: 'О платформе LingoTwice',
-    aboutSubtitle: 'Билингвальный браузер параллельного чтения и контекстного изучения иностранных языков.',
-    missionTitle: 'Наша миссия',
-    missionText: 'LingoTwice (https://lingotwice.com) создан для того, чтобы помочь изучающим иностранные языки преодолеть языковой барьер с помощью естественного погружения в оригинальные тексты. Мы устраняем утомляющую необходимость постоянно переключаться на внешний словарь, объединяя оригинал и перевод в едином синхронизированном рабочем пространстве.',
-    methodTitle: 'Метод параллельного чтения (Метод Шлимана)',
-    methodText: 'В основе нашего сервиса лежит концепция компрессионного ввода и исторический метод полиглота Генриха Шлимана. Читая материал сначала на знакомом языке (или сопоставляя абзацы в режиме реального времени), вы мгновенно понимаете контекст, сюжет и структуру предложений, что позволяет мозгу без усилий усваивать новые грамматические конструкции и лексику в естественном контексте.',
-    featuresTitle: 'Ключевые возможности',
+    aboutTitle: 'Lingotwice — Учите языки через взаимосвязь знаний',
+    aboutSubtitle: 'Новый язык становится понятнее, когда вы связываете его с тем, что уже знаете.',
+    missionTitle: 'Новый подход к изучению языков',
+    missionText: 'Lingotwice предлагает особый подход к изучению иностранных языков, основанный на контексте, ассоциациях и взаимосвязи между родным и изучаемым языками.',
+    methodTitle: 'Простой и эффективный метод',
+    methodText: 'Метод прост: сначала вы читаете текст на родном языке, понимая его содержание и смысл. Затем переходите к тому же тексту на иностранном языке. Теперь ваш мозг уже знаком с информацией. Вам не нужно заново разбираться в содержании — вы можете сосредоточиться на иностранных словах, выражениях и грамматических конструкциях. Постепенно новые слова начинают ассоциироваться со знакомыми значениями, а иностранные выражения становятся понятнее благодаря уже сформированному контексту.',
+    featuresTitle: 'Почему это работает?',
     features: [
-      'Синхронная прокрутка: Оригинал и перевод движутся вместе, исключая потерю фокуса.',
-      'Контекстный ИИ-словарь: Мгновенный разбор любого слова по клику (перевод, грамматика, род, формы глагола, примеры).',
-      'Интервальное повторение (SRS): Интеллектуальное закрепление выученных слов на основе алгоритма SM-2.',
-      'Поддержка общественных достояний и импорта: Чтение классических произведений и загрузка личных материалов.'
+      'Знакомый контекст: понимание содержания помогает воспринимать иностранный текст.',
+      'Смысловые ассоциации: новые слова связываются с уже известными понятиями.',
+      'Обучение в контексте: лексика усваивается не изолированно, а в составе осмысленных предложений.',
+      'Закрепление знаний: повторное знакомство с материалом помогает укреплять языковые ассоциации.',
+      'Естественное развитие навыков: постепенно вы начинаете лучше понимать иностранную речь и тексты.'
     ],
+    philosophyQuote: 'Новый подход к изучению языков. От знакомого к новому. От понимания к свободному владению языком.',
     contactBadge: 'Связь с нами',
     contactTitle: 'Контакты (Contact Us)',
     contactSubtitle: 'Мы всегда рады ответить на ваши вопросы, помочь с технической поддержкой или обсудить партнерство.',
@@ -152,19 +157,21 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
   uk: {
     returnToReader: 'Повернутися до читалки',
     aboutBadge: 'Про проєкт E-E-A-T',
-    aboutTitle: 'Про платформу LingoTwice',
-    aboutSubtitle: 'Білінгвальний браузер паралельного читання та контекстного вивчення іноземних мов.',
-    missionTitle: 'Наша місія',
-    missionText: 'LingoTwice створено для того, щоб допомогти учням долати мовний бар’єр завдяки природному зануренню в оригінальні тексти у синхронізованому середовищі.',
-    methodTitle: 'Метод паралельного читання (Метод Шлімана)',
-    methodText: 'В основі сервісу лежить історичний метод поліглота Генриха Шлімана та компресійний ввід, що дозволяє миттєво розуміти контекст.',
-    featuresTitle: 'Ключові можливості',
+    aboutTitle: "Lingotwice — Вивчайте мови через взаємозв'язок знань",
+    aboutSubtitle: 'Нова мова стає зрозумілішою, коли ви пов’язуєте її з тим, що вже знаєте.',
+    missionTitle: 'Новий підхід до вивчення мов',
+    missionText: "Lingotwice пропонує особливий підхід до вивчення іноземних мов, заснований на контексті, асоціаціях та взаємозв'язку між рідною та вивчуваною мовами.",
+    methodTitle: 'Простий та ефективний метод',
+    methodText: 'Метод простий: спочатку ви читаєте текст рідною мовою, розуміючи його зміст і суть. Потім переходите до того ж тексту іноземною мовою. Тепер ваш мозок вже знайомий з інформацією. Вам не потрібно заново розбиратися у змісті — ви можете зосередитися на іноземних словах, виразах і граматичних конструкціях. Поступово нові слова починають асоціюватися зі знайомими значеннями, а іноземні вирази стають зрозумілішими завдяки вже сформованому контексту.',
+    featuresTitle: 'Чому це працює?',
     features: [
-      'Синхронна прокрутка тексту.',
-      'Контекстний ШІ-словник.',
-      'Інтервальне повторення (SM-2).',
-      'Підтримка імпорту власних матеріалів.'
+      'Знайомий контекст: розуміння змісту допомагає сприймати іноземний текст.',
+      "Смислові асоціації: нові слова пов'язуються з вже відомими поняттями.",
+      'Навчання в контексті: лексика засвоюється не ізольовано, а у складі осмислених речень.',
+      'Закріплення знань: повторне знайомство з матеріалом допомагає зміцнювати мовні асоціації.',
+      'Природний розвиток навичок: поступово ви починаєте краще розуміти іноземне мовлення та тексти.'
     ],
+    philosophyQuote: 'Новий підхід до вивчення мов. Від знайомого до нового. Від розуміння до вільного володіння мовою.',
     contactBadge: 'Зв’язок з нами',
     contactTitle: 'Контакти (Contact Us)',
     contactSubtitle: 'Ми завжди раді відповісти на ваші запитання.',
@@ -200,19 +207,21 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
   de: {
     returnToReader: 'Zurück zum Reader',
     aboutBadge: 'E-E-A-T Über uns',
-    aboutTitle: 'Über LingoTwice',
-    aboutSubtitle: 'Bilingualer Lese-Browser für das kontextbezogene Sprachenlernen.',
-    missionTitle: 'Unsere Mission',
-    missionText: 'LingoTwice hilft Sprachlernern, Sprachbarrieren durch natürliche Immersion in Originaltexte mit synchronisiertem Parallel-Layout zu überwinden.',
-    methodTitle: 'Die Schliemann-Methode des parallelen Lesens',
-    methodText: 'Sofortiges Verstehen durch synchrone Gegenüberstellung von Original und Übersetzung.',
-    featuresTitle: 'Hauptmerkmale',
+    aboutTitle: 'Lingotwice — Sprachen lernen durch vernetztes Wissen',
+    aboutSubtitle: 'Eine neue Sprache wird verständlicher, wenn Sie sie mit dem verbinden, was Sie bereits wissen.',
+    missionTitle: 'Das LingoTwice-Konzept',
+    missionText: 'Lingotwice bietet einen besonderen Ansatz zum Erlernen von Fremdsprachen, der auf Kontext, Assoziationen und der Verbindung zwischen Muttersprache und Zielsprache basiert.',
+    methodTitle: 'Wie funktioniert die Methode?',
+    methodText: 'Die Methode ist einfach: Zuerst lesen Sie den Text in Ihrer Muttersprache und verstehen den Inhalt und Sinn. Dann wechseln Sie zum selben Text in der Fremdsprache. Ihr Gehirn ist nun bereits mit den Informationen vertraut. Sie müssen den Inhalt nicht neu entschlüsseln – Sie können sich ganz auf fremde Wörter, Ausdrücke und Grammatikstrukturen konzentrieren. Nach und nach verknüpfen sich neue Wörter mit bekannten Bedeutungen.',
+    featuresTitle: 'Warum funktioniert es?',
     features: [
-      'Synchrones Scrollen von Original und Übersetzung.',
-      'Kontextbezogenes KI-Wörterbuch.',
-      'Spaced Repetition (SM-2 Algorithmus).',
-      'Unterstützung für klassische Bibliothek & eigene Importe.'
+      'Vertrauter Kontext: Das Verständnis des Inhalts erleichtert die Aufnahme des fremden Textes.',
+      'Sinnvolle Assoziationen: Neue Wörter werden mit bereits bekannten Begriffen verknüpft.',
+      'Lernen im Kontext: Wortschatz wird nicht isoliert, sondern in sinnvollen Sätzen gelernt.',
+      'Festigung des Wissens: Die erneute Beschäftigung mit dem Material stärkt sprachliche Assoziationen.',
+      'Natürliche Entwicklung: Schritt für Schritt verstehen Sie fremde Sprache und Texte besser.'
     ],
+    philosophyQuote: 'Ein neuer Ansatz zum Sprachenlernen. Vom Vertrauten zum Neuen. Vom Verstehen zur fließenden Beherrschung.',
     contactBadge: 'Kontakt',
     contactTitle: 'Kontaktieren Sie uns',
     contactSubtitle: 'Wir freuen uns auf Ihre Fragen und Ihr Feedback.',
@@ -248,19 +257,21 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
   es: {
     returnToReader: 'Volver al lector',
     aboutBadge: 'Acerca de E-E-A-T',
-    aboutTitle: 'Acerca de LingoTwice',
-    aboutSubtitle: 'Navegador de lectura bilingüe paralelo y aprendizaje contextual.',
-    missionTitle: 'Nuestra Misión',
-    missionText: 'LingoTwice ayuda a los estudiantes a superar la barrera del idioma mediante la inmersión natural en textos originales.',
-    methodTitle: 'Método de Lectura Paralela (Método Schliemann)',
-    methodText: 'Comprensión instantánea gracias a la comparación en tiempo real.',
-    featuresTitle: 'Características Principales',
+    aboutTitle: 'Lingotwice — Aprende idiomas a través del conocimiento conectado',
+    aboutSubtitle: 'Un nuevo idioma se vuelve más claro cuando lo conectas con lo que ya sabes.',
+    missionTitle: 'El concepto LingoTwice',
+    missionText: 'Lingotwice ofrece un enfoque único para el aprendizaje de idiomas basado en el contexto, las asociaciones y la conexión entre tu lengua materna y el idioma que aprendes.',
+    methodTitle: '¿Cómo funciona el método?',
+    methodText: 'El método es sencillo: primero lees el texto en tu lengua materna, comprendiendo su contenido y significado. Luego pasas al mismo texto en el idioma extranjero. Ahora tu cerebro ya conoce la información. No necesitas volver a descifrar la trama: puedes concentrarte en palabras, expresiones y estructuras gramaticales. Poco a poco, las palabras nuevas se asocian con significados conocidos.',
+    featuresTitle: '¿Por qué funciona?',
     features: [
-      'Desplazamiento sincrónico.',
-      'Diccionario contextual con IA.',
-      'Repetición espaciada (SM-2).',
-      'Biblioteca clásica e importación propia.'
+      'Contexto familiar: Comprender el contenido ayuda a asimilar el texto extranjero.',
+      'Asociaciones semánticas: Las nuevas palabras se conectan con conceptos ya conocidos.',
+      'Aprendizaje en contexto: El vocabulario se aprende en oraciones con sentido, no de forma aislada.',
+      'Consolidación del conocimiento: Releer el material refuerza las asociaciones lingüísticas.',
+      'Desarrollo natural: Progresivamente comprenderás mejor el habla y los textos extranjeros.'
     ],
+    philosophyQuote: 'Un nuevo enfoque para el aprendizaje de idiomas. De lo conocido a lo nuevo. De la comprensión a la fluidez.',
     contactBadge: 'Contacto',
     contactTitle: 'Contáctenos',
     contactSubtitle: 'Estamos a su disposición para cualquier consulta.',
@@ -296,19 +307,21 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
   fr: {
     returnToReader: 'Retour au lecteur',
     aboutBadge: 'À propos E-E-A-T',
-    aboutTitle: 'À propos de LingoTwice',
-    aboutSubtitle: 'Navigateur de lecture bilingue et apprentissage des langues.',
-    missionTitle: 'Notre Mission',
-    missionText: 'LingoTwice aide les apprenants à franchir la barrière de la langue grâce à l’immersion naturelle.',
-    methodTitle: 'Méthode de lecture parallèle (Méthode Schliemann)',
-    methodText: 'Compréhension instantanée grâce au double affichage synchronisé.',
-    featuresTitle: 'Fonctionnalités clés',
+    aboutTitle: 'Lingotwice — Apprenez les langues grâce aux connaissances connectées',
+    aboutSubtitle: 'Une nouvelle langue devient plus claire lorsque vous la reliez à ce que vous savez déjà.',
+    missionTitle: 'Le concept LingoTwice',
+    missionText: 'Lingotwice propose une approche unique de l’apprentissage des langues étrangères basée sur le contexte, les associations et le lien entre votre langue maternelle et la langue étudiée.',
+    methodTitle: 'Comment fonctionne la méthode ?',
+    methodText: 'La méthode est simple : vous lisez d’abord le texte dans votre langue maternelle en comprenant le sens. Vous passez ensuite au même texte dans la langue étrangère. Votre cerveau est déjà familiarisé avec l’histoire. Vous pouvez vous concentrer sur les mots, expressions et structures grammaticales. Progressivement, les nouveaux mots s’associent à des significations connues.',
+    featuresTitle: 'Pourquoi cela fonctionne-t-il ?',
     features: [
-      'Défilement synchrone.',
-      'Dictionnaire IA contextuel.',
-      'Répétition espacée (SM-2).',
-      'Bibliothèque classique et importation.'
+      'Contexte familier : La compréhension du contenu facilite l’assimilation du texte étranger.',
+      'Associations de sens : Les nouveaux mots se lient à des concepts déjà connus.',
+      'Apprentissage en contexte : Le vocabulaire s’acquiert dans des phrases porteuses de sens.',
+      'Consolidation des connaissances : La relecture renforce les associations linguistiques.',
+      'Développement naturel : Vous comprenez progressivement mieux le langage et les textes étrangers.'
     ],
+    philosophyQuote: 'Une nouvelle approche de l’apprentissage des langues. Du connu vers la nouveauté. De la compréhension à la maîtrise.',
     contactBadge: 'Contact',
     contactTitle: 'Contactez-nous',
     contactSubtitle: 'Nous sommes à votre écoute pour toute question.',
@@ -344,19 +357,21 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
   it: {
     returnToReader: 'Torna al lettore',
     aboutBadge: 'Informazioni E-E-A-T',
-    aboutTitle: 'Informazioni su LingoTwice',
-    aboutSubtitle: 'Browser di lettura bilingue parallela e apprendimento linguistico.',
-    missionTitle: 'La Nostra Missione',
-    missionText: 'LingoTwice aiuta gli studenti a superare la barriera linguistica attraverso la lettura parallela.',
-    methodTitle: 'Metodo di Lettura Parallela (Metodo Schliemann)',
-    methodText: 'Comprensione immediata del testo in contesto.',
-    featuresTitle: 'Caratteristiche Principali',
+    aboutTitle: 'Lingotwice — Impara le lingue attraverso la conoscenza connessa',
+    aboutSubtitle: 'Una nuova lingua diventa più chiara quando la colleghi a ciò che conosci già.',
+    missionTitle: 'Il concetto LingoTwice',
+    missionText: 'Lingotwice offre un approccio unico per l’apprendimento delle lingue basato sul contesto, sulle associazioni e sulla connessione tra la tua lingua madre e la lingua che stai imparando.',
+    methodTitle: 'Come funziona il metodo?',
+    methodText: 'Il metodo è semplice: prima leggi il testo nella tua lingua madre, comprendendone appieno il contenuto. Poi passi allo stesso testo nella lingua straniera. Il tuo cervello ha già familiarità con l’informazione. Puoi concentrarti su vocaboli, espressioni e strutture grammaticali. A poco a poco, i nuovi vocaboli si collegano a significati noti.',
+    featuresTitle: 'Perché funziona?',
     features: [
-      'Scorrimento sincrono.',
-      'Dizionario contestuale IA.',
-      'Ripetizione spaziata (SM-2).',
-      'Libreria classica e importazione file.'
+      'Contesto familiare: Comprendere il contenuto aiuta ad assimilare il testo straniero.',
+      'Associazioni di significato: I nuovi vocaboli si collegano a concetti già noti.',
+      'Apprendimento nel contesto: Il lessico si impara all’interno di frasi di senso compiuto.',
+      'Consolidamento delle conoscenze: Rileggere il materiale rafforza le associazioni linguistiche.',
+      'Sviluppo naturale: Aumenti progressivamente la comprensione di testi e parlato stranieri.'
     ],
+    philosophyQuote: 'Un nuovo approccio all’apprendimento delle lingue. Dal noto al nuovo. Dalla comprensione alla padronanza.',
     contactBadge: 'Contatti',
     contactTitle: 'Contattaci',
     contactSubtitle: 'Siamo felici di rispondere alle tue domande.',
@@ -392,19 +407,21 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
   pl: {
     returnToReader: 'Powrót do czytnika',
     aboutBadge: 'O projekcie E-E-A-T',
-    aboutTitle: 'O platformie LingoTwice',
-    aboutSubtitle: 'Przeglądarka do czytania równoległego i nauki języków.',
-    missionTitle: 'Nasza Misja',
-    missionText: 'LingoTwice pomaga pokonać barierę językową dzięki naturalnej immersji w teksty.',
-    methodTitle: 'Metoda czytania równoległego (Metoda Schliemanna)',
-    methodText: 'Natychmiastowe zrozumienie kontekstu i słownictwa.',
-    featuresTitle: 'Kluczowe funkcje',
+    aboutTitle: 'Lingotwice — Ucz się języków poprzez powiązaną wiedzę',
+    aboutSubtitle: 'Nowy język staje się zrozumiały, gdy łączysz go z tym, co już wiesz.',
+    missionTitle: 'Koncepcja LingoTwice',
+    missionText: 'Lingotwice oferuje wyjątkowe podejście do nauki języków obcych oparte na kontekście, skojarzeniach i powiązaniu języka ojczystego z językiem docelowym.',
+    methodTitle: 'Jak działa ta metoda?',
+    methodText: 'Metoda jest prosta: najpierw czytasz tekst w języku ojczystym, rozumiejąc jego treść i sens. Następnie przechodzisz do tego samego tekstu w języku obcym. Twój mózg zna już te informacje. Nie musisz ponownie rozkodowywać treści — możesz skupić się na nowych słowach, zwrotach i strukturach gramatycznych. Stopniowo nowe słowa kojarzą się ze znanymi znaczeniami.',
+    featuresTitle: 'Dlaczego to działa?',
     features: [
-      'Synchroniczne przewijanie.',
-      'Kontekstowy słownik AI.',
-      'Powtarzanie w odstępach (SM-2).',
-      'Biblioteka klasyczna i własne importy.'
+      'Znany kontekst: Zrozumienie treści pomaga przyswajać obcy tekst.',
+      'Skojarzenia znaczeniowe: Nowe słowa łączą się ze znanymi pojęciami.',
+      'Nauka w kontekście: Słownictwo przyswajane jest w pełnych, sensownych zdaniach.',
+      'Utrwalanie wiedzy: Ponowny kontakt z materiałem wzmacnia skojarzenia językowe.',
+      'Naturalny rozwój umiejętności: Stopniowo coraz lepiej rozumiesz mowę i teksty obcojęzyczne.'
     ],
+    philosophyQuote: 'Nowe podejście do nauki języków. Od znanego do nowego. Od zrozumienia do biegłości.',
     contactBadge: 'Kontakt',
     contactTitle: 'Skontaktuj się z nami',
     contactSubtitle: 'Chętnie odpowiadamy na pytania użytkowników.',
@@ -440,19 +457,21 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
   tr: {
     returnToReader: 'Okuyucuya Dön',
     aboutBadge: 'E-E-A-T Hakkında',
-    aboutTitle: 'LingoTwice Hakkında',
-    aboutSubtitle: 'İki dilli paralel okuma tarayıcısı ve bağlamsal dil öğrenme platformu.',
-    missionTitle: 'Misyonumuz',
-    missionText: 'LingoTwice, dil öğrenenlerin orijinal metinlerle engelleri aşmasını sağlar.',
-    methodTitle: 'Paralel Okuma Metodu (Schliemann Metodu)',
-    methodText: 'Senkronize metinler ile anında bağlam kavrama.',
-    featuresTitle: 'Temel Özellikler',
+    aboutTitle: 'Lingotwice — Bağlantılı bilgi ile dil öğrenin',
+    aboutSubtitle: 'Yeni bir dil, zaten bildiğiniz şeylerle bağlantı kurduğunuzda anlaşılır hale gelir.',
+    missionTitle: 'LingoTwice Yaklaşımı',
+    missionText: 'Lingotwice, ana diliniz ile öğrendiğiniz dil arasındaki bağlama, çağrışımlara ve ilişkilere dayalı özel bir yabancı dil öğrenme yaklaşımı sunar.',
+    methodTitle: 'Yöntem Nasıl Çalışır?',
+    methodText: 'Yöntem basittir: önce metni ana dilinizde okuyup içeriği ve anlamı kavramış olursunuz. Ardından aynı metnin yabancı dildeki versiyonuna geçersiniz. Beyniniz artık hikayeye aşinadır. İçeriği tekrar çözmeye çalışmadan yabancı kelimelere, ifadelere ve dil bilgisine odaklanabilirsiniz.',
+    featuresTitle: 'Neden İşe Yarıyor?',
     features: [
-      'Senkronize kaydırma.',
-      'Bağlamsal Yapay Zeka Sözlüğü.',
-      'Aralıklı Tekrar (SM-2).',
-      'Klasik kütüphane ve özel metin yükleme.'
+      'Tanıdık Bağlam: İçeriği anlamak, yabancı metni özümsemeyi kolaylaştırır.',
+      'Anlamsal Çağrışımlar: Yeni kelimeler bilinen kavramlarla bağlanır.',
+      'Bağlam İçinde Öğrenme: Kelimeler tek başına değil, anlamlı cümleler içinde öğrenilir.',
+      'Bilginin Pekiştirilmesi: Materyalle tekrar karşılaşmak dilsel çağrışımları güçlendirir.',
+      'Doğal Beceri Gelişimi: Yabancı konuşma ve metinleri zamanla daha iyi anlamaya başlarsınız.'
     ],
+    philosophyQuote: 'Dil öğreniminde yeni bir yaklaşım. Tanıdıktan yeniye. Anlamaktan akıcı hakimiyete.',
     contactBadge: 'İletişim',
     contactTitle: 'Bize Ulaşın',
     contactSubtitle: 'Sorularınızı yanıtlamaktan memnuniyet duyarız.',
@@ -488,19 +507,21 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
   zh: {
     returnToReader: '返回阅读器',
     aboutBadge: '关于我们',
-    aboutTitle: '关于 LingoTwice',
-    aboutSubtitle: '双语并行阅读浏览器与语境语言学习平台。',
-    missionTitle: '我们的使命',
-    missionText: 'LingoTwice 旨在通过自然浸入原创文本帮助语言学习者突破语言障碍。',
-    methodTitle: '平行阅读法（施liemann方法）',
-    methodText: '通过同步对照原文与翻译，瞬间掌握上下文和结构。',
-    featuresTitle: '核心功能',
+    aboutTitle: 'Lingotwice — 通过知识关联学习语言',
+    aboutSubtitle: '当你将新语言与已知知识建立关联时，语言学习将变得更加清晰直观。',
+    missionTitle: 'LingoTwice 核心理念',
+    missionText: 'Lingotwice 种独特的外语学习理念，基于上下文、思维联想以及母语与目标语言之间的深层联系。',
+    methodTitle: '方法如何运作？',
+    methodText: '学习方法非常简单：首先阅读母语文本，完全理解文章的情节与核心含义；随后切换至相同内容的段落外语版本。此时你的大脑已熟悉相关信息，无需再次费力理解情节，可专注于吸收外语词汇、短语和语法结构。随着阅读深入，新词汇将自然与已知概念产生联系。',
+    featuresTitle: '为什么这种方法行之有效？',
     features: [
-      '同步滚动：原文与译文联动。',
-      'AI 语境词典：点击即解。',
-      '间隔重复（SM-2）：长效记忆。',
-      '经典文库与自定义导入。'
+      '熟悉语境：理解文章内容有助于无障碍吸收外语文本。',
+      '语义联想：新词汇与已知的概念自然建立深层连接。',
+      '情境化学习：在完整的句子表达中掌握词汇，而非孤立记忆。',
+      '巩固知识：重复接触材料有助于强化语言记忆与联想。',
+      '自然提升：循序渐进地提升对外语听力与阅读的理解能力。'
     ],
+    philosophyQuote: '全新的语言学习方法。从已知走向新知。从深刻理解走向流利掌握。',
     contactBadge: '联系我们',
     contactTitle: '联系与支持',
     contactSubtitle: '我们随时乐意解答您的疑问。',
@@ -536,19 +557,21 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
   ja: {
     returnToReader: 'リーダーに戻る',
     aboutBadge: 'LingoTwice について',
-    aboutTitle: 'LingoTwice プラットフォームについて',
-    aboutSubtitle: 'バイリンガル並行読書ブラウザと文脈型言語学習プラットフォーム。',
-    missionTitle: '私たちの使命',
-    missionText: 'LingoTwice は、オリジナルテキストへの自然な没入を通じて語学学習者をサポートします。',
-    methodTitle: '並行読書法（シュリーマン法）',
-    methodText: '原文と翻訳を同期させて文脈を瞬時に理解します。',
-    featuresTitle: '主な機能',
+    aboutTitle: 'Lingotwice — 知識の繋がりを通じて言語を学ぶ',
+    aboutSubtitle: 'すでにある知識と結びつけることで、新しい言語はよりわかりやすくなります。',
+    missionTitle: 'LingoTwice のコンセプト',
+    missionText: 'Lingotwiceは、母国語と学習言語の文脈、連想、知識の繋がりを活かした独自の外国語学習アプローチを提供します。',
+    methodTitle: 'メソッドの仕組み',
+    methodText: '方法は非常にシンプルです。まず母国語でテキストを読み、内容と意味を正確に理解します。次に同じ内容の外国語テキストに進みます。脳はすでにストーリーを把握しているため、内容を解読し直す必要がなく、外国語の単語、表現、文法構造に集中できます。徐々に新しい単語が知っている意味と結びつきます。',
+    featuresTitle: 'なぜ効果があるのか？',
     features: [
-      '同期スクロール',
-      '文脈AI辞書',
-      '間隔反復（SM-2）',
-      '名作ライブラリとカスタムインポート'
+      '慣れ親しんだ文脈: 内容の理解が外国語テキストの吸収を助けます。',
+      '意味の連想: 新しい単語が知っている概念と結びつきます。',
+      '文脈での学習: 単語を孤立して覚えるのではなく、意味のある文章の中で習得します。',
+      '知識の定着: 素材に繰り返し触れることで、言語の繋がりが強化されます。',
+      '自然なスキル向上: 外国語の会話や文章に対する理解が着実に深まります。'
     ],
+    philosophyQuote: '言語学習への新しいアプローチ。知っていることから新しいことへ。理解から流暢な習得へ。',
     contactBadge: 'お問い合わせ',
     contactTitle: 'お問い合わせ',
     contactSubtitle: 'ご質問やサポートが必要な場合はお気軽にご連絡ください。',
@@ -584,19 +607,21 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
   ko: {
     returnToReader: '독서 화면으로',
     aboutBadge: '소개',
-    aboutTitle: 'LingoTwice 소개',
-    aboutSubtitle: '이중 언어 병렬 독서 브라우저 및 문맥 언어 학습 플랫폼.',
-    missionTitle: '우리의 미션',
-    missionText: 'LingoTwice는 원문과의 자연스러운 몰입을 통해 언어 장벽을 극복하도록 돕습니다.',
-    methodTitle: '병렬 독서법 (슐리만 메서드)',
-    methodText: '원문과 번역을 동시에 보며 문맥을 직관적으로 이해합니다.',
-    featuresTitle: '핵심 기능',
+    aboutTitle: 'Lingotwice — 지식의 연관성을 통한 언어 학습',
+    aboutSubtitle: '이미 알고 있는 지식과 연결할 때 새로운 언어가 훨씬 명확해집니다.',
+    missionTitle: 'LingoTwice 컨셉',
+    missionText: 'Lingotwice는 모국어와 학습 언어 간의 맥락, 연상, 지식의 연관성에 기반한 특별한 외국어 학습법을 제공합니다.',
+    methodTitle: '학습법 작동 원리',
+    methodText: '방법은 간단합니다. 먼저 모국어로 텍스트를 읽어 내용과 의미를 완벽히 이해합니다. 그런 다음 동일한 내용의 외국어 텍스트로 이동합니다. 뇌는 이미 스토리에 익숙해져 있으므로 내용을 다시 해석하느라 애쓸 필요 없이, 외국어 단어, 표현, 문법 구조에 온전히 집중할 수 있습니다.',
+    featuresTitle: '왜 효과적일까요?',
     features: [
-      '동기화 스크롤',
-      '문맥 AI 사전',
-      '간격 반복 학습 (SM-2)',
-      '클래식 도서관 및 사용자 파일 가져오기'
+      '익숙한 맥락: 내용을 이해하면 외국어 텍스트를 훨씬 쉽게 습득할 수 있습니다.',
+      '의미적 연상: 새로운 단어가 이미 알고 있는 개념과 자연스럽게 연결됩니다.',
+      '맥락 중심 학습: 단어를 암기식이 아닌, 의미 있는 문장 속에서 배웁니다.',
+      '지식 강화: 학습 자료를 반복 접하며 언어적 연관성이 더 강화됩니다.',
+      '자연스러운 실력 향상: 외국어 말하기와 글을 차근차근 더 깊이 이해하게 됩니다.'
     ],
+    philosophyQuote: '언어 학습을 위한 새로운 접근법. 익숙함에서 새로운 세계로. 이해에서 유창한 구사까지.',
     contactBadge: '문의하기',
     contactTitle: '고객지원 및 연락처',
     contactSubtitle: '궁금한 점이 있으시면 언제든지 문의해 주세요.',
@@ -632,19 +657,21 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
   pt: {
     returnToReader: 'Voltar ao leitor',
     aboutBadge: 'Sobre E-E-A-T',
-    aboutTitle: 'Sobre o LingoTwice',
-    aboutSubtitle: 'Navegador de leitura bilíngue paralela e aprendizagem de idiomas.',
-    missionTitle: 'Nossa Missão',
-    missionText: 'O LingoTwice ajuda os alunos a superar a barreira do idioma através da imersão natural em textos.',
-    methodTitle: 'Método de Leitura Paralela',
-    methodText: 'Compreensão instantânea através da comparação em tempo real.',
-    featuresTitle: 'Recursos Principais',
+    aboutTitle: 'Lingotwice — Aprenda idiomas através do conhecimento conectado',
+    aboutSubtitle: 'Um novo idioma torna-se mais claro quando você o conecta ao que já sabe.',
+    missionTitle: 'O Conceito LingoTwice',
+    missionText: 'O Lingotwice oferece uma abordagem única para o aprendizado de idiomas baseada no contexto, em associações e na conexão entre sua língua materna e a língua estudada.',
+    methodTitle: 'Como funciona o método?',
+    methodText: 'O método é simples: primeiro você lê o texto na sua língua materna, compreendendo o conteúdo e o significado. Em seguida, passa para o mesmo texto no idioma estrangeiro. Seu cérebro já está familiarizado com a história. Você pode se concentrar totalmente em palavras, expressões e estruturas gramaticais.',
+    featuresTitle: 'Por que funciona?',
     features: [
-      'Rolagem síncrona.',
-      'Dicionário contextual com IA.',
-      'Repetição espaçada (SM-2).',
-      'Biblioteca clássica e importação.'
+      'Contexto familiar: Compreender o conteúdo facilita a assimilação do texto estrangeiro.',
+      'Associações semânticas: Novas palavras conectam-se a conceitos já conhecidos.',
+      'Aprendizado em contexto: O vocabulário é absorvido em frases com sentido.',
+      'Consolidação do conhecimento: Reeler o material fortalece as associações linguísticas.',
+      'Desenvolvimento natural: Melhore progressivamente a compreensão da fala e de textos.'
     ],
+    philosophyQuote: 'Uma nova abordagem para aprender idiomas. Do conhecido ao novo. Da compreensão à fluência.',
     contactBadge: 'Contato',
     contactTitle: 'Fale Conosco',
     contactSubtitle: 'Estamos prontos para ajudar com suas dúvidas.',
@@ -680,19 +707,21 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
   ar: {
     returnToReader: 'العودة للقارئ',
     aboutBadge: 'عن المنصة',
-    aboutTitle: 'عن LingoTwice',
-    aboutSubtitle: 'متصفح القراءة ثنائية اللغة الموازية.',
-    missionTitle: 'مهمتنا',
-    missionText: 'يساعد LingoTwice متعلمي  اللغات على كسر حاجز اللغة من خلال الانغماس الطبيعي.',
-    methodTitle: 'طريقة القراءة الموازية',
-    methodText: 'فهم الفوري للسياق والنصوص.',
-    featuresTitle: 'الميزات الرئيسية',
+    aboutTitle: 'Lingotwice — تعلم اللغات من خلال المعرفة المترابطة',
+    aboutSubtitle: 'تصبح اللغة الجديدة أكثر وضوحاً عندما تربطها بما تعرفه بالفعل.',
+    missionTitle: 'مفهوم LingoTwice',
+    missionText: 'يقدم Lingotwice نهجاً فريداً لتعلم اللغات الأجنبية يعتمد على السياق، والروابط الذهنية، والصلة بين لغتك الأم واللغة التي تتعلمها.',
+    methodTitle: 'كيف تعمل الطريقة؟',
+    methodText: 'الطريقة بسيطة: تبدأ بقراءة النص بلغتك الأم لفهم المحتوى والمعنى بشكل كامل. ثم تنتقل إلى النص نفسه باللغة الأجنبية. يكون عقلك حينها معتاداً على المعلومات، فتستطيع التركيز على الكلمات والتعبيرات والقواعد الأجنبية.',
+    featuresTitle: 'لماذا تنجح هذه الطريقة؟',
     features: [
-      'التمرير المتزامن.',
-      'قاموس الذكاء الاصطناعي.',
-      'التكرار المتباعد (SM-2).',
-      'مكتبة الكلاسيكيات.'
+      'سياق مألوف: يساعد فهم المحتوى على استيعاب النص الأجنبي بسهولة.',
+      'روابط معنوية: ترتبط الكلمات الجديدة بمفاهيم معروفة لديك بالفعل.',
+      'التعلم في السياق: يتم اكتساب المفردات داخل جمل مفيدة وليس في عزلة.',
+      'ترسيخ المعرفة: التفاعل المتكرر مع المحتوى يقوي الروابط اللغوية.',
+      'تطور طبيعي للمهارات: تزداد قدرتك على فهم الحديث والنصوص الأجنبية خطوة بخطوة.'
     ],
+    philosophyQuote: 'نهج جديد لتعلم اللغات. من المألوف إلى الجديد. من الفهم إلى الإتقان والسلاسة.',
     contactBadge: 'اتصل بنا',
     contactTitle: 'اتصل بنا',
     contactSubtitle: 'نحن هنا للإجابة على استفساراتكم.',
@@ -728,19 +757,21 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
   nl: {
     returnToReader: 'Terug naar lezer',
     aboutBadge: 'Over ons E-E-A-T',
-    aboutTitle: 'Over LingoTwice',
-    aboutSubtitle: 'Tweetalige parallelle leesbrowser en taalplatform.',
-    missionTitle: 'Onze Missie',
-    missionText: 'LingoTwice helpt taaleriaars de taalbarrière te doorbreken door natuurlijke onderdompeling.',
-    methodTitle: 'Parallelle Leesmethode',
-    methodText: 'Direct begrip door synchrone weergave van origineel en vertaling.',
-    featuresTitle: 'Belangrijkste Kenmerken',
+    aboutTitle: 'Lingotwice — Talen leren door verbonden kennis',
+    aboutSubtitle: 'Een nieuwe taal wordt duidelijker wanneer je deze verbindt met wat je al weet.',
+    missionTitle: 'Het LingoTwice Concept',
+    missionText: 'Lingotwice biedt een unieke aanpak voor het leren van vreemde talen op basis van context, associaties en de verbinding tussen je moedertaal en de taal die je leert.',
+    methodTitle: 'Hoe werkt de methode?',
+    methodText: 'De methode is eenvoudig: eerst lees je de tekst in je moedertaal en begrijp je de inhoud en betekenis volledig. Vervolgens stap je over naar dezelfde tekst in de vreemde taal. Je brein is nu al bekend met de informatie. Je kunt je volledig concentreren op nieuwe woorden, uitdrukkingen en grammatica.',
+    featuresTitle: 'Waarom werkt het?',
     features: [
-      'Synchroon scrollen.',
-      'Contextueel AI-woordenboek.',
-      'Gespreide herhaling (SM-2).',
-      'Klassieke bibliotheek & eigen import.'
+      'Vertrouwde context: Het begrijpen van de inhoud helpt de vreemde tekst op te nemen.',
+      'Betekenisvolle associaties: Nieuwe woorden worden gekoppeld aan bekende begrippen.',
+      'Leren in context: Woordenschat wordt geleerd in betekenisvolle zinnen.',
+      'Versterking van kennis: Herhaalde betrokkenheid versterkt taalkundige associaties.',
+      'Natuurlijke vaardigheidsopbouw: Je begrijpt gesproken taal en teksten stap voor stap beter.'
     ],
+    philosophyQuote: 'Een nieuwe aanpak voor het leren van talen. Van het bekende naar het nieuwe. Van begrip naar vloeiende beheersing.',
     contactBadge: 'Contact',
     contactTitle: 'Neem contact op',
     contactSubtitle: 'We beantwoorden graag al uw vragen.',
@@ -765,7 +796,7 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
     privacyP2: 'Gebruik van cookies en advertenties.',
     privacyP3: 'Lokale gegevensopslag op uw apparaat.',
     privacyP4: 'GDPR-rechten: support@lingotwice.com.',
-    termsBadge: '的服务条款',
+    termsBadge: 'Gebruiksvoorwaarden',
     termsTitle: 'Gebruiksvoorwaarden',
     termsSubtitle: 'Ingangsdatum: 31 oktober 2026',
     termsP1: 'Door LingoTwice te gebruiken akkoord met deze voorwaarden.',
@@ -776,19 +807,21 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
   sv: {
     returnToReader: 'Tillbaka till läsaren',
     aboutBadge: 'Om E-E-A-T',
-    aboutTitle: 'Om LingoTwice',
-    aboutSubtitle: 'Tvåspråkig parallell läswebbläsare.',
-    missionTitle: 'Vår Vår Mission',
-    missionText: 'LingoTwice hjälper språkstuderande att övervinna språkbarriären.',
-    methodTitle: 'Parallell läsmetod',
-    methodText: 'Omedelbar förståelse genom synkroniserad text.',
-    featuresTitle: 'Nyckelfunktioner',
+    aboutTitle: 'Lingotwice — Lär dig språk genom sammankopplad kunskap',
+    aboutSubtitle: 'Ett nytt språk blir tydligare när du kopplar det till det du redan kan.',
+    missionTitle: 'LingoTwice-konceptet',
+    missionText: 'Lingotwice erbjuder ett unikt sätt att lära sig främmande språk baserat på kontext, associationer och kopplingen mellan ditt modersmål och språket du lär dig.',
+    methodTitle: 'Hur fungerar metoden?',
+    methodText: 'Metoden är enkel: först läser du texten på ditt modersmål och förstår innehållet och innebörd. Sedan går du över till samma text på det främmande språket. Din hjärna är nu redan bekant med informationen. Du kan fokusera helt på nya ord, uttryck och gramatikstrukturer.',
+    featuresTitle: 'Varför fungerar det?',
     features: [
-      'Synkroniserad scrollning.',
-      'Kontextuell AI-ordbok.',
-      'Spaced repetition (SM-2).',
-      'Klassiska bibliotek & egna importer.'
+      'Bekant kontext: Att förstå innehållet underlättar upptaget av den utländska texten.',
+      'Meningsfulla associationer: Nya ord kopplas till redan kända begrepp.',
+      'Inlärning i kontext: Ordförråd inläras i meningsfulla meningar.',
+      'Förstärkning av kunskap: Återkommande kontakt stärker de språkliga kopplingarna.',
+      'Naturlig färdighetsutveckling: Du förstår talat språk och utländska texter allt bättre.'
     ],
+    philosophyQuote: 'Ett nytt tillvägagångssätt för språkinlärning. Från det kända till det nya. Från förståelse till flytande språkbeärskning.',
     contactBadge: 'Kontakt',
     contactTitle: 'Kontakta oss',
     contactSubtitle: 'Vi svarar gärna på dina frågor.',
@@ -822,21 +855,23 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
     termsP4: 'Kontakt: support@lingotwice.com.'
   },
   he: {
-    returnToReader: 'חזרה לקرأה',
+    returnToReader: 'חזרה לקריאה',
     aboutBadge: 'אודות',
-    aboutTitle: 'אודות LingoTwice',
-    aboutSubtitle: 'דפדפן קריאה דו-לשוני מקביל.',
-    missionTitle: 'המשימה שלנו',
-    missionText: 'LingoTwice עוזר ללומדי שפות לשבור את מחסום השפה באמצעות טבילה טבעית.',
-    methodTitle: 'שיטת קריאה מקבילה',
-    methodText: 'הבנה מיידית של ההקשר.',
-    featuresTitle: 'תכונות עיקריות',
+    aboutTitle: 'Lingotwice — למד שפות דרך ידע מקושר',
+    aboutSubtitle: 'שפה חדשה הופכת לברורה יותר כאשר אתה מקשר אותה למה שאתה כבר יודע.',
+    missionTitle: 'קונספט LingoTwice',
+    missionText: 'Lingotwice מציעה גישה ייחודית ללימוד שפות זרות המבוססת על הקשר, אסוציאציות והקשר בין שפת האם שלך לשפה הנלמדת.',
+    methodTitle: 'איך השיטה עובדת?',
+    methodText: 'השיטה פשוטה: תחילה אתה קורא את הטקסט בשפת האם שלך ומבין את התוכן והמשמעות לחלוטין. לאחר מכן אתה עובר לאותו טקסט בשפה הזרות. המוח שלך כבר מכיר את המידע. אינך צריך לפענח את התוכן מחדש — אתה יכול להתרכז במילים, בביטויים במבנים הדקדוקיים החדשים.',
+    featuresTitle: 'למה זה עובד?',
     features: [
-      'גלריה וגלילה מסונכרנת.',
-      'מילון AI הקשרי.',
-      'חזרה מרווחת (SM-2).',
-      'ספרייה קלאסית ויבוא אישי.'
+      'הקשר מוכר: הבנת התוכן מסייעת לקלוט את הטקסט בשפה הזרות.',
+      'אסוציאציות משמעותיות: מילים חדשות מתקשרות למושגים מוכרים.',
+      'למידה בהקשר: אוצר המילים נרכש בתוך משפטים בעלי משמעות.',
+      'חיזוק הידע: מפגש חוזר עם החומר מחזק את הקשרים הלשוניים.',
+      'פיתוח מיומנות טבעי: בהדרגה תבין טוב יותר שפה דבורה וטקסטים זרים.'
     ],
+    philosophyQuote: 'גישה חדשה ללימוד שפות. מהמוכר אל החדש. מהבנה ועד שליטה שוטפת.',
     contactBadge: 'צור קשר',
     contactTitle: 'צור קשר',
     contactSubtitle: 'נשמח לענות על כל שאלה.',
@@ -896,32 +931,45 @@ export const InfoPageView: React.FC<InfoPageViewProps> = ({ page, onBack, uiLang
                 <h1 className="font-serif text-2xl sm:text-3xl font-bold mt-2 text-slate-900 dark:text-white">
                   {t.aboutTitle}
                 </h1>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                <p className="text-base font-medium text-amber-700 dark:text-amber-400 mt-2">
                   {t.aboutSubtitle}
                 </p>
               </div>
 
-              <div className="space-y-4 text-sm sm:text-base leading-relaxed">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t.missionTitle}</h2>
-                <p>{t.missionText}</p>
+              <div className="space-y-6 text-sm sm:text-base leading-relaxed">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1.5">{t.missionTitle}</h2>
+                  <p className="text-slate-700 dark:text-slate-300">{t.missionText}</p>
+                </div>
 
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t.methodTitle}</h2>
-                <p>{t.methodText}</p>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1.5">{t.methodTitle}</h2>
+                  <p className="text-slate-700 dark:text-slate-300">{t.methodText}</p>
+                </div>
 
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t.featuresTitle}</h2>
-                <ul className="list-disc pl-5 space-y-2 text-slate-700 dark:text-slate-300">
-                  {t.features.map((feat, idx) => (
-                    <li key={idx}>{feat}</li>
-                  ))}
-                </ul>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{t.featuresTitle}</h2>
+                  <ul className="space-y-2 text-slate-700 dark:text-slate-300">
+                    {t.features.map((feat, idx) => (
+                      <li key={idx} className="flex items-start gap-2.5">
+                        <span className="mt-1.5 flex h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+                        <span>{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Контакты и поддержка</h2>
-                <p>
-                  Email:{' '}
-                  <a href="mailto:support@lingotwice.com" className="text-amber-600 underline font-medium">
-                    support@lingotwice.com
-                  </a>
-                </p>
+                <div className="rounded-xl bg-amber-50 dark:bg-amber-950/40 p-4 border border-amber-200 dark:border-amber-900/60 text-center font-medium text-amber-900 dark:text-amber-200">
+                  <p className="text-base font-semibold">{t.philosophyQuote}</p>
+                </div>
+
+                <div className="border-t border-slate-100 pt-4 dark:border-slate-800">
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white mb-1">{t.directContact}</h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-amber-600" />
+                    <span>Email: <strong>support@lingotwice.com</strong></span>
+                  </p>
+                </div>
               </div>
             </div>
           )}

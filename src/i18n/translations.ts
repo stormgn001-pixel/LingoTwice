@@ -3,7 +3,7 @@ import { InterfaceLanguage, ReadingDocument } from '../types';
 export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> = {
   ru: {
     appTitle: 'LingoTwice',
-    tagline: 'Билингвальный браузер параллельного чтения',
+    tagline: 'Учите языки через взаимосвязь знаний',
     navRead: 'Чтение',
     navLibrary: 'Библиотека',
     navVocabulary: 'Словарь',
@@ -160,7 +160,7 @@ export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> 
 
   uk: {
     appTitle: 'LingoTwice',
-    tagline: 'Білінгвальний браузер паралельного читання',
+    tagline: "Вивчайте мови через взаємозв'язок знань",
     navRead: 'Читати',
     navLibrary: 'Бібліотека',
     navVocabulary: 'Словник',
@@ -304,7 +304,7 @@ export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> 
 
   en: {
     appTitle: 'LingoTwice',
-    tagline: 'Bilingual Parallel Reading Browser',
+    tagline: 'Learn languages through connected knowledge',
     navRead: 'Read',
     navLibrary: 'Library',
     navVocabulary: 'Vocabulary',
@@ -448,7 +448,7 @@ export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> 
 
   de: {
     appTitle: 'LingoTwice',
-    tagline: 'Bilingualer Lese-Browser für Sprachenlerner',
+    tagline: 'Sprachen lernen durch vernetztes Wissen',
     navRead: 'Lesen',
     navLibrary: 'Bibliothek',
     navVocabulary: 'Wortschatz',
@@ -588,7 +588,7 @@ export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> 
 
   es: {
     appTitle: 'LingoTwice',
-    tagline: 'Navegador de Lectura Bilingüe y Aprendizaje',
+    tagline: 'Aprende idiomas a través del conocimiento conectado',
     navRead: 'Lectura',
     navLibrary: 'Biblioteca',
     navVocabulary: 'Vocabulario',
@@ -728,7 +728,7 @@ export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> 
 
   fr: {
     appTitle: 'LingoTwice',
-    tagline: 'Navigateur de Lecture Bilingue et Parallèle',
+    tagline: 'Apprenez les langues grâce aux connaissances connectées',
     navRead: 'Lire',
     navLibrary: 'Bibliothèque',
     navVocabulary: 'Vocabulaire',
@@ -868,7 +868,7 @@ export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> 
 
   it: {
     appTitle: 'LingoTwice',
-    tagline: 'Browser di Lettura Bilingue e Parallela',
+    tagline: 'Impara le lingue attraverso la conoscenza connessa',
     navRead: 'Leggi',
     navLibrary: 'Biblioteca',
     navVocabulary: 'Vocabolario',
@@ -998,7 +998,7 @@ export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> 
 
   pl: {
     appTitle: 'LingoTwice',
-    tagline: 'Bilingwalna Przeglądarka Równoległego Czytania',
+    tagline: 'Ucz się języków poprzez powiązaną wiedzę',
     navRead: 'Czytaj',
     navLibrary: 'Biblioteka',
     navVocabulary: 'Słownik',
@@ -1128,7 +1128,7 @@ export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> 
 
   tr: {
     appTitle: 'LingoTwice',
-    tagline: 'Çift Dilli Paralel Okuma Tarayıcısı',
+    tagline: 'Bağlantılı bilgi ile dil öğrenin',
     navRead: 'Oku',
     navLibrary: 'Kütüphane',
     navVocabulary: 'Kelime Bilgisi',
@@ -1269,7 +1269,7 @@ export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> 
 
   zh: {
     appTitle: 'LingoTwice',
-    tagline: '双语对照与平行阅读器',
+    tagline: '通过知识关联学习语言',
     navRead: '阅读',
     navLibrary: '书库',
     navVocabulary: '生词本',
@@ -1409,7 +1409,7 @@ export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> 
   },
   ja: {
     appTitle: 'LingoTwice',
-    tagline: 'バイリンガル並列読書ブラウザ',
+    tagline: '知識の繋がりを通じて言語を学ぶ',
     navRead: '読む',
     navLibrary: 'ライブラリ',
     navVocabulary: '単語帳',
@@ -1539,7 +1539,7 @@ export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> 
   },
   ko: {
     appTitle: 'LingoTwice',
-    tagline: '이중 언어 병렬 독서 브라우저',
+    tagline: '지식의 연관성을 통한 언어 학습',
     navRead: '읽기',
     navLibrary: '라이브러리',
     navVocabulary: '단어장',
@@ -1669,7 +1669,7 @@ export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> 
   },
   pt: {
     appTitle: 'LingoTwice',
-    tagline: 'Navegador de Leitura Bilíngue e Paralela',
+    tagline: 'Aprenda idiomas através do conhecimento conectado',
     navRead: 'Ler',
     navLibrary: 'Biblioteca',
     navVocabulary: 'Vocabulário',
@@ -1799,7 +1799,7 @@ export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> 
   },
   ar: {
     appTitle: 'LingoTwice',
-    tagline: 'متصفح القراءة الموازي ثنائي اللغة',
+    tagline: 'تعلم اللغات من خلال المعرفة المترابطة',
     navRead: 'اقرأ',
     navLibrary: 'المكتبة',
     navVocabulary: 'المفردات',
@@ -1929,7 +1929,7 @@ export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> 
   },
   nl: {
     appTitle: 'LingoTwice',
-    tagline: 'Browser voor tweetalig en parallel lezen',
+    tagline: 'Talen leren door verbonden kennis',
     navRead: 'Lezen',
     navLibrary: 'Bibliotheek',
     navVocabulary: 'Woordenschat',
@@ -2062,7 +2062,7 @@ export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> 
   
   sv: {
     appTitle: 'LingoTwice',
-    tagline: 'Webbläsare för tvåspråkig och parallell läsning',
+    tagline: 'Lär dig språk genom sammankopplad kunskap',
     navRead: 'Läsa',
     navLibrary: 'Bibliotek',
     navVocabulary: 'Ordförråd',
@@ -2192,7 +2192,7 @@ export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> 
   },
   he: {
     appTitle: 'LingoTwice',
-    tagline: 'דפדפן לקריאה מקבילה דו-לשונית',
+    tagline: 'למד שפות דרך ידע מקושר',
     navRead: 'קריאה',
     navLibrary: 'ספרייה',
     navVocabulary: 'אוצר מילים',
