@@ -1,0 +1,16 @@
+# ==============================================================================
+# ads.txt for Lingotwice (https://lingotwice.com)
+# Authorized Digital Sellers file for Google AdSense monetization
+# ==============================================================================
+# Format specification:
+# Field #1: Domain name of the advertising system (canonical domain: google.com)
+# Field #2: Publisher account ID (pub-XXXXXXXXXXXXXXXX)
+# Field #3: Account type / relationship (DIRECT or RESELLER)
+# Field #4: Certification authority ID for Google AdSense (f08c47fec0942fa0)
+# ==============================================================================
+
+google.com, pub-2319563738462034, DIRECT, f08c47fec0942fa0
+
+# Instruction:
+# If you have another publisher ID or need to update it, replace
+# pub-2319563738462034 with your AdSense Publisher ID (e.g. pub-XXXXXXXXXXXXXXXX).

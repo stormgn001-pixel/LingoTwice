@@ -945,6 +945,26 @@ app.post('/api/subscription/verify-tx', async (req: Request, res: Response) => {
 });
 
 // -------------------------------------------------------------
+// Direct routes for Google AdSense compliance pages & ads.txt
+// -------------------------------------------------------------
+const servePublicPage = (fileName: string) => (_req: Request, res: Response) => {
+  const targetDir = process.env.NODE_ENV === 'production' ? 'dist' : 'public';
+  res.sendFile(path.resolve(__dirname, targetDir, fileName));
+};
+
+app.get('/privacy', servePublicPage('privacy.html'));
+app.get('/privacy.html', servePublicPage('privacy.html'));
+app.get('/terms', servePublicPage('terms.html'));
+app.get('/terms.html', servePublicPage('terms.html'));
+app.get('/about', servePublicPage('about.html'));
+app.get('/about.html', servePublicPage('about.html'));
+app.get('/contact', servePublicPage('contact.html'));
+app.get('/contact.html', servePublicPage('contact.html'));
+app.get('/ads.txt', servePublicPage('ads.txt'));
+app.get('/robots.txt', servePublicPage('robots.txt'));
+app.get('/sitemap.xml', servePublicPage('sitemap.xml'));
+
+// -------------------------------------------------------------
 // Vite Middleware in Dev & Static Serving in Production
 // -------------------------------------------------------------
 async function startServer() {

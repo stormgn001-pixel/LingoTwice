@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us — Lingotwice</title>
+  <meta name="description" content="Get in touch with the Lingotwice support team. We're here to help with questions, bug reports, feature requests, or partnership inquiries.">
+  <link rel="icon" type="image/png" href="/assets/aistudio/file_000000004eec82468ea111a6735b2471_8524203a.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #d97706;
+      --primary-hover: #b45309;
+      --primary-light: #fef3c7;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-light: #64748b;
+      --bg-main: #ffffff;
+      --bg-alt: #f8fafc;
+      --border-color: #e2e8f0;
+      --radius: 12px;
+      --max-width: 860px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text-main);
+      background-color: var(--bg-alt);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    a {
+      color: var(--primary);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+
+    a:hover {
+      color: var(--primary-hover);
+      text-decoration: underline;
+    }
+
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-container {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+      text-decoration: none !important;
+    }
+
+    .brand img {
+      width: 32px;
+      height: 32px;
+      object-contain: contain;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+    }
+
+    .nav-links a:hover, .nav-links a.active {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    main {
+      flex: 1;
+      max-width: var(--max-width);
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      width: 100%;
+    }
+
+    .card {
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 2.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .page-tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--primary);
+      background: var(--primary-light);
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      margin-bottom: 0.75rem;
+    }
+
+    h1 {
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 2.25rem;
+      line-height: 1.25;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1.25rem;
+    }
+
+    .contact-layout {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 2.5rem;
+      align-items: start;
+    }
+
+    /* Form Styles */
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    input[type="text"],
+    input[type="email"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--text-main);
+      background: #ffffff;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 130px;
+    }
+
+    button.btn-submit {
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      padding: 0.85rem 1.75rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.15s ease, transform 0.1s ease;
+      align-self: flex-start;
+    }
+
+    button.btn-submit:hover {
+      background: var(--primary-hover);
+    }
+
+    button.btn-submit:active {
+      transform: translateY(1px);
+    }
+
+    /* Info Sidebar */
+    .contact-info {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .info-item h3 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.25rem;
+    }
+
+    .info-item p {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 0;
+    }
+
+    /* Success / Feedback Banner */
+    .alert-success {
+      display: none;
+      background: #ecfdf5;
+      border: 1px solid #10b981;
+      color: #065f46;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.925rem;
+    }
+
+    .alert-success.show {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    footer {
+      background: #ffffff;
+      border-top: 1px solid var(--border-color);
+      margin-top: auto;
+      padding: 2.5rem 1.5rem;
+      font-size: 0.875rem;
+      color: var(--text-light);
+    }
+
+    .footer-container {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      text-align: center;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.5rem;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .footer-links a:hover {
+      color: var(--primary);
+    }
+
+    .copyright {
+      font-size: 0.8125rem;
+    }
+
+    @media (max-width: 768px) {
+      .contact-layout {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+      .card {
+        padding: 1.5rem;
+      }
+      h1 {
+        font-size: 1.75rem;
+      }
+      button.btn-submit {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="nav-container">
+      <a href="/" class="brand">
+        <img src="/assets/aistudio/file_000000004eec82468ea111a6735b2471_8524203a.png" alt="Lingotwice Logo">
+        <span>Lingotwice</span>
+      </a>
+      <nav class="nav-links">
+        <a href="/">App</a>
+        <a href="/about.html">About</a>
+        <a href="/contact.html" class="active">Contact</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <span class="page-tag">Get in Touch</span>
+      <h1>Contact Us</h1>
+      <div class="subtitle">We'd love to hear from you. Have a question, bug report, or partnership suggestion? Reach out below.</div>
+
+      <div id="successAlert" class="alert-success">
+        <strong>Thank you!</strong> Your message has been received. Our team will review your inquiry and respond to your email within 24–48 business hours.
+      </div>
+
+      <div class="contact-layout">
+        <!-- Form Column -->
+        <div>
+          <form id="contactForm" onsubmit="handleContactSubmit(event)">
+            <div class="form-group">
+              <label for="name">Your Name *</label>
+              <input type="text" id="name" name="name" placeholder="Jane Doe" required minlength="2">
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email Address *</label>
+              <input type="email" id="email" name="email" placeholder="jane@example.com" required>
+            </div>
+
+            <div class="form-group">
+              <label for="subject">Inquiry Subject *</label>
+              <select id="subject" name="subject" required>
+                <option value="" disabled selected>Select a subject...</option>
+                <option value="general">General Inquiry &amp; Feedback</option>
+                <option value="support">Technical Support &amp; Bug Report</option>
+                <option value="features">Feature Request &amp; Language Suggestion</option>
+                <option value="partnership">Partnership &amp; Educational Licensing</option>
+                <option value="privacy">Privacy &amp; Data Subject Request</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="message">Message *</label>
+              <textarea id="message" name="message" placeholder="Please describe how we can assist you..." required minlength="10"></textarea>
+            </div>
+
+            <button type="submit" class="btn-submit" id="submitBtn">Send Message</button>
+          </form>
+        </div>
+
+        <!-- Info Sidebar Column -->
+        <div class="contact-info">
+          <div class="info-item">
+            <h3>Direct Email</h3>
+            <p><a href="mailto:support@lingotwice.com">support@lingotwice.com</a></p>
+          </div>
+
+          <div class="info-item">
+            <h3>Response Time</h3>
+            <p>Our dedicated support team typically reviews and replies to all requests within 24 to 48 hours (Monday through Friday).</p>
+          </div>
+
+          <div class="info-item">
+            <h3>Platform &amp; Legal</h3>
+            <p><strong>Lingotwice</strong><br>
+            Official Website: <a href="https://lingotwice.com">https://lingotwice.com</a><br>
+            Dedicated to bilingual parallel reading and contextual vocabulary development.</p>
+          </div>
+
+          <div class="info-item">
+            <h3>Quick Links</h3>
+            <p>
+              &bull; <a href="/privacy.html">Privacy Policy</a><br>
+              &bull; <a href="/terms.html">Terms of Service</a><br>
+              &bull; <a href="/about.html">About Lingotwice</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="/about.html">About Us</a>
+        <a href="/contact.html">Contact Us</a>
+        <a href="/privacy.html">Privacy Policy</a>
+        <a href="/terms.html">Terms of Service</a>
+      </div>
+      <div class="copyright">
+        &copy; 2026 Lingotwice. All rights reserved. Dedicated to effective bilingual parallel reading.
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function handleContactSubmit(e) {
+      e.preventDefault();
+      var form = document.getElementById('contactForm');
+      var alertBox = document.getElementById('successAlert');
+      var submitBtn = document.getElementById('submitBtn');
+
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      // Simulate sending with responsive feedback
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'Sending...';
+
+      setTimeout(function() {
+        form.reset();
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Send Message';
+        alertBox.classList.add('show');
+        alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 700);
+    }
+  </script>
+
+</body>
+</html>

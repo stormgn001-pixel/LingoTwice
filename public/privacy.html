@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Lingotwice</title>
+  <meta name="description" content="Privacy Policy for Lingotwice. Learn how we collect, use, and protect your data, as well as our compliance with GDPR, CCPA, and Google AdSense cookie guidelines.">
+  <link rel="icon" type="image/png" href="/assets/aistudio/file_000000004eec82468ea111a6735b2471_8524203a.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #d97706;
+      --primary-hover: #b45309;
+      --primary-light: #fef3c7;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-light: #64748b;
+      --bg-main: #ffffff;
+      --bg-alt: #f8fafc;
+      --border-color: #e2e8f0;
+      --radius: 12px;
+      --max-width: 860px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text-main);
+      background-color: var(--bg-alt);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    a {
+      color: var(--primary);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+
+    a:hover {
+      color: var(--primary-hover);
+      text-decoration: underline;
+    }
+
+    /* Header */
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-container {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+      text-decoration: none !important;
+    }
+
+    .brand img {
+      width: 32px;
+      height: 32px;
+      object-contain: contain;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+    }
+
+    .nav-links a:hover, .nav-links a.active {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      max-width: var(--max-width);
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      width: 100%;
+    }
+
+    .card {
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 2.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .page-tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--primary);
+      background: var(--primary-light);
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      margin-bottom: 0.75rem;
+    }
+
+    h1 {
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 2.25rem;
+      line-height: 1.25;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+    }
+
+    .meta-date {
+      font-size: 0.875rem;
+      color: var(--text-light);
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1.25rem;
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-top: 2rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-top: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      margin-bottom: 1rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    ul, ol {
+      margin-bottom: 1.25rem;
+      padding-left: 1.5rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    li {
+      margin-bottom: 0.5rem;
+    }
+
+    .highlight-box {
+      background: #f8fafc;
+      border-left: 4px solid var(--primary);
+      padding: 1.25rem;
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+
+    .highlight-box p {
+      margin-bottom: 0;
+      color: var(--text-main);
+      font-weight: 500;
+    }
+
+    /* Footer */
+    footer {
+      background: #ffffff;
+      border-top: 1px solid var(--border-color);
+      margin-top: auto;
+      padding: 2.5rem 1.5rem;
+      font-size: 0.875rem;
+      color: var(--text-light);
+    }
+
+    .footer-container {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      text-align: center;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.5rem;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .footer-links a:hover {
+      color: var(--primary);
+    }
+
+    .copyright {
+      font-size: 0.8125rem;
+    }
+
+    @media (max-width: 640px) {
+      .card {
+        padding: 1.5rem;
+      }
+      h1 {
+        font-size: 1.75rem;
+      }
+      .nav-links {
+        gap: 0.85rem;
+        font-size: 0.8125rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="nav-container">
+      <a href="/" class="brand">
+        <img src="/assets/aistudio/file_000000004eec82468ea111a6735b2471_8524203a.png" alt="Lingotwice Logo">
+        <span>Lingotwice</span>
+      </a>
+      <nav class="nav-links">
+        <a href="/">App</a>
+        <a href="/about.html">About</a>
+        <a href="/contact.html">Contact</a>
+        <a href="/privacy.html" class="active">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <span class="page-tag">Legal &amp; Transparency</span>
+      <h1>Privacy Policy</h1>
+      <div class="meta-date">Last Updated: October 31, 2026 &bull; Effective Date: October 31, 2026</div>
+
+      <p>
+        At <strong>Lingotwice</strong> (accessible at <a href="https://lingotwice.com">https://lingotwice.com</a>), your privacy is one of our top priorities. This Privacy Policy outlines the types of information collected and recorded by Lingotwice, how we use it, and how we protect your personal information in compliance with international privacy laws, including the <strong>General Data Protection Regulation (GDPR)</strong>, the <strong>California Consumer Privacy Act (CCPA) / CPRA</strong>, and the <strong>Google AdSense Publisher Policies</strong>.
+      </p>
+
+      <div class="highlight-box">
+        <p>If you have additional questions or require more information about our Privacy Policy, please contact us directly via email at <a href="mailto:support@lingotwice.com">support@lingotwice.com</a>.</p>
+      </div>
+
+      <h2>1. Information We Collect</h2>
+      <p>Lingotwice is designed as an interactive bilingual parallel reading and language learning platform. Depending on how you interact with our service, we may collect the following categories of data:</p>
+      <ul>
+        <li><strong>Personal Information Voluntarily Provided:</strong> When contacting us via our contact form or email at <code>support@lingotwice.com</code>, we collect your name, email address, subject line, and message content.</li>
+        <li><strong>Client-Side Application Data (Local Storage):</strong> To provide a personalized reading experience without requiring account creation, Lingotwice stores reading preferences (such as target languages, font size, theme, and reading progress), custom imported texts, and saved vocabulary cards directly in your browser's LocalStorage. This data resides on your own device and is not sold or shared with external parties.</li>
+        <li><strong>Log Files &amp; Technical Identifiers:</strong> Like most modern websites, Lingotwice follows standard procedure of using server log files. The information collected by log files includes internet protocol (IP) addresses (anonymized where required by law), browser type, Internet Service Provider (ISP), date/time stamps, referring/exit pages, and number of clicks. These are not linked to any personally identifiable information and are strictly used for analyzing trends, preventing DDoS attacks, and administering the site.</li>
+      </ul>
+
+      <h2>2. Third-Party Advertising and Cookies (Google AdSense)</h2>
+      <p>
+        Lingotwice displays advertisements served by third-party advertising vendors, predominantly <strong>Google AdSense</strong>. Third-party vendors, including Google, use cookies to serve ads based on a user's prior visits to our website or other websites on the Internet:
+      </p>
+      <ul>
+        <li><strong>Google DoubleClick / DART Cookie:</strong> Google's use of advertising cookies enables it and its partners to serve ads to our users based on their visit to Lingotwice and/or other sites on the Internet.</li>
+        <li><strong>Third-Party Vendors &amp; Ad Networks:</strong> Third-party ad servers or ad networks use technologies like cookies, JavaScript, or Web Beacons in their respective advertisements and links that appear on Lingotwice, which are sent directly to users' browsers. They automatically receive your IP address when this occurs. These technologies are used to measure the effectiveness of their advertising campaigns and/or to personalize the advertising content that you see on websites that you visit.</li>
+      </ul>
+
+      <div class="highlight-box">
+        <p><strong>Important Note:</strong> Lingotwice has no access to or control over these cookies that are used by third-party advertisers. We encourage you to consult the respective Privacy Policies of these third-party ad servers for more detailed information.</p>
+      </div>
+
+      <h2>3. Opting Out of Personalized Advertising</h2>
+      <p>You have the full right to opt out of personalized interest-based advertising across the web:</p>
+      <ul>
+        <li>
+          <strong>Google Ads Settings:</strong> Users may opt out of personalized advertising by visiting Google's official Ads Settings page at <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer">https://adssettings.google.com</a>.
+        </li>
+        <li>
+          <strong>AboutAds.info Opt-Out:</strong> Users can opt out of third-party vendor's use of cookies for personalized advertising by visiting the Digital Advertising Alliance Consumer Choice page at <a href="https://optout.aboutads.info" target="_blank" rel="noopener noreferrer">www.aboutads.info</a>.
+        </li>
+        <li>
+          <strong>Network Advertising Initiative (NAI):</strong> You may also opt out of participating ad networks via the NAI opt-out tool at <a href="https://optout.networkadvertising.org" target="_blank" rel="noopener noreferrer">https://optout.networkadvertising.org</a>.
+        </li>
+        <li>
+          <strong>Browser Cookie Controls:</strong> You can choose to disable cookies through your individual browser options. Detailed information about cookie management with specific web browsers can be found at the browsers' respective websites.
+        </li>
+      </ul>
+
+      <h2>4. Google Analytics &amp; Web Metrics</h2>
+      <p>
+        Lingotwice may use Google Analytics or privacy-friendly aggregated metrics to collect anonymous information such as page response times, download errors, duration of reading sessions, and user engagement with bilingual tools. Google Analytics uses cookies to collect anonymous standard internet log information and visitor behavior. No sensitive personal information is transmitted to Google Analytics.
+      </p>
+
+      <h2>5. General Data Protection Regulation (GDPR) Rights</h2>
+      <p>If you are a resident of the European Economic Area (EEA), you have certain data protection rights under the GDPR. Lingotwice aims to take reasonable steps to allow you to correct, amend, delete, or limit the use of your Personal Data. You have the right to:</p>
+      <ul>
+        <li><strong>Right to access:</strong> Request copies of your personal data.</li>
+        <li><strong>Right to rectification:</strong> Request that we correct any information you believe is inaccurate or complete information you believe is incomplete.</li>
+        <li><strong>Right to erasure ("Right to be Forgotten"):</strong> Request that we erase your personal data under certain conditions.</li>
+        <li><strong>Right to restrict processing:</strong> Request that we restrict the processing of your personal data.</li>
+        <li><strong>Right to object to processing:</strong> Object to our processing of your personal data.</li>
+        <li><strong>Right to data portability:</strong> Request that we transfer data that we have collected to another organization or directly to you.</li>
+      </ul>
+      <p>If you make a request, we have one month to respond to you. If you would like to exercise any of these rights, please contact us at <a href="mailto:support@lingotwice.com">support@lingotwice.com</a>.</p>
+
+      <h2>6. California Consumer Privacy Act (CCPA / CPRA) Rights</h2>
+      <p>Under the CCPA, California consumers have the right to:</p>
+      <ul>
+        <li>Request that a business that collects a consumer's personal data disclose the categories and specific pieces of personal data that a business has collected about consumers.</li>
+        <li>Request that a business delete any personal data about the consumer that a business has collected.</li>
+        <li><strong>Do Not Sell My Personal Information:</strong> Lingotwice does not sell consumer personal data in exchange for monetary compensation.</li>
+        <li>Right to non-discrimination for exercising CCPA rights.</li>
+      </ul>
+
+      <h2>7. Children's Information Protection</h2>
+      <p>
+        Protecting children's privacy while using the internet is especially important to us. Lingotwice does not knowingly collect any Personal Identifiable Information from children under the age of 13. If you believe that your child provided personal information on our website, we strongly encourage you to contact us immediately and we will do our best efforts to promptly remove such information from our records.
+      </p>
+
+      <h2>8. External Links</h2>
+      <p>
+        Our website may contain links to external sites (such as online dictionaries, public domain literature repositories, or partner language tools) that are not operated by us. If you click on a third-party link, you will be directed to that third party's site. We strongly advise you to review the Privacy Policy of every site you visit. We have no control over and assume no responsibility for the content, privacy policies, or practices of any third-party sites or services.
+      </p>
+
+      <h2>9. Changes to This Privacy Policy</h2>
+      <p>
+        We may update our Privacy Policy from time to time to reflect changes in our operational, legal, or regulatory requirements. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last Updated" date at the top. You are advised to review this Privacy Policy periodically for any changes.
+      </p>
+
+      <h2>10. Contact Us</h2>
+      <p>
+        If you have any questions, feedback, or data privacy requests regarding this Privacy Policy, please do not hesitate to contact our team:
+      </p>
+      <ul>
+        <li><strong>Service Name:</strong> Lingotwice</li>
+        <li><strong>Website:</strong> <a href="https://lingotwice.com">https://lingotwice.com</a></li>
+        <li><strong>Official Support Email:</strong> <a href="mailto:support@lingotwice.com">support@lingotwice.com</a></li>
+        <li><strong>Contact Page:</strong> <a href="/contact.html">https://lingotwice.com/contact.html</a></li>
+      </ul>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="/about.html">About Us</a>
+        <a href="/contact.html">Contact Us</a>
+        <a href="/privacy.html">Privacy Policy</a>
+        <a href="/terms.html">Terms of Service</a>
+      </div>
+      <div class="copyright">
+        &copy; 2026 Lingotwice. All rights reserved. Dedicated to effective bilingual parallel reading.
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

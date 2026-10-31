@@ -51,7 +51,7 @@ const PRESET_COVERS = [
   {
     id: 'app',
     label: 'LingoTwice',
-    url: '/assets/aistudio/file_000000003e588211bf60528640d33add_c3fdfa78.png',
+    url: '/assets/aistudio/file_000000004eec82468ea111a6735b2471_8524203a.png',
   },
 ];
 
@@ -467,10 +467,12 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 dark:border-slate-800 shrink-0">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                <BookOpen className="h-4 w-4" />
-              </span>
+            <div className="flex items-center gap-2.5">
+              <img
+                src="/assets/aistudio/file_000000004eec82468ea111a6735b2471_8524203a.png"
+                alt="LingoTwice"
+                className="h-7 w-7 object-contain drop-shadow-xs"
+              />
               <h3 className="font-serif text-lg font-bold text-slate-900 dark:text-white">
                 Добавление своего параллельного текста
               </h3>

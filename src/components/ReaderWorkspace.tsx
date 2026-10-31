@@ -485,20 +485,29 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
     });
   }, []);
 
+  const isBuiltIn = Boolean(document.isSample || SAMPLE_DOCUMENTS.some((s) => s.id === document.id));
+
   const playSourceAudio = React.useCallback((text: string) => {
-    playAudio(text, document.sourceLang);
-  }, [playAudio, document.sourceLang]);
+    const audioLang = isBuiltIn && document.translations?.[uiLang] ? uiLang : document.sourceLang;
+    playAudio(text, audioLang);
+  }, [playAudio, isBuiltIn, uiLang, document.translations, document.sourceLang]);
+
+  const effectiveTargetLang =
+    document.targetLang && document.targetLang !== uiLang
+      ? document.targetLang
+      : uiLang === 'ru'
+      ? 'en'
+      : 'ru';
 
   const playTargetAudio = React.useCallback((text: string) => {
-    playAudio(text, document.targetLang);
-  }, [playAudio, document.targetLang]);
-
-  const isBuiltIn = Boolean(document.isSample || SAMPLE_DOCUMENTS.some((s) => s.id === document.id));
+    playAudio(text, effectiveTargetLang);
+  }, [playAudio, effectiveTargetLang]);
 
   // Change target language (only allowed for built-in library articles)
   const handleTargetLangChange = async (newTarget: string) => {
     if (!isBuiltIn) return;
-    onChangeLanguages(document.id, document.sourceLang, newTarget);
+    if (newTarget === effectiveTargetLang) return;
+    onChangeLanguages(document.id, uiLang, newTarget);
     onUpdatePreferences({ targetLang: newTarget });
     // Trigger retranslation to new target language
     try {
@@ -546,44 +555,29 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
       ? 'text-[#2e2317]'
       : 'text-slate-900';
 
+  const uiLangMeta = getLanguageByCode(uiLang);
   const sourceLangMeta = getLanguageByCode(document.sourceLang);
-  const targetLangMeta = getLanguageByCode(document.targetLang);
+  const targetLangMeta = getLanguageByCode(effectiveTargetLang);
   const isPanesSwapped = preferences.swapSides ?? false;
   const toggleSwapSides = () => onUpdatePreferences({ swapSides: !isPanesSwapped });
 
-  // Source language reading pane
+  // Source language reading pane (always occupies 50% split)
   const renderSourcePane = () => (
     <div
       key="source-panel"
-      className={`${
+      className={`flex flex-col min-w-0 min-h-0 overflow-hidden ${
         preferences.splitOrientation === 'horizontal'
-          ? 'w-full md:w-1/2 h-1/2 md:h-full'
-          : 'w-full h-1/2'
-      } flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden`}
+          ? 'w-full sm:w-1/2 basis-1/2 h-1/2 sm:h-full flex-1'
+          : 'w-full h-1/2 basis-1/2 flex-1'
+      }`}
     >
-      <div className={`h-7 shrink-0 px-3 sm:px-6 flex items-center justify-between border-b select-none ${paneHeaderBgClass}`}>
+      <div className={`h-8 shrink-0 px-3 sm:px-6 flex items-center justify-between border-b select-none ${paneHeaderBgClass}`}>
         <div className="flex items-center gap-1.5">
           <span className="text-base leading-none" role="img" aria-label="Original Language Flag">
-            {(() => {
-              if (!isBuiltIn) return sourceLangMeta.flag;
-              const samplePassage = document.passages[0];
-              const hasUiTranslation = 
-                (samplePassage?.translations?.[uiLang]) || 
-                (document.translations?.[uiLang]?.length > 0);
-              
-              return hasUiTranslation 
-                ? getLanguageByCode(uiLang).flag 
-                : sourceLangMeta.flag;
-            })()}
+            {uiLangMeta.flag}
           </span>
           <span className="text-xs font-bold">{t.originalPane}</span>
-          <span className="text-[11px] text-slate-500 font-normal">
-            ({!isBuiltIn
-              ? sourceLangMeta.name
-              : ((document.passages[0]?.translations?.[uiLang] || document.translations?.[uiLang]?.length)
-                  ? getLanguageByCode(uiLang).name
-                  : sourceLangMeta.name)})
-          </span>
+          <span className="text-[11px] text-slate-500 font-normal">({uiLangMeta.name})</span>
         </div>
       </div>
 
@@ -594,20 +588,11 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
         <div className="space-y-4 sm:space-y-5 max-w-2xl mx-auto pb-16">
           {visiblePassages.map((passage, idx) => {
             const resolvedSourceText = isBuiltIn
-              ? passage.translations?.[uiLang] ||
-                document.translations?.[uiLang]?.[idx] ||
-                passage.sourceText ||
-                ''
+              ? (uiLang === 'ru'
+                  ? (passage.translations?.['ru'] || document.translations?.['ru']?.[idx] || passage.sourceText || '')
+                  : (document.translations?.[uiLang]?.[idx] || passage.translations?.[uiLang] || passage.sourceText || ''))
               : passage.sourceText || '';
             const displaySourcePassage = { ...passage, sourceText: resolvedSourceText };
-            
-            // Target language for Target Pane
-            const resolvedTargetText =
-              passage.translations?.[document.targetLang] ||
-              document.translations?.[document.targetLang]?.[idx] ||
-              passage.targetText ||
-              '';
-            const displayTargetPassage = { ...passage, targetText: resolvedTargetText };
 
             return (
               <SourcePassage
@@ -647,17 +632,17 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
     </div>
   );
 
-  // Target language reading pane
+  // Target language reading pane (always occupies 50% split)
   const renderTargetPane = () => (
     <div
       key="target-panel"
-      className={`${
+      className={`flex flex-col min-w-0 min-h-0 overflow-hidden ${
         preferences.splitOrientation === 'horizontal'
-          ? 'w-full md:w-1/2 h-1/2 md:h-full'
-          : 'w-full h-1/2'
-      } flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden`}
+          ? 'w-full sm:w-1/2 basis-1/2 h-1/2 sm:h-full flex-1'
+          : 'w-full h-1/2 basis-1/2 flex-1'
+      }`}
     >
-      <div className={`h-7 shrink-0 px-3 sm:px-6 flex items-center justify-between border-b select-none ${paneHeaderBgClass}`}>
+      <div className={`h-8 shrink-0 px-3 sm:px-6 flex items-center justify-between border-b select-none ${paneHeaderBgClass}`}>
         <div className="flex items-center gap-1.5">
           <span className="text-base leading-none" role="img" aria-label="Target Language Flag">
             {targetLangMeta.flag}
@@ -706,11 +691,12 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
         <div className="space-y-4 sm:space-y-5 max-w-2xl mx-auto pb-16">
           {visiblePassages.map((passage, idx) => {
             const resolvedTargetText = isBuiltIn
-              ? passage.translations?.[document.targetLang] ||
-                document.translations?.[document.targetLang]?.[idx] ||
-                passage.targetText ||
-                ''
-              : passage.targetText || '';
+              ? (effectiveTargetLang === 'ru'
+                  ? (passage.translations?.['ru'] || document.translations?.['ru']?.[idx] || passage.sourceText || passage.targetText || '')
+                  : (passage.translations?.[effectiveTargetLang] || document.translations?.[effectiveTargetLang]?.[idx] || passage.targetText || ''))
+              : (effectiveTargetLang === 'ru' && passage.sourceText
+                  ? passage.sourceText
+                  : passage.targetText || '');
             const displayPassage = { ...passage, targetText: resolvedTargetText };
 
             return (
@@ -808,8 +794,8 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
   );
 
   return (
-    <div className={`flex flex-col h-full w-full select-text transition-colors duration-200 ${themeClass}`}>
-      <div className={`border-b border-slate-200/80 px-2.5 py-1.5 sm:px-4 sm:py-2 dark:border-slate-800 ${
+    <div className={`flex flex-col h-full w-full min-h-0 overflow-hidden select-text transition-colors duration-200 ${themeClass}`}>
+      <div className={`shrink-0 border-b border-slate-200/80 px-2.5 py-1.5 sm:px-4 sm:py-2 dark:border-slate-800 ${
         preferences.theme === 'sepia' ? 'bg-[#f4efe1] border-[#e2d9c2]' : 'bg-slate-50/90 dark:bg-slate-900/70'
       }`}>
         <div className="flex items-center justify-between gap-1 sm:gap-2 pb-1 border-b border-slate-200/50 dark:border-slate-800/50">
@@ -844,7 +830,7 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
               <span className="hidden sm:inline text-[10px] sm:text-[11px] font-medium text-slate-500 dark:text-slate-400">{t.translateTo}</span>
               <div className="flex items-center gap-0.5">
                 <select
-                  value={document.targetLang}
+                  value={effectiveTargetLang}
                   onChange={(e) => handleTargetLangChange(e.target.value)}
                   className="bg-transparent font-semibold text-slate-800 dark:text-slate-200 cursor-pointer focus:outline-hidden text-[11px] sm:text-xs py-0"
                 >
@@ -955,8 +941,22 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
         )}
       </div>
 
-      <div className={`relative flex-1 min-h-0 w-full overflow-hidden ${preferences.splitOrientation === 'horizontal' ? 'flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-slate-200 dark:divide-slate-800' : 'flex flex-col divide-y divide-slate-200 dark:divide-slate-800'}`}>
-        {isPanesSwapped ? (<>{renderTargetPane()}{renderSourcePane()}</>) : (<>{renderSourcePane()}{renderTargetPane()}</>)}
+      <div className={`relative flex-1 min-h-0 w-full overflow-hidden flex ${
+        preferences.splitOrientation === 'horizontal' 
+          ? 'flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x' 
+          : 'flex-col divide-y'
+      } divide-slate-300 dark:divide-slate-700`}>
+        {isPanesSwapped ? (
+          <>
+            {renderTargetPane()}
+            {renderSourcePane()}
+          </>
+        ) : (
+          <>
+            {renderSourcePane()}
+            {renderTargetPane()}
+          </>
+        )}
       </div>
 
       {showDeleteConfirm && (

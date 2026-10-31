@@ -218,9 +218,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         <div className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-100 bg-white/95 px-4 py-3 sm:px-6 sm:py-3.5 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95 shrink-0">
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="flex h-5 w-5 items-center justify-center rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                <Sparkles className="h-3.5 w-3.5" />
-              </span>
+              <img
+                src="/assets/aistudio/file_000000004eec82468ea111a6735b2471_8524203a.png"
+                alt="LingoTwice"
+                className="h-5 w-5 object-contain"
+              />
               <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-500">
                 LingoTwice Pro
               </span>

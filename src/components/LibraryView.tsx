@@ -163,8 +163,11 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             const isBuiltIn = Boolean(doc.isSample || SAMPLE_DOCUMENTS.some((s) => s.id === doc.id));
             const docTitle = getDocTitle(doc, uiLang);
             const sLang = getLanguageByCode(doc.sourceLang);
-            // Built-in articles adapt to UI language; user custom texts retain their own fixed target language
-            const tLang = isBuiltIn ? getLanguageByCode(uiLang) : getLanguageByCode(doc.targetLang);
+            // Target language badge: reflects the document's targetLang and is always distinct from sourceLang
+            const effectiveTargetCode = doc.targetLang && doc.targetLang !== doc.sourceLang
+              ? doc.targetLang
+              : (doc.sourceLang === 'ru' ? 'en' : 'ru');
+            const tLang = getLanguageByCode(effectiveTargetCode);
 
             const categoryBadge =
               doc.category === 'literature'

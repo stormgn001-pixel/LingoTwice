@@ -14,15 +14,22 @@ export const LegalModal: React.FC<LegalModalProps> = ({ page, onClose, uiLang })
       <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-2xl dark:border-slate-800 dark:bg-slate-900 max-h-[85vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800 shrink-0">
-          <div>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-500">
-              Юридические положения и защита данных
-            </span>
-            <h3 className="font-serif text-xl font-bold text-slate-900 dark:text-white">
-              {page === 'privacy' && 'Политика конфиденциальности (Проект)'}
-              {page === 'terms' && 'Пользовательское соглашение (Проект)'}
-              {page === 'faq' && 'Регламент обработки данных и безопасность'}
-            </h3>
+          <div className="flex items-center gap-3">
+            <img
+              src="/assets/aistudio/file_000000004eec82468ea111a6735b2471_8524203a.png"
+              alt="LingoTwice"
+              className="h-8 w-8 object-contain shrink-0 drop-shadow-xs"
+            />
+            <div>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-500">
+                LingoTwice · Юридические положения и защита данных
+              </span>
+              <h3 className="font-serif text-xl font-bold text-slate-900 dark:text-white">
+                {page === 'privacy' && 'Политика конфиденциальности (Проект)'}
+                {page === 'terms' && 'Пользовательское соглашение (Проект)'}
+                {page === 'faq' && 'Регламент обработки данных и безопасность'}
+              </h3>
+            </div>
           </div>
           <button
             onClick={onClose}
@@ -90,10 +97,48 @@ export const LegalModal: React.FC<LegalModalProps> = ({ page, onClose, uiLang })
         </div>
 
         {/* Footer */}
-        <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800 text-right shrink-0">
+        <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+            <a
+              href="/privacy.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-amber-700 hover:underline dark:text-amber-400"
+            >
+              Privacy Policy (HTML)
+            </a>
+            <span>·</span>
+            <a
+              href="/terms.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-amber-700 hover:underline dark:text-amber-400"
+            >
+              Terms of Service (HTML)
+            </a>
+            <span>·</span>
+            <a
+              href="/about.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline hover:text-slate-800 dark:hover:text-slate-200"
+            >
+              About
+            </a>
+            <span>·</span>
+            <a
+              href="/contact.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline hover:text-slate-800 dark:hover:text-slate-200"
+            >
+              Contact
+            </a>
+          </div>
+
           <button
             onClick={onClose}
-            className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700"
+            className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 cursor-pointer"
           >
             Закрыть
           </button>

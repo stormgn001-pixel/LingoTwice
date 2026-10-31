@@ -38,18 +38,36 @@ export const Header: React.FC<HeaderProps> = ({
   const navRef = useRef<HTMLElement>(null);
   const activeTabRef = useRef<HTMLButtonElement>(null);
 
-  // Touch swipe gesture tracking
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  // Track scroll position to show gradient indicators if needed
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
-  // Auto-scroll the active tab into view horizontally when changed
+  const checkScroll = () => {
+    if (navRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = navRef.current;
+      setCanScrollLeft(scrollLeft > 6);
+      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 6);
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
+  }, []);
+
+  // Auto-scroll the active tab into view horizontally when changed without shifting the window
   useEffect(() => {
     if (activeTabRef.current && navRef.current) {
-      activeTabRef.current.scrollIntoView({
+      const nav = navRef.current;
+      const tab = activeTabRef.current;
+      const targetLeft = tab.offsetLeft - nav.offsetWidth / 2 + tab.offsetWidth / 2;
+      nav.scrollTo({
+        left: Math.max(0, targetLeft),
         behavior: 'smooth',
-        inline: 'center',
-        block: 'nearest',
       });
+      const timer = setTimeout(checkScroll, 350);
+      return () => clearTimeout(timer);
     }
   }, [currentView]);
 
@@ -57,30 +75,12 @@ export const Header: React.FC<HeaderProps> = ({
     return null;
   }
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStartX(e.touches[0].clientX);
-    setTouchStartY(e.touches[0].clientY);
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX === null || touchStartY === null) return;
-    const deltaX = e.changedTouches[0].clientX - touchStartX;
-    const deltaY = e.changedTouches[0].clientY - touchStartY;
-
-    // Dominant horizontal swipe with distance threshold (45px)
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 45) {
-      const currentIndex = TABS.indexOf(currentView);
-      if (deltaX < 0 && currentIndex < TABS.length - 1) {
-        // Swipe left -> next tab
-        onNavigate(TABS[currentIndex + 1]);
-      } else if (deltaX > 0 && currentIndex > 0) {
-        // Swipe right -> previous tab
-        onNavigate(TABS[currentIndex - 1]);
-      }
+  // Smooth wheel scrolling: translate vertical mouse wheel into horizontal scroll over tabs
+  const handleNavWheel = (e: React.WheelEvent<HTMLElement>) => {
+    if (navRef.current && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      navRef.current.scrollLeft += e.deltaY;
+      checkScroll();
     }
-
-    setTouchStartX(null);
-    setTouchStartY(null);
   };
 
   const headerBgClass =
@@ -111,26 +111,49 @@ export const Header: React.FC<HeaderProps> = ({
       ? 'text-slate-400 hover:text-white hover:bg-slate-900'
       : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100';
 
+  const fadeBgClass =
+    theme === 'sepia'
+      ? 'from-[#eae3d2]'
+      : theme === 'dark'
+      ? 'from-slate-950'
+      : 'from-white';
+
   return (
-    <header className={`sticky top-0 z-30 flex items-center justify-between gap-2 sm:gap-6 border-b px-3 py-2 sm:px-6 sm:py-2.5 backdrop-blur-md transition-colors ${headerBgClass}`}>
-      {/* Zone 1: Wordmark */}
+    <header className={`shrink-0 sticky top-0 z-30 w-full flex items-center justify-between gap-2 sm:gap-6 border-b px-3 py-1.5 sm:px-6 sm:py-2 backdrop-blur-md select-none transition-colors ${headerBgClass}`}>
+      {/* Zone 1: Wordmark with 3D Book Logo */}
       <div className="flex items-center gap-1.5 shrink-0">
         <button
           onClick={() => onNavigate('read')}
-          className={`group flex items-center gap-1.5 text-left font-serif text-base sm:text-lg font-bold tracking-tight transition-colors ${brandTextClass}`}
+          className={`group flex items-center gap-2 text-left font-serif text-base sm:text-lg font-bold tracking-tight transition-colors cursor-pointer ${brandTextClass}`}
+          title="LingoTwice"
         >
-          <BookOpen className="h-4.5 w-4.5 sm:h-5 sm:w-5 text-amber-600 transition-transform group-hover:scale-105 dark:text-amber-500" />
-          <span className="whitespace-nowrap">LingoTwice</span>
+          <img
+            src="/assets/aistudio/file_000000004eec82468ea111a6735b2471_8524203a.png"
+            alt="LingoTwice Logo"
+            className="h-7 w-7 sm:h-8 sm:w-8 object-contain transition-transform duration-200 group-hover:scale-105 drop-shadow-xs"
+          />
+          <span className="whitespace-nowrap font-serif tracking-tight">LingoTwice</span>
         </button>
       </div>
 
-      {/* Zone 2: Horizontally swipeable / scrollable tabs */}
-      <div className="flex-1 min-w-0 max-w-xl mx-auto overflow-hidden">
+      {/* Zone 2: Smooth Horizontally scrollable tabs */}
+      <div className="flex-1 min-w-0 max-w-xl mx-auto relative overflow-hidden">
+        {canScrollLeft && (
+          <div
+            className={`pointer-events-none absolute left-0 top-0 bottom-0 w-5 bg-gradient-to-r ${fadeBgClass} to-transparent z-10 transition-opacity`}
+          />
+        )}
+        {canScrollRight && (
+          <div
+            className={`pointer-events-none absolute right-0 top-0 bottom-0 w-5 bg-gradient-to-l ${fadeBgClass} to-transparent z-10 transition-opacity`}
+          />
+        )}
+
         <nav
           ref={navRef}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          className="flex items-center gap-1 sm:gap-3 text-xs sm:text-sm font-medium overflow-x-auto no-scrollbar scroll-smooth touch-pan-x overscroll-x-contain py-1 px-1"
+          onScroll={checkScroll}
+          onWheel={handleNavWheel}
+          className="flex items-center gap-1 sm:gap-3 text-xs sm:text-sm font-medium overflow-x-auto no-scrollbar touch-pan-x overscroll-x-contain py-1 px-1.5"
         >
           {TABS.map((tab) => {
             const isActive = currentView === tab;
@@ -145,7 +168,7 @@ export const Header: React.FC<HeaderProps> = ({
                 key={tab}
                 ref={isActive ? activeTabRef : undefined}
                 onClick={() => onNavigate(tab)}
-                className={`relative px-2.5 py-1 rounded-md transition-all whitespace-nowrap shrink-0 text-xs sm:text-sm ${
+                className={`relative px-2.5 py-1 rounded-md transition-all whitespace-nowrap shrink-0 text-xs sm:text-sm cursor-pointer ${
                   isActive ? activeTabClass : inactiveTabClass
                 }`}
               >

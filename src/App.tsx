@@ -65,6 +65,30 @@ const isBuiltInDoc = (doc?: ReadingDocument | null): boolean => {
   return Boolean(doc.isSample || SAMPLE_DOCUMENTS.some((s) => s.id === doc.id));
 };
 
+const sanitizeDocuments = (docs: ReadingDocument[]): ReadingDocument[] => {
+  return docs.map((doc) => {
+    const sample = SAMPLE_DOCUMENTS.find((s) => s.id === doc.id);
+    let targetLang = doc.targetLang;
+    if (!targetLang) {
+      targetLang = doc.sourceLang === 'ru' ? 'en' : 'ru';
+    }
+    if (sample) {
+      const sampleTrans = targetLang === 'ru'
+        ? doc.passages.map((p) => p.sourceText)
+        : sample.translations?.[targetLang];
+      return {
+        ...doc,
+        targetLang,
+        passages: doc.passages.map((p, idx) => ({
+          ...p,
+          targetText: (targetLang === 'ru' ? p.sourceText : null) || p.targetText || sampleTrans?.[idx] || p.translations?.[targetLang] || '',
+        })),
+      };
+    }
+    return { ...doc, targetLang };
+  });
+};
+
 export default function App() {
   const user = useAuth();
   const [loading, setLoading] = useState(true);
@@ -76,8 +100,25 @@ export default function App() {
   const [isDistractionFree, setIsDistractionFree] = useState(false);
 
   // Core Data
-  const [documents, setDocuments] = useState<ReadingDocument[]>(SAMPLE_DOCUMENTS);
-  const [activeDocId, setActiveDocId] = useState<string>(SAMPLE_DOCUMENTS[0].id);
+  const [documents, setDocuments] = useState<ReadingDocument[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.DOCUMENTS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return sanitizeDocuments(parsed);
+        }
+      }
+    } catch {}
+    return sanitizeDocuments(SAMPLE_DOCUMENTS);
+  });
+  const [activeDocId, setActiveDocId] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.ACTIVE_DOC_ID);
+      if (saved) return saved;
+    } catch {}
+    return SAMPLE_DOCUMENTS[0].id;
+  });
 
   const [vocabulary, setVocabulary] = useState<VocabularyEntry[]>([]);
   const [preferences, setPreferences] = useState<ReadingPreferences>(() => {
@@ -107,9 +148,9 @@ export default function App() {
             const activeSamples = SAMPLE_DOCUMENTS.filter(s => !deletedIds.includes(s.id));
             const existingIds = new Set(docs.map(d => d.id));
             const missingSamples = activeSamples.filter(s => !existingIds.has(s.id));
-            setDocuments([...docs, ...missingSamples]);
+            setDocuments(sanitizeDocuments([...docs, ...missingSamples]));
           } catch {
-            setDocuments(docs);
+            setDocuments(sanitizeDocuments(docs));
           }
         }
         setVocabulary(vocab);
@@ -192,6 +233,13 @@ export default function App() {
   useEffect(() => {
     apiService.getSubscription().then(setSubscription);
   }, []);
+
+  // Guarantee window and document scroll position is reset to 0 whenever the view changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    if (document.body) document.body.scrollTop = 0;
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+  }, [currentView]);
 
   // Sync theme with document element
   useEffect(() => {
@@ -386,7 +434,7 @@ export default function App() {
     );
   };
 
-  // Unified translation handler - now supports lazy translation by clearing target texts
+  // Unified translation handler - safely updates language and fills translations
   const handleTranslateField = async (
     docId: string,
     field: 'source' | 'target',
@@ -396,30 +444,84 @@ export default function App() {
     if (!doc || !isBuiltInDoc(doc)) return;
 
     const currentLang = field === 'source' ? doc.sourceLang : doc.targetLang;
-    if (currentLang.toLowerCase() === newLang.toLowerCase()) return;
+    if (currentLang.toLowerCase() === newLang.toLowerCase()) {
+      if (field === 'target' && newLang.toLowerCase() === 'ru') {
+        setDocuments((prev) =>
+          prev.map((d) => {
+            if (d.id !== docId) return d;
+            return {
+              ...d,
+              targetLang: 'ru',
+              passages: d.passages.map((p) => ({
+                ...p,
+                targetText: p.sourceText || p.targetText || '',
+              })),
+            };
+          })
+        );
+      }
+      return;
+    }
 
-    // For lazy translation, we just update the target language and clear target texts
-    setDocuments((prev) =>
-      prev.map((d) => {
-        if (d.id !== docId) return d;
-        if (field === 'source') {
-          // If source changes, we need a full re-sync usually, but let's keep it simple
-          return {
-            ...d,
-            sourceLang: newLang,
-          };
-        } else {
-          return {
-            ...d,
+    const sampleDoc = SAMPLE_DOCUMENTS.find((s) => s.id === docId);
+    const existingTranslations =
+      newLang.toLowerCase() === 'ru'
+        ? doc.passages.map((p) => p.sourceText)
+        : sampleDoc?.translations?.[newLang] || doc.translations?.[newLang];
+
+    if (field === 'target') {
+      if (existingTranslations && existingTranslations.length > 0) {
+        setDocuments((prev) =>
+          prev.map((d) => {
+            if (d.id !== docId) return d;
+            return {
+              ...d,
+              targetLang: newLang,
+              passages: d.passages.map((p, idx) => ({
+                ...p,
+                targetText: existingTranslations[idx] || p.translations?.[newLang] || p.targetText || '',
+              })),
+            };
+          })
+        );
+      } else {
+        // Try translate through apiService
+        try {
+          const res = await apiService.translate({
+            sourceLang: doc.sourceLang,
             targetLang: newLang,
-            passages: d.passages.map((p) => ({
-              ...p,
-              targetText: '', // Clear to trigger lazy translation
-            })),
-          };
+            paragraphs: doc.passages.map((p) => p.sourceText),
+          });
+          if (res && res.translatedParagraphs && res.translatedParagraphs.length > 0) {
+            setDocuments((prev) =>
+              prev.map((d) => {
+                if (d.id !== docId) return d;
+                return {
+                  ...d,
+                  targetLang: newLang,
+                  passages: d.passages.map((p, idx) => ({
+                    ...p,
+                    targetText: res.translatedParagraphs[idx] || p.targetText || '',
+                  })),
+                };
+              })
+            );
+          } else {
+            setDocuments((prev) =>
+              prev.map((d) => (d.id === docId ? { ...d, targetLang: newLang } : d))
+            );
+          }
+        } catch {
+          setDocuments((prev) =>
+            prev.map((d) => (d.id === docId ? { ...d, targetLang: newLang } : d))
+          );
         }
-      })
-    );
+      }
+    } else {
+      setDocuments((prev) =>
+        prev.map((d) => (d.id === docId ? { ...d, sourceLang: newLang } : d))
+      );
+    }
   };
 
   // Retranslate document into new target language (now lazy, only for built-in documents)
@@ -448,7 +550,7 @@ export default function App() {
 
   return (
     <div
-      className={`flex h-screen w-screen flex-col overflow-hidden transition-colors duration-200 ${
+      className={`fixed inset-0 h-full w-full max-h-[100dvh] flex flex-col overflow-hidden select-text transition-colors duration-200 ${
         preferences.theme === 'dark'
           ? 'bg-slate-950 text-slate-100 dark'
           : preferences.theme === 'sepia'
@@ -470,7 +572,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-hidden relative">
+      <main className="flex-1 min-h-0 w-full overflow-hidden relative">
         {currentView === 'read' && (
           <ReaderWorkspace
             document={activeDocument}
@@ -487,10 +589,15 @@ export default function App() {
               setPreferences((prev) => {
                 const next = { ...prev, ...newPrefs };
                 if (newPrefs.uiLang && newPrefs.uiLang !== prev.uiLang) {
-                  next.targetLang = newPrefs.uiLang;
+                  const newTargetLang = newPrefs.targetLang || (
+                    newPrefs.uiLang === 'ru'
+                      ? (prev.targetLang && prev.targetLang !== 'ru' ? prev.targetLang : 'en')
+                      : 'ru'
+                  );
+                  next.targetLang = newTargetLang;
                   if (activeDocument && isBuiltInDoc(activeDocument)) {
-                    handleChangeLanguages(activeDocument.id, activeDocument.sourceLang, newPrefs.uiLang);
-                    handleRetranslateDocument(activeDocument.id, newPrefs.uiLang);
+                    handleChangeLanguages(activeDocument.id, newPrefs.uiLang, newTargetLang);
+                    handleRetranslateDocument(activeDocument.id, newTargetLang);
                   }
                 }
                 return next;
@@ -512,10 +619,13 @@ export default function App() {
               documents={documents}
               onSelectDocument={(doc) => {
                 setActiveDocId(doc.id);
-                if (isBuiltInDoc(doc) && doc.targetLang !== preferences.uiLang) {
-                  handleChangeLanguages(doc.id, doc.sourceLang, preferences.uiLang);
-                  handleRetranslateDocument(doc.id, preferences.uiLang);
+                // Ensure document has valid distinct source and target languages
+                let targetLang = doc.targetLang;
+                if (!targetLang || targetLang === doc.sourceLang) {
+                  targetLang = doc.sourceLang === 'ru' ? 'en' : 'ru';
+                  handleChangeLanguages(doc.id, doc.sourceLang, targetLang);
                 }
+                window.scrollTo(0, 0);
                 setCurrentView('read');
               }}
               onOpenImporter={() => setIsImporterOpen(true)}
@@ -604,8 +714,8 @@ export default function App() {
             setPreferences((prev) => {
               const next = { ...prev, ...newPrefs };
               if (newPrefs.uiLang && newPrefs.uiLang !== prev.uiLang) {
-                next.targetLang = newPrefs.uiLang;
-                if (activeDocument && isBuiltInDoc(activeDocument)) {
+                if (activeDocument && isBuiltInDoc(activeDocument) && newPrefs.uiLang !== activeDocument.sourceLang) {
+                  next.targetLang = newPrefs.uiLang;
                   handleChangeLanguages(activeDocument.id, activeDocument.sourceLang, newPrefs.uiLang);
                   handleRetranslateDocument(activeDocument.id, newPrefs.uiLang);
                 }
