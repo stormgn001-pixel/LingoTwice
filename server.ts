@@ -18,6 +18,33 @@ const PORT = Number(process.env.PORT) || 3000;
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// CORS middleware allowing lingotwice.com and preflight OPTIONS requests
+app.use((req: Request, res: Response, next) => {
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    'https://lingotwice.com',
+    'https://www.lingotwice.com',
+    'http://localhost:3000',
+    'http://localhost:5173',
+  ];
+
+  if (origin && (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production')) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else if (!origin) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(204);
+    return;
+  }
+  next();
+});
+
 // In-memory caches to reduce API consumption
 const translationCache = new Map<string, string>();
 const dictionaryCache = new Map<string, any>();

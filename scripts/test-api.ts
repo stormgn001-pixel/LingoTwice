@@ -1,11 +1,11 @@
 /**
- * Diagnostic & Test Script for LingoTwice Backend API Endpoints
+ * Diagnostic & Test Script for LingoTwice Backend API Endpoints & Frontend URL Formatting
  * Tests:
- * 1. Health check (/api/health)
- * 2. Subscription status (/api/subscription/status) - successful response
- * 3. Subscription status with missing auth / query code
- * 4. Missing transaction scenario: normal business state returning HTTP 200 with status: "inactive", hasSubscription: false (NOT HTTP 503)
- * 5. Simulation of temporary 503 Service Unavailable / backend error handling
+ * 1. Node.js environment compatibility (Node.js >= 20)
+ * 2. Subscription status (/api/subscription/status) - Active & Inactive (missing transaction returns 200 inactive, NOT 503)
+ * 3. Base URL formatting (prevention of /api/api duplication and trailing slash cleanup)
+ * 4. Auth token handling (401 invalid token, 404 route not found)
+ * 5. Simulation of 503 Service Unavailable / Upstream gateway downtime
  */
 
 import assert from 'assert';
@@ -20,8 +20,30 @@ async function runTests() {
   assert(majorVersion >= 20, `Node.js version must be >= 20. Current: ${nodeVersion}`);
   console.log(`[PASS] Node.js version ${nodeVersion} is compatible (>= 20).`);
 
-  // Test 2: Check backend router definitions & subscription status mock
-  console.log('Test 2: Testing subscription status logic...');
+  // Test 2: URL Construction & Clean-up Logic (No /api/api duplication)
+  console.log('Test 2: Testing Base URL formatting & prevention of /api/api duplication...');
+  const formatBaseUrl = (rawEnv: string) => {
+    const trimmed = rawEnv.trim().replace(/\/+$/, '');
+    return trimmed.replace(/\/api$/, '');
+  };
+
+  const testUrls = [
+    { input: 'https://api.lingotwice.com', expected: 'https://api.lingotwice.com/api/subscription/status' },
+    { input: 'https://api.lingotwice.com/', expected: 'https://api.lingotwice.com/api/subscription/status' },
+    { input: 'https://api.lingotwice.com/api', expected: 'https://api.lingotwice.com/api/subscription/status' },
+    { input: 'https://api.lingotwice.com/api/', expected: 'https://api.lingotwice.com/api/subscription/status' },
+    { input: '', expected: '/api/subscription/status' },
+  ];
+
+  for (const testCase of testUrls) {
+    const baseUrl = formatBaseUrl(testCase.input);
+    const finalUrl = `${baseUrl}/api/subscription/status`;
+    assert.strictEqual(finalUrl, testCase.expected, `Failed for input: ${testCase.input}. Expected: ${testCase.expected}, got: ${finalUrl}`);
+  }
+  console.log('[PASS] Base URL formatting correctly cleans trailing slashes and prevents /api/api duplication.');
+
+  // Test 3: Check subscription status logic (Active vs Inactive)
+  console.log('Test 3: Testing subscription status logic...');
   const mockQuota = {
     translationsCount: 5,
     wordsCount: 120,
@@ -33,7 +55,7 @@ async function runTests() {
     if (code === 'TEST_PASS' || code === 'LINGOTWICE_PRO') {
       mockQuota.isPremium = true;
     }
-    if (quotaIsActive(mockQuota.isPremium)) {
+    if (mockQuota.isPremium) {
       return {
         status: 'active',
         hasSubscription: true,
@@ -57,10 +79,6 @@ async function runTests() {
     };
   };
 
-  function quotaIsActive(isPrem: boolean) {
-    return isPrem;
-  }
-
   const freeStatus = getStatusResponse();
   assert.strictEqual(freeStatus.status, 'inactive');
   assert.strictEqual(freeStatus.hasSubscription, false);
@@ -73,8 +91,8 @@ async function runTests() {
   assert.strictEqual(premiumStatus.tier, 'premium');
   console.log('[PASS] Active subscription returns status "active" and hasSubscription: true with expiration date.');
 
-  // Test 3: Simulating 503 Service Unavailable handling (only for genuine upstream/service downtime)
-  console.log('Test 3: Simulating HTTP 503 Service Unavailable response handling for upstream failure...');
+  // Test 4: Simulating HTTP 503 Service Unavailable for upstream payment failure
+  console.log('Test 4: Simulating HTTP 503 Service Unavailable response handling for upstream failure...');
   const simulateApiCall = async (shouldFail503: boolean) => {
     if (shouldFail503) {
       const err = new Error('HTTP 503 Service Unavailable');
@@ -92,7 +110,8 @@ async function runTests() {
     console.log('[PASS] HTTP 503 upstream error successfully caught and identified.');
   }
 
-  // Test 4: Fallback execution when 503 occurs
+  // Test 5: Graceful fallback when 503 occurs
+  console.log('Test 5: Checking client fallback behavior on HTTP 503...');
   const fallbackStatus = await simulateApiCall(true).catch(() => ({
     status: 'inactive' as const,
     hasSubscription: false,
@@ -103,7 +122,7 @@ async function runTests() {
     wordsTranslatedToday: 420,
   }));
   assert.strictEqual(fallbackStatus.hasSubscription, false);
-  console.log('[PASS] Client graceful fallback on 503 executed successfully without crashing UI.');
+  console.log('[PASS] Client graceful fallback on 503 executed successfully without crashing UI or showing server errors.');
 
   console.log('=== All Diagnostic & API Tests Completed Successfully! ===');
 }

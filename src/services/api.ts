@@ -28,7 +28,9 @@ export const apiService = {
    * Get base URL for backend API (supports separate backend deployment like Render/Railway/VPS)
    */
   getBaseUrl() {
-    return (import.meta.env.VITE_API_BASE_URL as string) || '';
+    const raw = (import.meta.env.VITE_API_BASE_URL as string) || '';
+    const trimmed = raw.trim().replace(/\/+$/, '');
+    return trimmed.replace(/\/api$/, '');
   },
 
   /**
@@ -204,7 +206,7 @@ export const apiService = {
   },
 
   /**
-   * Fetch current subscription status with robust handling of HTTP 503, network errors, and local fallback
+   * Fetch current subscription status with robust handling of HTTP 503, 401, 404, network errors, and local fallback
    */
   async getSubscription(): Promise<SubscriptionStatus> {
     const defaultStatus: SubscriptionStatus = {
@@ -229,12 +231,43 @@ export const apiService = {
 
       if (res.ok) {
         const data = await res.json();
-        return data || defaultStatus;
-      } else if (res.status === 503 || res.status === 404 || res.status >= 500) {
-        console.warn(`Subscription API returned HTTP ${res.status} (Service Unavailable / Unavailable route). Using local status fallback.`);
+        if (data.status === 'inactive' || data.hasSubscription === false || data.tier === 'free') {
+          return {
+            tier: 'free',
+            isActive: true,
+            dailyTranslationsUsed: data.dailyTranslationsUsed ?? 0,
+            dailyTranslationsLimit: data.dailyTranslationsLimit ?? 20,
+            wordsTranslatedToday: data.wordsTranslatedToday ?? 0,
+          };
+        }
+        return {
+          tier: data.tier || (data.hasSubscription ? 'premium' : 'free'),
+          isActive: data.isActive ?? true,
+          expiresAt: data.expiresAt,
+          dailyTranslationsUsed: data.dailyTranslationsUsed ?? 0,
+          dailyTranslationsLimit: data.dailyTranslationsLimit ?? 99999,
+          wordsTranslatedToday: data.wordsTranslatedToday ?? 0,
+        };
+      }
+
+      if (res.status === 401) {
+        // Unauthorized -> clear invalid stored credentials
+        localStorage.removeItem('lingotwice_activation_code');
+        localStorage.removeItem('lingotwin_activation_code');
+        localStorage.removeItem('linguatwin_activation_code');
+        return defaultStatus;
+      }
+
+      if (res.status === 404) {
+        // Route / subscription record not found -> treat gracefully as free tier
+        return defaultStatus;
+      }
+
+      if (res.status === 500 || res.status === 502 || res.status === 503) {
+        console.warn(`Subscription API returned HTTP ${res.status} (Temporary technical error). Falling back to local state.`);
       }
     } catch (err) {
-      console.warn('Failed to fetch subscription status (network error / offline / 503), using local fallback', err);
+      console.warn('Failed to fetch subscription status (network error / offline), using local fallback', err);
     }
 
     // Check if local activation code is present
