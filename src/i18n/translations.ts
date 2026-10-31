@@ -9,6 +9,10 @@ export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> 
     navVocabulary: 'Словарь',
     navReview: 'Повторение',
     navProgress: 'Прогресс',
+    navAbout: 'О нас',
+    navContact: 'Контакты',
+    navPrivacy: 'Конфиденциальность',
+    navTerms: 'Условия',
     navSettings: 'Настройки',
     upgradePremium: 'Премиум',
     guestUser: 'Гость',
@@ -2318,11 +2322,33 @@ export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> 
   },
 };
 
-export const getTranslation = (lang: InterfaceLanguage) => {
+const NAV_TRANSLATIONS: Record<InterfaceLanguage, { navRead: string; navLibrary: string; navVocabulary: string; navReview: string; navProgress: string; navAbout: string; navContact: string; navPrivacy: string; navTerms: string }> = {
+  ru: { navRead: 'Чтение', navLibrary: 'Библиотека', navVocabulary: 'Словарь', navReview: 'Повторение', navProgress: 'Прогресс', navAbout: 'О нас', navContact: 'Контакты', navPrivacy: 'Конфиденциальность', navTerms: 'Условия' },
+  uk: { navRead: 'Читати', navLibrary: 'Бібліотека', navVocabulary: 'Словник', navReview: 'Повторення', navProgress: 'Прогрес', navAbout: 'Про нас', navContact: 'Контакти', navPrivacy: 'Конфіденційність', navTerms: 'Умови' },
+  en: { navRead: 'Read', navLibrary: 'Library', navVocabulary: 'Vocabulary', navReview: 'Review', navProgress: 'Progress', navAbout: 'About Us', navContact: 'Contact', navPrivacy: 'Privacy', navTerms: 'Terms' },
+  de: { navRead: 'Lesen', navLibrary: 'Bibliothek', navVocabulary: 'Wortschatz', navReview: 'Wiederholen', navProgress: 'Fortschritt', navAbout: 'Über uns', navContact: 'Kontakt', navPrivacy: 'Datenschutz', navTerms: 'AGB' },
+  es: { navRead: 'Lectura', navLibrary: 'Biblioteca', navVocabulary: 'Vocabulario', navReview: 'Repaso', navProgress: 'Progreso', navAbout: 'Acerca de', navContact: 'Contacto', navPrivacy: 'Privacidad', navTerms: 'Términos' },
+  fr: { navRead: 'Lire', navLibrary: 'Bibliothèque', navVocabulary: 'Vocabulaire', navReview: 'Révision', navProgress: 'Progrès', navAbout: 'À propos', navContact: 'Contact', navPrivacy: 'Confidentialité', navTerms: 'Conditions' },
+  it: { navRead: 'Leggi', navLibrary: 'Biblioteca', navVocabulary: 'Vocabolario', navReview: 'Ripasso', navProgress: 'Progressi', navAbout: 'Chi siamo', navContact: 'Contatti', navPrivacy: 'Privacy', navTerms: 'Termini' },
+  pl: { navRead: 'Czytaj', navLibrary: 'Biblioteka', navVocabulary: 'Słownik', navReview: 'Powtórki', navProgress: 'Postępy', navAbout: 'O nas', navContact: 'Kontakt', navPrivacy: 'Prywatność', navTerms: 'Regulamin' },
+  tr: { navRead: 'Oku', navLibrary: 'Kütüphane', navVocabulary: 'Sözlük', navReview: 'Tekrar', navProgress: 'İlerleme', navAbout: 'Hakkında', navContact: 'İletişim', navPrivacy: 'Gizlilik', navTerms: 'Koşullar' },
+  zh: { navRead: '阅读', navLibrary: '图书馆', navVocabulary: '词汇', navReview: '复习', navProgress: '进度', navAbout: '关于我们', navContact: '联系我们', navPrivacy: '隐私政策', navTerms: '服务条款' },
+  ja: { navRead: '読書', navLibrary: 'ライブラリ', navVocabulary: '単語帳', navReview: '復習', navProgress: '進捗', navAbout: '当社について', navContact: 'お問い合わせ', navPrivacy: 'プライバシー', navTerms: '利用規約' },
+  ko: { navRead: '읽기', navLibrary: '도서관', navVocabulary: '단어장', navReview: '복습', navProgress: '진행상황', navAbout: '소개', navContact: '연락처', navPrivacy: '개인정보', navTerms: '이용약관' },
+  pt: { navRead: 'Ler', navLibrary: 'Biblioteca', navVocabulary: 'Vocabulário', navReview: 'Revisão', navProgress: 'Progresso', navAbout: 'Sobre', navContact: 'Contato', navPrivacy: 'Privacidade', navTerms: 'Termos' },
+  ar: { navRead: 'قراءة', navLibrary: 'مكتبة', navVocabulary: 'مفردات', navReview: 'مراجعة', navProgress: 'تقدم', navAbout: 'عن المنصة', navContact: 'اتصل بنا', navPrivacy: 'الخصوصية', navTerms: 'الشروط' },
+  nl: { navRead: 'Lezen', navLibrary: 'Bibliotheek', navVocabulary: 'Woordenschat', navReview: 'Herhalen', navProgress: 'Voortgang', navAbout: 'Over ons', navContact: 'Contact', navPrivacy: 'Privacy', navTerms: 'Voorwaarden' },
+  sv: { navRead: 'Läs', navLibrary: 'Bibliotek', navVocabulary: 'Ordlista', navReview: 'Repetition', navProgress: 'Framsteg', navAbout: 'Om oss', navContact: 'Kontakt', navPrivacy: 'Integritet', navTerms: 'Villkor' },
+  he: { navRead: 'קריאה', navLibrary: 'ספרייה', navVocabulary: 'אוצר מילים', navReview: 'חזרה', navProgress: 'התקדמות', navAbout: 'אודות', navContact: 'צור קשר', navPrivacy: 'פרטיות', navTerms: 'תנאים' },
+};
+
+export const getTranslation = (lang: InterfaceLanguage): Record<string, string> => {
   const base = UI_TRANSLATIONS[lang] || UI_TRANSLATIONS.ru;
+  const nav = NAV_TRANSLATIONS[lang] || NAV_TRANSLATIONS.en;
   return {
     ...UI_TRANSLATIONS.ru,
     ...base,
+    ...nav,
     revealOriginal: base.revealOriginal || (lang === 'en' ? 'Reveal original' : lang === 'uk' ? 'Показати оригінал' : lang === 'de' ? 'Original anzeigen' : 'Показать оригинал'),
     hideOriginal: base.hideOriginal || (lang === 'en' ? 'Hide original' : lang === 'uk' ? 'Сховати оригінал' : lang === 'de' ? 'Original verbergen' : 'Скрыть оригинал'),
   };

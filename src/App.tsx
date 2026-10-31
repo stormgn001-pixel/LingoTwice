@@ -10,6 +10,7 @@ import { ProgressView } from './components/ProgressView';
 import { SettingsModal } from './components/SettingsModal';
 import { SubscriptionModal } from './components/SubscriptionModal';
 import { LegalModal } from './components/LegalModal';
+import { InfoPageView } from './components/InfoPageView';
 import { SAMPLE_DOCUMENTS } from './constants/sampleLibrary';
 import {
   ReadingDocument,
@@ -95,7 +96,7 @@ export default function App() {
   
   // Navigation & View state
   const [currentView, setCurrentView] = useState<
-    'read' | 'library' | 'vocabulary' | 'review' | 'progress'
+    'read' | 'library' | 'vocabulary' | 'review' | 'progress' | 'about' | 'contact' | 'privacy' | 'terms'
   >('read');
   const [isDistractionFree, setIsDistractionFree] = useState(false);
 
@@ -670,6 +671,14 @@ export default function App() {
               uiLang={preferences.uiLang}
             />
           </div>
+        )}
+
+        {(currentView === 'about' || currentView === 'contact' || currentView === 'privacy' || currentView === 'terms') && (
+          <InfoPageView
+            page={currentView}
+            onBack={() => setCurrentView('read')}
+            uiLang={preferences.uiLang}
+          />
         )}
       </main>
 

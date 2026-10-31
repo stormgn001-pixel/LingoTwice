@@ -4,8 +4,8 @@ import { InterfaceLanguage, SubscriptionStatus } from '../types';
 import { getTranslation } from '../i18n/translations';
 
 interface HeaderProps {
-  currentView: 'read' | 'library' | 'vocabulary' | 'review' | 'progress';
-  onNavigate: (view: 'read' | 'library' | 'vocabulary' | 'review' | 'progress') => void;
+  currentView: 'read' | 'library' | 'vocabulary' | 'review' | 'progress' | 'about' | 'contact' | 'privacy' | 'terms';
+  onNavigate: (view: 'read' | 'library' | 'vocabulary' | 'review' | 'progress' | 'about' | 'contact' | 'privacy' | 'terms') => void;
   uiLang: InterfaceLanguage;
   subscription: SubscriptionStatus;
   onOpenSettings: () => void;
@@ -15,12 +15,16 @@ interface HeaderProps {
   theme?: 'light' | 'dark' | 'sepia';
 }
 
-const TABS: Array<'read' | 'library' | 'vocabulary' | 'review' | 'progress'> = [
+const TABS: Array<'read' | 'library' | 'vocabulary' | 'review' | 'progress' | 'about' | 'contact' | 'privacy' | 'terms'> = [
   'read',
   'library',
   'vocabulary',
   'review',
   'progress',
+  'about',
+  'contact',
+  'privacy',
+  'terms',
 ];
 
 export const Header: React.FC<HeaderProps> = ({
@@ -81,6 +85,30 @@ export const Header: React.FC<HeaderProps> = ({
       navRef.current.scrollLeft += e.deltaY;
       checkScroll();
     }
+  };
+
+  const isDraggingRef = useRef(false);
+  const startXRef = useRef(0);
+  const scrollLeftRef = useRef(0);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!navRef.current) return;
+    isDraggingRef.current = true;
+    startXRef.current = e.pageX - navRef.current.offsetLeft;
+    scrollLeftRef.current = navRef.current.scrollLeft;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingRef.current || !navRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - navRef.current.offsetLeft;
+    const walk = (x - startXRef.current) * 1.5;
+    navRef.current.scrollLeft = scrollLeftRef.current - walk;
+    checkScroll();
+  };
+
+  const handleMouseUpOrLeave = () => {
+    isDraggingRef.current = false;
   };
 
   const headerBgClass =
@@ -153,7 +181,11 @@ export const Header: React.FC<HeaderProps> = ({
           ref={navRef}
           onScroll={checkScroll}
           onWheel={handleNavWheel}
-          className="flex items-center gap-1 sm:gap-3 text-xs sm:text-sm font-medium overflow-x-auto no-scrollbar touch-pan-x overscroll-x-contain py-1 px-1.5"
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUpOrLeave}
+          onMouseLeave={handleMouseUpOrLeave}
+          className="flex items-center gap-1 sm:gap-3 text-xs sm:text-sm font-medium overflow-x-auto no-scrollbar touch-pan-x overscroll-x-contain py-1 px-1.5 cursor-grab active:cursor-grabbing select-none"
         >
           {TABS.map((tab) => {
             const isActive = currentView === tab;
@@ -162,6 +194,10 @@ export const Header: React.FC<HeaderProps> = ({
             if (tab === 'vocabulary') tabLabel = t.navVocabulary;
             if (tab === 'review') tabLabel = t.navReview;
             if (tab === 'progress') tabLabel = t.navProgress;
+            if (tab === 'about') tabLabel = t.navAbout || 'О нас';
+            if (tab === 'contact') tabLabel = t.navContact || 'Контакты';
+            if (tab === 'privacy') tabLabel = t.navPrivacy || 'Конфиденциальность';
+            if (tab === 'terms') tabLabel = t.navTerms || 'Условия';
 
             return (
               <button

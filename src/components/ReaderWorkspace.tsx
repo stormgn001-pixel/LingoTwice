@@ -548,10 +548,10 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
       <div className={`h-8 shrink-0 px-3 sm:px-6 flex items-center justify-between border-b select-none ${paneHeaderBgClass}`}>
         <div className="flex items-center gap-1.5">
           <span className="text-base leading-none" role="img" aria-label="Original Language Flag">
-            {uiLangMeta.flag}
+            {sourceLangMeta.flag}
           </span>
           <span className="text-xs font-bold">{t.originalPane}</span>
-          <span className="text-[11px] text-slate-500 font-normal">({uiLangMeta.name})</span>
+          <span className="text-[11px] text-slate-500 font-normal">({sourceLangMeta.name})</span>
         </div>
       </div>
 
