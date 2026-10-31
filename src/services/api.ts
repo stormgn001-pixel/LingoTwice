@@ -25,6 +25,13 @@ export interface TranslateResponse {
 
 export const apiService = {
   /**
+   * Get base URL for backend API (supports separate backend deployment like Render/Railway/VPS)
+   */
+  getBaseUrl() {
+    return (import.meta.env.VITE_API_BASE_URL as string) || '';
+  },
+
+  /**
    * Helper to get common headers
    */
   getHeaders() {
@@ -44,8 +51,8 @@ export const apiService = {
    */
   async translate(req: TranslateRequest): Promise<TranslateResponse> {
     try {
-      // 1. Attempt backend server route (which supports ALL language pairs with fluent quality)
-      const res = await fetch('/api/translate', {
+      const baseUrl = this.getBaseUrl();
+      const res = await fetch(`${baseUrl}/api/translate`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify(req),
@@ -61,7 +68,7 @@ export const apiService = {
       console.warn('Backend server translation unavailable, falling back to on-device translation...');
     }
 
-    // 2. On-device client translation fallback
+    // On-device client translation fallback
     const onDeviceRes = await translateOnDevice(req.paragraphs, req.sourceLang, req.targetLang);
     return {
       translatedParagraphs: onDeviceRes.translatedParagraphs,
@@ -84,7 +91,8 @@ export const apiService = {
     targetLang: string;
   }): Promise<WordLookupResponse> {
     try {
-      const res = await fetch('/api/dictionary/lookup', {
+      const baseUrl = this.getBaseUrl();
+      const res = await fetch(`${baseUrl}/api/dictionary/lookup`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify(params),
@@ -96,7 +104,6 @@ export const apiService = {
 
       return await res.json();
     } catch (err) {
-      // Deterministic grammatical fallback based on target language
       const isGerman = params.sourceLang === 'de';
       const isRussian = params.targetLang === 'ru';
       return {
@@ -128,7 +135,8 @@ export const apiService = {
     targetLang: string;
   }): Promise<{ questions: ComprehensionQuestion[] }> {
     try {
-      const res = await fetch('/api/comprehension/generate', {
+      const baseUrl = this.getBaseUrl();
+      const res = await fetch(`${baseUrl}/api/comprehension/generate`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify(params),
@@ -141,7 +149,6 @@ export const apiService = {
       console.warn('Quiz generation fallback', err);
     }
 
-    // Default high-quality fallback questions
     return {
       questions: [
         {
@@ -154,7 +161,7 @@ export const apiService = {
             'Описание второстепенных бытовых деталей обстановки'
           ],
           correctOptionIndex: 0,
-          explanation: 'Текст раскрывает суть создания уз и взаимной ответственности (концепция приручения и смысловых связей).'
+          explanation: 'Текст раскрывает суть создания уз и взаимной ответственности.'
         },
         {
           id: 'q-2',
@@ -181,7 +188,8 @@ export const apiService = {
     paragraphs: string[];
     wordCount: number;
   }> {
-    const res = await fetch('/api/import-url', {
+    const baseUrl = this.getBaseUrl();
+    const res = await fetch(`${baseUrl}/api/import-url`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({ url }),
@@ -196,7 +204,7 @@ export const apiService = {
   },
 
   /**
-   * Fetch current subscription status (passing activation code if any)
+   * Fetch current subscription status with robust handling of HTTP 503, network errors, and local fallback
    */
   async getSubscription(): Promise<SubscriptionStatus> {
     const defaultStatus: SubscriptionStatus = {
@@ -212,17 +220,35 @@ export const apiService = {
         localStorage.getItem('lingotwice_activation_code') ||
         localStorage.getItem('lingotwin_activation_code') ||
         localStorage.getItem('linguatwin_activation_code');
-      const url = code ? `/api/subscription/status?code=${encodeURIComponent(code)}` : '/api/subscription/status';
-      const res = await fetch(url, {
+      const baseUrl = this.getBaseUrl();
+      const endpointUrl = code ? `${baseUrl}/api/subscription/status?code=${encodeURIComponent(code)}` : `${baseUrl}/api/subscription/status`;
+      
+      const res = await fetch(endpointUrl, {
         headers: this.getHeaders()
       });
+
       if (res.ok) {
         const data = await res.json();
         return data || defaultStatus;
+      } else if (res.status === 503 || res.status === 404 || res.status >= 500) {
+        console.warn(`Subscription API returned HTTP ${res.status} (Service Unavailable / Unavailable route). Using local status fallback.`);
       }
     } catch (err) {
-      console.warn('Failed to fetch subscription status', err);
+      console.warn('Failed to fetch subscription status (network error / offline / 503), using local fallback', err);
     }
+
+    // Check if local activation code is present
+    const localCode = localStorage.getItem('lingotwice_activation_code');
+    if (localCode) {
+      return {
+        tier: 'premium',
+        isActive: true,
+        dailyTranslationsUsed: 0,
+        dailyTranslationsLimit: 99999,
+        wordsTranslatedToday: 0,
+      };
+    }
+
     return defaultStatus;
   },
 
@@ -234,7 +260,8 @@ export const apiService = {
     txHash: string;
     plan: 'monthly' | 'yearly' | 'lifetime';
   }): Promise<{ success: boolean; tier: 'premium'; plan: string; txHash: string; confirmations: number }> {
-    const res = await fetch('/api/subscription/verify-tx', {
+    const baseUrl = this.getBaseUrl();
+    const res = await fetch(`${baseUrl}/api/subscription/verify-tx`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(params),
@@ -272,7 +299,9 @@ export const apiService = {
       plan?: 'monthly' | 'yearly' | 'lifetime';
       transactionId?: string;
     } = typeof params === 'string' ? { code: params, method: 'promo' } : (params || { method: 'card' });
-    const res = await fetch('/api/subscription/upgrade', {
+    
+    const baseUrl = this.getBaseUrl();
+    const res = await fetch(`${baseUrl}/api/subscription/upgrade`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(payload),
@@ -299,7 +328,8 @@ export const apiService = {
    */
   async detectLanguage(text: string): Promise<string | null> {
     try {
-      const res = await fetch('/api/detect-language', {
+      const baseUrl = this.getBaseUrl();
+      const res = await fetch(`${baseUrl}/api/detect-language`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify({ text }),
@@ -319,7 +349,8 @@ export const apiService = {
    */
   async getProvidersStatus(): Promise<any> {
     try {
-      const res = await fetch('/api/health');
+      const baseUrl = this.getBaseUrl();
+      const res = await fetch(`${baseUrl}/api/health`);
       if (res.ok) return await res.json();
     } catch {}
     return null;
