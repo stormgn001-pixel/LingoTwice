@@ -38,12 +38,19 @@ export const AUTO_DETECT_LANGUAGE: Language = {
 export const SOURCE_LANGUAGES: Language[] = [AUTO_DETECT_LANGUAGE, ...SUPPORTED_LANGUAGES];
 
 export const getLanguageByCode = (code: string): Language => {
-  if (code === 'auto') return AUTO_DETECT_LANGUAGE;
-  return SUPPORTED_LANGUAGES.find(l => l.code === code) || {
-    code,
-    name: code.toUpperCase(),
-    nativeName: code.toUpperCase(),
+  if (!code) return SUPPORTED_LANGUAGES[0];
+  const normalized = code.toLowerCase().trim();
+  if (normalized === 'auto') return AUTO_DETECT_LANGUAGE;
+  const directMatch = SUPPORTED_LANGUAGES.find(l => l.code === normalized);
+  if (directMatch) return directMatch;
+  const prefix = normalized.split(/[-_]/)[0];
+  const prefixMatch = SUPPORTED_LANGUAGES.find(l => l.code === prefix);
+  if (prefixMatch) return prefixMatch;
+  return {
+    code: normalized,
+    name: normalized.toUpperCase(),
+    nativeName: normalized.toUpperCase(),
     flag: '🌐',
-    ttsLocale: `${code}-${code.toUpperCase()}`
+    ttsLocale: `${normalized}-${normalized.toUpperCase()}`
   };
 };

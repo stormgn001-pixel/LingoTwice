@@ -4,8 +4,6 @@ import {
   VolumeX,
   Eye,
   EyeOff,
-  Maximize2,
-  Minimize2,
   Columns2,
   Rows2,
   Link,
@@ -60,8 +58,8 @@ interface ReaderWorkspaceProps {
   onUpdatePassages?: (docId: string, updates: { id: string; sourceText: string; targetText: string }[]) => void;
   onWordClick: (word: string, contextSentence: string) => void;
   onProgressUpdate: (docId: string, progress: number, activePassageId?: string) => void;
-  isDistractionFree: boolean;
-  onToggleDistractionFree: () => void;
+  isDistractionFree?: boolean;
+  onToggleDistractionFree?: () => void;
   uiLang: InterfaceLanguage;
 }
 
@@ -461,17 +459,23 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
 
   const isBuiltIn = Boolean(document.isSample || SAMPLE_DOCUMENTS.some((s) => s.id === document.id));
 
-  const playSourceAudio = React.useCallback((text: string) => {
-    const audioLang = isBuiltIn && document.translations?.[uiLang] ? uiLang : document.sourceLang;
-    playAudio(text, audioLang);
-  }, [playAudio, isBuiltIn, uiLang, document.translations, document.sourceLang]);
+  // Determine effective source language
+  const effectiveSourceLang = isBuiltIn
+    ? (document.translations?.[uiLang] ? uiLang : (document.sourceLang || 'ru'))
+    : (document.sourceLang || 'ru');
 
-  const effectiveTargetLang =
-    document.targetLang && document.targetLang !== uiLang
-      ? document.targetLang
-      : uiLang === 'ru'
-      ? 'en'
-      : 'ru';
+  // Determine effective target language (never incorrectly overridden by uiLang)
+  const effectiveTargetLang = isBuiltIn
+    ? (document.targetLang && document.targetLang !== effectiveSourceLang
+        ? document.targetLang
+        : preferences.targetLang && preferences.targetLang !== effectiveSourceLang
+        ? preferences.targetLang
+        : effectiveSourceLang === 'ru' ? 'en' : 'ru')
+    : (document.targetLang || (effectiveSourceLang === 'ru' ? 'en' : 'ru'));
+
+  const playSourceAudio = React.useCallback((text: string) => {
+    playAudio(text, effectiveSourceLang);
+  }, [playAudio, effectiveSourceLang]);
 
   const playTargetAudio = React.useCallback((text: string) => {
     playAudio(text, effectiveTargetLang);
@@ -481,7 +485,7 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
   const handleTargetLangChange = async (newTarget: string) => {
     if (!isBuiltIn) return;
     if (newTarget === effectiveTargetLang) return;
-    onChangeLanguages(document.id, uiLang, newTarget);
+    onChangeLanguages(document.id, effectiveSourceLang, newTarget);
     onUpdatePreferences({ targetLang: newTarget });
     // Trigger retranslation to new target language
     try {
@@ -530,8 +534,12 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
       : 'text-slate-900';
 
   const uiLangMeta = getLanguageByCode(uiLang);
-  const sourceLangMeta = getLanguageByCode(document.sourceLang);
+  const sourceLangMeta = getLanguageByCode(effectiveSourceLang);
   const targetLangMeta = getLanguageByCode(effectiveTargetLang);
+  const getLanguageLabel = (meta: { name: string; nativeName?: string }) => {
+    if (uiLang === 'ru') return meta.name;
+    return meta.nativeName || meta.name;
+  };
   const isPanesSwapped = preferences.swapSides ?? false;
   const toggleSwapSides = () => onUpdatePreferences({ swapSides: !isPanesSwapped });
 
@@ -551,7 +559,7 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
             {sourceLangMeta.flag}
           </span>
           <span className="text-xs font-bold">{t.originalPane}</span>
-          <span className="text-[11px] text-slate-500 font-normal">({sourceLangMeta.name})</span>
+          <span className="text-[11px] text-slate-500 font-normal">({getLanguageLabel(sourceLangMeta)})</span>
         </div>
       </div>
 
@@ -626,7 +634,7 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
             {targetLangMeta.flag}
           </span>
           <span className="text-xs font-bold">{t.translationPane}</span>
-          <span className="text-[11px] text-slate-500 font-normal">({targetLangMeta.name})</span>
+          <span className="text-[11px] text-slate-500 font-normal">({getLanguageLabel(targetLangMeta)})</span>
         </div>
         <div className="flex items-center gap-2">
           {translationStatus === 'translating' && (
@@ -669,12 +677,12 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
         <div className="space-y-4 sm:space-y-5 max-w-2xl mx-auto pb-16">
           {visiblePassages.map((passage, idx) => {
             const resolvedTargetText = isBuiltIn
-              ? (effectiveTargetLang === 'ru'
-                  ? (passage.translations?.['ru'] || document.translations?.['ru']?.[idx] || passage.sourceText || passage.targetText || '')
-                  : (passage.translations?.[effectiveTargetLang] || document.translations?.[effectiveTargetLang]?.[idx] || passage.targetText || ''))
-              : (effectiveTargetLang === 'ru' && passage.sourceText
-                  ? passage.sourceText
-                  : passage.targetText || '');
+              ? (passage.translations?.[effectiveTargetLang] ||
+                 document.translations?.[effectiveTargetLang]?.[idx] ||
+                 (effectiveTargetLang === 'ru' ? (passage.translations?.['ru'] || document.translations?.['ru']?.[idx] || passage.sourceText) : '') ||
+                 passage.targetText ||
+                 '')
+              : (passage.targetText || '');
             const displayPassage = { ...passage, targetText: resolvedTargetText };
 
             return (
@@ -754,7 +762,7 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
                 >
                   {SUPPORTED_LANGUAGES.map((l) => (
                     <option key={l.code} value={l.code}>
-                      {l.flag} {l.name}
+                      {l.flag} {getLanguageLabel(l)}
                     </option>
                   ))}
                 </select>
@@ -768,12 +776,12 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
             >
               <span className="flex items-center gap-1">
                 <span>{sourceLangMeta.flag}</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-100">{sourceLangMeta.name}</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-100">{getLanguageLabel(sourceLangMeta)}</span>
               </span>
               <span className="text-slate-400 font-mono text-[10px]">⇄</span>
               <span className="flex items-center gap-1">
                 <span>{targetLangMeta.flag}</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-100">{targetLangMeta.name}</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-100">{getLanguageLabel(targetLangMeta)}</span>
               </span>
             </div>
           )}
@@ -833,10 +841,6 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
               <button onClick={() => onUpdatePreferences({ theme: 'sepia' })} className={`p-1 rounded-md ${preferences.theme === 'sepia' ? 'bg-[#eadebf] text-[#6d512a]' : 'text-slate-400 hover:text-slate-700'}`}><Coffee className="h-3 w-3" /></button>
               <button onClick={() => onUpdatePreferences({ theme: 'dark' })} className={`p-1 rounded-md ${preferences.theme === 'dark' ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:text-slate-700'}`}><Moon className="h-3 w-3" /></button>
             </div>
-
-            <button onClick={onToggleDistractionFree} className={`p-1 sm:p-1.5 rounded-lg border transition-colors shrink-0 ${isDistractionFree ? 'border-amber-400 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400' : 'border-slate-200 text-slate-500 hover:bg-slate-100 dark:border-slate-800 dark:hover:bg-slate-800'}`}>
-              {isDistractionFree ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-            </button>
           </div>
         </div>
 
