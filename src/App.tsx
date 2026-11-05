@@ -260,15 +260,28 @@ export default function App() {
   // Sync theme with document element
   useEffect(() => {
     const root = document.documentElement;
+    let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (!metaThemeColor) {
+      metaThemeColor = document.createElement('meta');
+      metaThemeColor.setAttribute('name', 'theme-color');
+      document.head.appendChild(metaThemeColor);
+    }
+
     if (preferences.theme === 'dark') {
       root.classList.add('dark');
       root.classList.remove('theme-sepia', 'theme-light');
+      root.style.colorScheme = 'dark';
+      metaThemeColor.setAttribute('content', '#020617');
     } else if (preferences.theme === 'sepia') {
       root.classList.remove('dark', 'theme-light');
       root.classList.add('theme-sepia');
+      root.style.colorScheme = 'light';
+      metaThemeColor.setAttribute('content', '#f4efe2');
     } else {
       root.classList.remove('dark', 'theme-sepia');
       root.classList.add('theme-light');
+      root.style.colorScheme = 'light';
+      metaThemeColor.setAttribute('content', '#f8fafc');
     }
   }, [preferences.theme]);
 

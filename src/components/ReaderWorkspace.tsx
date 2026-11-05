@@ -505,10 +505,13 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
       ? 'leading-relaxed'
       : 'leading-normal';
 
+  const isDark = preferences.theme === 'dark';
+  const isSepia = preferences.theme === 'sepia';
+
   const themeClass =
-    preferences.theme === 'dark'
+    isDark
       ? 'bg-slate-950 text-slate-100 dark'
-      : preferences.theme === 'sepia'
+      : isSepia
       ? 'bg-[#f4efe2] text-[#2b2118] theme-sepia'
       : 'bg-slate-50 text-slate-900 theme-light';
 
@@ -721,14 +724,26 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
 
   return (
     <div className={`flex flex-col h-full w-full min-h-0 overflow-hidden select-text transition-colors duration-200 ${themeClass}`}>
-      <div className={`shrink-0 border-b border-slate-200/80 px-2.5 py-1.5 sm:px-4 sm:py-2 dark:border-slate-800 ${
-        preferences.theme === 'sepia' ? 'bg-[#f4efe1] border-[#e2d9c2]' : 'bg-slate-50/90 dark:bg-slate-900/70'
+      <div className={`shrink-0 border-b px-2.5 py-1.5 sm:px-4 sm:py-2 transition-colors ${
+        isDark
+          ? 'bg-slate-950/95 border-slate-800 text-slate-100'
+          : isSepia
+          ? 'bg-[#f4efe1] border-[#e2d9c2] text-[#2b2118]'
+          : 'bg-slate-50/90 border-slate-200/80 text-slate-900'
       }`}>
-        <div className="flex items-center justify-between gap-1 sm:gap-2 pb-1 border-b border-slate-200/50 dark:border-slate-800/50">
+        <div className={`flex items-center justify-between gap-1 sm:gap-2 pb-1 border-b ${
+          isDark ? 'border-slate-800/80' : isSepia ? 'border-[#e2d9c2]' : 'border-slate-200/50'
+        }`}>
           <div className="relative shrink min-w-0">
             <button
               onClick={() => setShowDocSwitcher(!showDocSwitcher)}
-              className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-1.5 py-0.5 sm:px-2 sm:py-0.5 text-[11px] sm:text-xs font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 max-w-[95px] xs:max-w-[130px] sm:max-w-[180px] md:max-w-[220px]"
+              className={`flex items-center gap-1 rounded-lg border px-1.5 py-0.5 sm:px-2 sm:py-0.5 text-[11px] sm:text-xs font-semibold max-w-[95px] xs:max-w-[130px] sm:max-w-[180px] md:max-w-[220px] transition-colors cursor-pointer ${
+                isDark
+                  ? 'border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800'
+                  : isSepia
+                  ? 'border-[#d4c6a6] bg-[#eae3d2] text-[#2b2118] hover:bg-[#e4d9c3]'
+                  : 'border-slate-200 bg-white text-slate-800 hover:bg-slate-50'
+              }`}
               title={getDocTitle(document, preferences.uiLang)}
             >
               <BookOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
@@ -736,12 +751,24 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
               <ChevronDown className="h-3 w-3 shrink-0 text-slate-400" />
             </button>
             {showDocSwitcher && (
-              <div className="absolute left-0 top-full mt-1 z-40 w-72 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-800 dark:bg-slate-900">
-                <div className="text-[10px] font-semibold uppercase text-slate-400 px-2 py-1">{t.libraryTitle}</div>
+              <div className={`absolute left-0 top-full mt-1 z-40 w-72 rounded-xl border p-1.5 shadow-xl ${
+                isDark
+                  ? 'border-slate-800 bg-slate-900 text-slate-100'
+                  : isSepia
+                  ? 'border-[#d4c6a6] bg-[#f4efe2] text-[#2b2118]'
+                  : 'border-slate-200 bg-white text-slate-800'
+              }`}>
+                <div className={`text-[10px] font-semibold uppercase px-2 py-1 ${
+                  isDark ? 'text-slate-400' : isSepia ? 'text-[#6b5845]' : 'text-slate-400'
+                }`}>{t.libraryTitle}</div>
                 <div className="max-h-60 overflow-y-auto reader-scrollbar divide-y divide-slate-100 dark:divide-slate-800">
                   {documents.map((d) => (
                     <button key={d.id} onClick={() => { onSelectDocument(d); setShowDocSwitcher(false); }}
-                      className={`w-full text-left rounded-lg px-2.5 py-2 text-xs transition-colors ${d.id === document.id ? 'bg-amber-50 text-amber-900 font-semibold dark:bg-amber-950/60 dark:text-amber-200' : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'}`}>
+                      className={`w-full text-left rounded-lg px-2.5 py-2 text-xs transition-colors cursor-pointer ${
+                        d.id === document.id
+                          ? (isDark ? 'bg-amber-950/60 text-amber-200 font-semibold' : isSepia ? 'bg-[#dcd2be] text-[#2b2118] font-bold' : 'bg-amber-50 text-amber-900 font-semibold')
+                          : (isDark ? 'text-slate-300 hover:bg-slate-800' : isSepia ? 'text-[#5c4c3b] hover:bg-[#e4d9c3]' : 'text-slate-700 hover:bg-slate-100')
+                      }`}>
                       <div className="truncate">{getDocTitle(d, preferences.uiLang)}</div>
                       <div className="text-[10px] text-slate-400">{d.sourceLang.toUpperCase()} → {d.targetLang.toUpperCase()} · {d.wordCount} слов</div>
                     </button>
@@ -752,16 +779,26 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
           </div>
 
           {isBuiltIn ? (
-            <div className="flex items-center gap-1 sm:gap-1.5 bg-white rounded-lg border border-slate-200 px-1.5 py-0.5 sm:px-2 sm:py-0.5 text-[11px] sm:text-xs dark:border-slate-700 dark:bg-slate-900 shrink-0 shadow-xs">
-              <span className="hidden sm:inline text-[10px] sm:text-[11px] font-medium text-slate-500 dark:text-slate-400">{t.translateTo}</span>
+            <div className={`flex items-center gap-1 sm:gap-1.5 rounded-lg border px-1.5 py-0.5 sm:px-2 sm:py-0.5 text-[11px] sm:text-xs shrink-0 shadow-xs transition-colors ${
+              isDark
+                ? 'border-slate-700 bg-slate-900 text-slate-200'
+                : isSepia
+                ? 'border-[#d4c6a6] bg-[#eae3d2] text-[#2b2118]'
+                : 'border-slate-200 bg-white text-slate-800'
+            }`}>
+              <span className={`hidden sm:inline text-[10px] sm:text-[11px] font-medium ${
+                isDark ? 'text-slate-400' : isSepia ? 'text-[#6b5845]' : 'text-slate-500'
+              }`}>{t.translateTo}</span>
               <div className="flex items-center gap-0.5">
                 <select
                   value={effectiveTargetLang}
                   onChange={(e) => handleTargetLangChange(e.target.value)}
-                  className="bg-transparent font-semibold text-slate-800 dark:text-slate-200 cursor-pointer focus:outline-hidden text-[11px] sm:text-xs py-0"
+                  className={`bg-transparent font-semibold cursor-pointer focus:outline-hidden text-[11px] sm:text-xs py-0 ${
+                    isDark ? 'text-slate-100' : isSepia ? 'text-[#2b2118]' : 'text-slate-800'
+                  }`}
                 >
                   {SUPPORTED_LANGUAGES.map((l) => (
-                    <option key={l.code} value={l.code}>
+                    <option key={l.code} value={l.code} className={isDark ? 'bg-slate-900 text-slate-100' : ''}>
                       {l.flag} {getLanguageLabel(l)}
                     </option>
                   ))}
@@ -771,38 +808,70 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
             </div>
           ) : (
             <div
-              className="flex items-center gap-1.5 bg-slate-100/90 dark:bg-slate-800/80 rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-[11px] sm:text-xs text-slate-700 dark:text-slate-200 shrink-0 select-none shadow-2xs"
+              className={`flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-[11px] sm:text-xs shrink-0 select-none shadow-2xs transition-colors ${
+                isDark
+                  ? 'border-slate-700 bg-slate-900 text-slate-200'
+                  : isSepia
+                  ? 'border-[#d4c6a6] bg-[#eae3d2] text-[#2b2118]'
+                  : 'border-slate-200 bg-slate-100/90 text-slate-700'
+              }`}
               title="Для добавленного вами текста языки зафиксированы (оригинал и добавленный перевод)"
             >
               <span className="flex items-center gap-1">
                 <span>{sourceLangMeta.flag}</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-100">{getLanguageLabel(sourceLangMeta)}</span>
+                <span className={`font-semibold ${isDark ? 'text-slate-100' : isSepia ? 'text-[#2b2118]' : 'text-slate-800'}`}>{getLanguageLabel(sourceLangMeta)}</span>
               </span>
               <span className="text-slate-400 font-mono text-[10px]">⇄</span>
               <span className="flex items-center gap-1">
                 <span>{targetLangMeta.flag}</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-100">{getLanguageLabel(targetLangMeta)}</span>
+                <span className={`font-semibold ${isDark ? 'text-slate-100' : isSepia ? 'text-[#2b2118]' : 'text-slate-800'}`}>{getLanguageLabel(targetLangMeta)}</span>
               </span>
             </div>
           )}
 
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-            <button onClick={onOpenImporter} className="flex items-center gap-1 rounded-lg bg-amber-600 px-1.5 py-0.5 sm:px-2 sm:py-0.5 text-[11px] sm:text-xs font-semibold text-white transition-colors hover:bg-amber-700 shadow-xs whitespace-nowrap shrink-0">
+            <button onClick={onOpenImporter} className="flex items-center gap-1 rounded-lg bg-amber-600 px-1.5 py-0.5 sm:px-2 sm:py-0.5 text-[11px] sm:text-xs font-semibold text-white transition-colors hover:bg-amber-700 shadow-xs whitespace-nowrap shrink-0 cursor-pointer">
               <Plus className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               <span className="hidden sm:inline">{t.addNewText}</span>
               <span className="sm:hidden text-[10px]">+Текст</span>
             </button>
-            <button onClick={() => setShowDeleteConfirm(true)} className="flex items-center justify-center rounded-lg border border-slate-200 p-1 text-[11px] sm:text-xs font-medium text-slate-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-rose-950/40 dark:hover:text-rose-300 shrink-0">
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className={`flex items-center justify-center rounded-lg border p-1 text-[11px] sm:text-xs font-medium transition-colors shrink-0 cursor-pointer ${
+                isDark
+                  ? 'border-slate-700 bg-slate-900 text-slate-300 hover:border-rose-800 hover:bg-rose-950/40 hover:text-rose-300'
+                  : isSepia
+                  ? 'border-[#d4c6a6] bg-[#eae3d2] text-[#2b2118] hover:border-rose-400 hover:bg-rose-100/60 hover:text-rose-700'
+                  : 'border-slate-200 bg-white text-slate-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700'
+              }`}
+            >
               <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-rose-500" />
             </button>
           </div>
         </div>
 
         <div className="mt-1.5 flex items-center justify-between gap-1.5 sm:gap-2 text-xs overflow-x-auto no-scrollbar touch-pan-x py-0.5">
-          <div className="flex items-center rounded-lg border border-slate-200 bg-white p-0.5 dark:border-slate-800 dark:bg-slate-950 shrink-0">
+          <div className={`flex items-center rounded-lg border p-0.5 shrink-0 transition-colors ${
+            isDark
+              ? 'border-slate-800 bg-slate-900'
+              : isSepia
+              ? 'border-[#d4c6a6] bg-[#eae3d2]'
+              : 'border-slate-200 bg-white'
+          }`}>
             {(['parallel', 'immersion'] as ReadingMode[]).map((mode) => (
-              <button key={mode} onClick={() => onUpdatePreferences({ activeMode: mode })}
-                className={`px-1.5 sm:px-2.5 py-1 font-medium transition-all rounded-md whitespace-nowrap shrink-0 text-xs ${preferences.activeMode === mode ? 'bg-amber-600 text-white shadow-xs dark:bg-amber-500' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'}`}>
+              <button
+                key={mode}
+                onClick={() => onUpdatePreferences({ activeMode: mode })}
+                className={`px-1.5 sm:px-2.5 py-1 font-medium transition-all rounded-md whitespace-nowrap shrink-0 text-xs cursor-pointer ${
+                  preferences.activeMode === mode
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : isDark
+                    ? 'text-slate-400 hover:text-slate-100 hover:bg-slate-800'
+                    : isSepia
+                    ? 'text-[#5c4c3b] hover:text-[#2b2118] hover:bg-[#e4d9c3]'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
                 <span className="hidden sm:inline">
                   {mode === 'parallel' && t.modeParallel}
                   {mode === 'immersion' && t.modeImmersion}
@@ -816,36 +885,121 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
           </div>
 
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-            <div className="flex items-center rounded-lg border border-slate-200 bg-white p-0.5 dark:border-slate-800 dark:bg-slate-950 shrink-0">
-              <button type="button" onClick={() => onUpdatePreferences({ splitOrientation: 'horizontal' })} className={`p-1 sm:p-1.5 rounded-md text-xs font-semibold transition-colors ${preferences.splitOrientation === 'horizontal' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'}`}><Columns2 className="h-3.5 w-3.5" /></button>
-              <button type="button" onClick={() => onUpdatePreferences({ splitOrientation: 'vertical' })} className={`p-1 sm:p-1.5 rounded-md text-xs font-semibold transition-colors ${preferences.splitOrientation === 'vertical' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'}`}><Rows2 className="h-3.5 w-3.5" /></button>
-              <button type="button" onClick={toggleSwapSides} className={`flex items-center gap-1 p-1 sm:px-1.5 rounded-md text-xs font-semibold transition-all border-l border-slate-200 dark:border-slate-800 ${isPanesSwapped ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'}`}>
+            <div className={`flex items-center rounded-lg border p-0.5 shrink-0 transition-colors ${
+              isDark
+                ? 'border-slate-800 bg-slate-900'
+                : isSepia
+                ? 'border-[#d4c6a6] bg-[#eae3d2]'
+                : 'border-slate-200 bg-white'
+            }`}>
+              <button
+                type="button"
+                onClick={() => onUpdatePreferences({ splitOrientation: 'horizontal' })}
+                className={`p-1 sm:p-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                  preferences.splitOrientation === 'horizontal'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : isDark
+                    ? 'text-slate-400 hover:text-slate-100 hover:bg-slate-800'
+                    : isSepia
+                    ? 'text-[#5c4c3b] hover:text-[#2b2118] hover:bg-[#e4d9c3]'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                <Columns2 className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onUpdatePreferences({ splitOrientation: 'vertical' })}
+                className={`p-1 sm:p-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                  preferences.splitOrientation === 'vertical'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : isDark
+                    ? 'text-slate-400 hover:text-slate-100 hover:bg-slate-800'
+                    : isSepia
+                    ? 'text-[#5c4c3b] hover:text-[#2b2118] hover:bg-[#e4d9c3]'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                <Rows2 className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={toggleSwapSides}
+                className={`flex items-center gap-1 p-1 sm:px-1.5 rounded-md text-xs font-semibold transition-all border-l cursor-pointer ${
+                  isDark ? 'border-slate-800' : isSepia ? 'border-[#d4c6a6]' : 'border-slate-200'
+                } ${
+                  isPanesSwapped
+                    ? isDark
+                      ? 'bg-amber-950 text-amber-200 font-bold'
+                      : isSepia
+                      ? 'bg-[#dcd2be] text-[#2b2118] font-bold'
+                      : 'bg-amber-100 text-amber-900 font-bold'
+                    : isDark
+                    ? 'text-slate-400 hover:text-slate-100 hover:bg-slate-800'
+                    : isSepia
+                    ? 'text-[#5c4c3b] hover:text-[#2b2118] hover:bg-[#e4d9c3]'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
                 <ArrowLeftRight className={`h-3.5 w-3.5 transition-transform duration-200 ${isPanesSwapped ? 'rotate-180 text-amber-600 dark:text-amber-400' : ''}`} />
                 <span className="hidden lg:inline text-[10px]">{t.sides}</span>
               </button>
             </div>
 
-            <button onClick={() => onUpdatePreferences({ syncScroll: !preferences.syncScroll })} className={`flex items-center gap-1 rounded-lg border p-1 sm:px-2 text-xs font-medium transition-colors shrink-0 ${preferences.syncScroll ? 'border-amber-400 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200' : 'border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800'}`}>
+            <button
+              onClick={() => onUpdatePreferences({ syncScroll: !preferences.syncScroll })}
+              className={`flex items-center gap-1 rounded-lg border p-1 sm:px-2 text-xs font-medium transition-colors shrink-0 cursor-pointer ${
+                preferences.syncScroll
+                  ? isDark
+                    ? 'border-amber-900 bg-amber-950/60 text-amber-200'
+                    : isSepia
+                    ? 'border-[#d4c6a6] bg-[#eae3d2] text-amber-900'
+                    : 'border-amber-400 bg-amber-50 text-amber-900'
+                  : isDark
+                  ? 'border-slate-800 bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                  : isSepia
+                  ? 'border-[#d4c6a6] bg-[#eae3d2] text-[#5c4c3b] hover:bg-[#e4d9c3]'
+                  : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100'
+              }`}
+            >
               {preferences.syncScroll ? <Link className="h-3.5 w-3.5 text-amber-600" /> : <Unlink className="h-3.5 w-3.5 text-slate-400" />}
               <span className="hidden xl:inline text-[11px]">{preferences.syncScroll ? 'Синхрон' : 'Раздельно'}</span>
             </button>
 
-            <div className="flex items-center rounded-lg border border-slate-200 bg-white px-0.5 text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 shrink-0">
-              <button onClick={() => onUpdatePreferences({ fontSize: Math.max(14, preferences.fontSize - 1) })} className="px-1 py-0.5 font-semibold hover:text-amber-600 text-xs">A-</button>
+            <div className={`flex items-center rounded-lg border px-0.5 shrink-0 transition-colors ${
+              isDark
+                ? 'border-slate-800 bg-slate-900 text-slate-300'
+                : isSepia
+                ? 'border-[#d4c6a6] bg-[#eae3d2] text-[#2b2118]'
+                : 'border-slate-200 bg-white text-slate-700'
+            }`}>
+              <button onClick={() => onUpdatePreferences({ fontSize: Math.max(14, preferences.fontSize - 1) })} className="px-1 py-0.5 font-semibold hover:text-amber-600 text-xs cursor-pointer">A-</button>
               <span className="px-0.5 font-mono text-[10px] text-slate-400">{preferences.fontSize}</span>
-              <button onClick={() => onUpdatePreferences({ fontSize: Math.min(26, preferences.fontSize + 1) })} className="px-1 py-0.5 font-semibold hover:text-amber-600 text-xs">A+</button>
+              <button onClick={() => onUpdatePreferences({ fontSize: Math.min(26, preferences.fontSize + 1) })} className="px-1 py-0.5 font-semibold hover:text-amber-600 text-xs cursor-pointer">A+</button>
             </div>
 
-            <div className="flex items-center rounded-lg border border-slate-200 bg-white p-0.5 dark:border-slate-800 dark:bg-slate-950 shrink-0">
-              <button onClick={() => onUpdatePreferences({ theme: 'light' })} className={`p-1 rounded-md ${preferences.theme === 'light' ? 'bg-slate-100 text-amber-600' : 'text-slate-400 hover:text-slate-700'}`}><Sun className="h-3 w-3" /></button>
-              <button onClick={() => onUpdatePreferences({ theme: 'sepia' })} className={`p-1 rounded-md ${preferences.theme === 'sepia' ? 'bg-[#eadebf] text-[#6d512a]' : 'text-slate-400 hover:text-slate-700'}`}><Coffee className="h-3 w-3" /></button>
-              <button onClick={() => onUpdatePreferences({ theme: 'dark' })} className={`p-1 rounded-md ${preferences.theme === 'dark' ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:text-slate-700'}`}><Moon className="h-3 w-3" /></button>
+            <div className={`flex items-center rounded-lg border p-0.5 shrink-0 transition-colors ${
+              isDark
+                ? 'border-slate-800 bg-slate-900'
+                : isSepia
+                ? 'border-[#d4c6a6] bg-[#eae3d2]'
+                : 'border-slate-200 bg-white'
+            }`}>
+              <button onClick={() => onUpdatePreferences({ theme: 'light' })} className={`p-1 rounded-md transition-colors cursor-pointer ${preferences.theme === 'light' ? 'bg-amber-100 text-amber-800 font-bold' : isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800' : 'text-slate-400 hover:text-slate-700'}`}><Sun className="h-3 w-3" /></button>
+              <button onClick={() => onUpdatePreferences({ theme: 'sepia' })} className={`p-1 rounded-md transition-colors cursor-pointer ${preferences.theme === 'sepia' ? 'bg-[#dcd2be] text-[#2b2118] font-bold' : isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800' : 'text-slate-400 hover:text-slate-700'}`}><Coffee className="h-3 w-3" /></button>
+              <button onClick={() => onUpdatePreferences({ theme: 'dark' })} className={`p-1 rounded-md transition-colors cursor-pointer ${preferences.theme === 'dark' ? 'bg-slate-800 text-amber-400 font-bold' : isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800' : 'text-slate-400 hover:text-slate-700'}`}><Moon className="h-3 w-3" /></button>
             </div>
           </div>
         </div>
 
         {speechState.isPlaying && (
-          <div className="mt-1.5 flex items-center justify-between rounded-lg bg-amber-50/90 px-2.5 py-1 text-xs text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">
+          <div className={`mt-1.5 flex items-center justify-between rounded-lg px-2.5 py-1 text-xs transition-colors ${
+            isDark
+              ? 'bg-amber-950/60 text-amber-200 border border-amber-900/60'
+              : isSepia
+              ? 'bg-[#eae3d2] text-[#2b2118] border border-[#d4c6a6]'
+              : 'bg-amber-50/90 text-amber-900 border border-amber-200'
+          }`}>
             <div className="flex items-center gap-1.5 truncate">
               <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
               <span className="font-medium shrink-0">Воспроизведение:</span>

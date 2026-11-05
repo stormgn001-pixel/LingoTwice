@@ -224,7 +224,13 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         <button
           onClick={onOpenSubscription}
-          className="flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs font-medium text-slate-700 transition-colors hover:border-amber-300 hover:bg-amber-50/50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900 whitespace-nowrap shrink-0"
+          className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+            theme === 'dark'
+              ? 'border-slate-800 bg-slate-900 text-slate-200 hover:border-amber-500/60 hover:bg-slate-800'
+              : theme === 'sepia'
+              ? 'border-[#dfd5c0] bg-[#f4efe2] text-[#2b2118] hover:border-amber-600'
+              : 'border-slate-200 bg-white text-slate-700 hover:border-amber-300 hover:bg-amber-50/50'
+          }`}
         >
           <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
           <span className="hidden xs:inline">{subscription.tier === 'premium' ? 'PRO' : t.upgradePremium}</span>
@@ -234,7 +240,13 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onOpenSettings}
           title={t.navSettings}
-          className="flex h-7.5 w-7.5 sm:h-8 sm:w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+          className={`flex h-7.5 w-7.5 sm:h-8 sm:w-8 items-center justify-center rounded-lg border transition-colors cursor-pointer ${
+            theme === 'dark'
+              ? 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white'
+              : theme === 'sepia'
+              ? 'border-[#dfd5c0] bg-[#f4efe2] text-[#2b2118] hover:bg-[#eadebf]'
+              : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+          }`}
         >
           <Languages className="h-4 w-4" />
         </button>

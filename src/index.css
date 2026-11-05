@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   :root {
     --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
@@ -77,6 +79,20 @@ html:not(.dark) body {
 
 html:not(.dark) .reading-text {
   color: #0f172a;
+}
+
+/* Explicit dark theme rules */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #020617;
+  color: #f8fafc;
+}
+
+html.dark .reading-text {
+  color: #f8fafc;
 }
 
 /* Custom scrollbar styling for reading panes */
