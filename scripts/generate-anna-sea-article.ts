@@ -1,0 +1,1236 @@
+import fs from 'fs';
+import path from 'path';
+
+// Russian source paragraphs (48 paragraphs across 16 sections)
+const ruParagraphs: string[] = [
+  // 1. Отпуск
+  "Скоро у меня отпуск. Я очень рада. Отпуск две недели. Я хочу поехать на море.",
+  "Я никогда не была на море зимой, но сейчас лето. Лето тёплое и солнечное. Это хорошее время для отдыха.",
+  "Мой брат Антон тоже едет. Он говорит: «Анна, это будет лучший отпуск!» Я думаю, что он прав.",
+
+  // 2. Подготовка
+  "Я готовлюсь к поездке. Сначала я покупаю билеты на поезд. Билеты стоят недорого. Мы едем ночью, и утром мы на месте.",
+  "Потом я иду в магазин. Я покупаю купальник, шляпу и крем от солнца. Ещё я покупаю новые сандалии. Они красные и очень удобные.",
+  "Дома я собираю чемодан. Я беру платья, шорты и футболки. Я беру полотенце и книгу. Чемодан тяжёлый, но Антон помогает мне.",
+
+  // 3. Вокзал
+  "Вечером мы едем на вокзал. На вокзале много людей. Все спешат. Люди ищут свои поезда и свои вагоны.",
+  "Мы находим наш поезд. Он синий и длинный. Наш вагон номер семь. Мы заходим и находим свои места.",
+  "Поезд едет. Я смотрю в окно. Город остаётся позади. Я думаю: «Я еду на море!» У меня отличное настроение.",
+
+  // 4. В поезде
+  "В поезде мы пьём чай. Проводница приносит нам чай и печенье. Печенье сладкое и вкусное.",
+  "Антон читает журнал. Я слушаю музыку и смотрю на поля. Поля зелёные, а небо красное. Это закат.",
+  "Потом мы ложимся спать. Кровать в поезде узкая, но удобная. Поезд качается, и я быстро засыпаю.",
+
+  // 5. Утро у моря
+  "Утром я просыпаюсь рано. Я смотрю в окно и вижу море. Оно большое и синее. Я не могу поверить, что оно такое красивое.",
+  "Поезд останавливается. Мы выходим на вокзал. Воздух тёплый и пахнет морем. Над нами кричат белые птицы.",
+  "Мы берём такси и едем в гостиницу. Водитель добрый. Он рассказывает нам о городе. Я всё слушаю и улыбаюсь.",
+
+  // 6. Гостиница
+  "Наша гостиница маленькая и белая. Она стоит рядом с морем. У гостиницы есть красивый сад. В саду растут цветы и большие деревья.",
+  "У меня отдельная комната. Там есть кровать, стол и шкаф. Окно выходит на море. Я открываю окно и слушаю волны.",
+  "Антон живёт в соседней комнате. Мы оба довольны. Администратор говорит: «Добро пожаловать!» Мы говорим: «Спасибо!»",
+
+  // 7. Первый день на пляже
+  "После завтрака мы идём на пляж. Пляж большой и чистый. Песок мягкий и тёплый. На пляже много людей, но места хватает.",
+  "Я надеваю шляпу и мажу кожу кремом. Антон смеётся. Он говорит, что я очень боюсь солнца. Но я знаю: солнце бывает опасным.",
+  "Потом мы идём в воду. Вода прохладная и чистая. Я плаваю недолго, потому что я не очень хорошо плаваю. Антон плавает далеко.",
+
+  // 8. Обед у моря
+  "В час мы идём обедать. Рядом с пляжем есть маленький ресторан. Там сидят люди и едят рыбу. Нам тоже хочется рыбу.",
+  "Я заказываю рыбу с картошкой и салат. Антон заказывает суп и мясо. Мы пьём лимонад. Он холодный и кислый.",
+  "Официант приносит еду. Всё очень вкусно. Я говорю: «Это лучший обед в моей жизни!» Антон отвечает: «Ты всегда так говоришь».",
+
+  // 9. Прогулка по городу
+  "Вечером мы гуляем по городу. Улицы здесь узкие и старые. Дома жёлтые и белые. На балконах стоят цветы.",
+  "Мы идём на рынок. На рынке продают фрукты, овощи и сувениры. Продавцы громко говорят и улыбаются. Я покупаю персики. Они сладкие и сочные.",
+  "Ещё я покупаю маленькую ракушку. Продавец говорит, что это на удачу. Я кладу ракушку в сумку. Я хочу взять её домой.",
+
+  // 10. Вечер на набережной
+  "Вечером мы идём на набережную. Это длинная дорога у моря. Здесь гуляют семьи, и играет тихая музыка.",
+  "Мы покупаем мороженое. У меня клубничное, а у Антона шоколадное. Мы сидим на скамейке и смотрим на море. Солнце садится, и вода становится золотой.",
+  "Я говорю: «Как хорошо!» Антон молчит и улыбается. Он тоже счастлив. Мы долго сидим и ничего не говорим.",
+
+  // 11. Дождливый день
+  "На четвёртый день идёт дождь. Небо серое, и на улице холодно. Мы остаёмся в гостинице. Я немного грущу.",
+  "Но потом я думаю: «Дождь — это тоже хорошо». Я беру книгу и сажусь у окна. Я пью горячий чай и читаю.",
+  "Антон играет в карты с другим гостем. Они громко смеются. К вечеру дождь заканчивается. Выходит солнце, и появляется радуга.",
+
+  // 12. Новая подруга
+  "В гостинице я знакомлюсь с девушкой. Её зовут Мария. Она тоже отдыхает здесь. Мария живёт в другом городе и работает врачом.",
+  "Мы вместе завтракаем и гуляем. Мария рассказывает о своей работе. Я рассказываю о магазине и о книгах. Нам интересно разговаривать.",
+  "Мария любит море, как и я. Мы вместе плаваем и собираем ракушки. Я думаю: «Как хорошо, что я поехала сюда!»",
+
+  // 13. Экскурсия
+  "В один день мы едем на экскурсию. Автобус едет в горы. Дорога длинная, но вид очень красивый. Я фотографирую всё вокруг.",
+  "В горах прохладно и тихо. Мы идём по тропе. Гид рассказывает об истории этих мест. Я не всё понимаю, но слушаю с интересом.",
+  "На вершине мы останавливаемся. Отсюда видно всё море. Оно как большое синее зеркало. Я долго смотрю и не хочу уходить.",
+
+  // 14. Последний вечер
+  "Отпуск заканчивается. Сегодня наш последний вечер. Мы идём в ресторан и заказываем много вкусной еды. Мария идёт с нами.",
+  "Мы говорим о том, что было хорошо. Антон вспоминает, как он упал в воду. Мы все смеёмся. Мария записывает мой номер телефона.",
+  "Потом мы идём на пляж в последний раз. Ночью море тихое и тёмное. На небе много звёзд. Я говорю морю: «До свидания. Я вернусь».",
+
+  // 15. Дорога домой
+  "Утром мы собираем чемоданы. Чемодан стал тяжелее, потому что я купила много сувениров. Я везу подарки маме, папе, Лене и Ольге.",
+  "Мы едем на вокзал. Мария провожает нас. Она обнимает меня и говорит: «Пиши мне!» Я обещаю, что напишу.",
+  "В поезде я смотрю в окно. Море остаётся позади. Мне немного грустно, но я очень счастлива. У меня много хороших воспоминаний.",
+
+  // 16. Дома
+  "Дома тихо и уютно. Я открываю окна и убираю вещи. Я ставлю ракушку на полку. Теперь она напоминает мне о море.",
+  "Я звоню маме. Я рассказываю ей обо всём: о море, о рынке, о Марии. Мама слушает и говорит: «Я рада, что ты отдохнула».",
+  "Завтра я иду на работу. Я не грущу. Я знаю, что у меня есть любимая работа, добрая семья и хорошие друзья. Скоро будет новый отпуск."
+];
+
+// Translations for all 16 other languages (each exactly 48 paragraphs)
+
+// English (en)
+const enParagraphs: string[] = [
+  "Soon I have a vacation. I am very happy. The vacation is for two weeks. I want to go to the sea.",
+  "I have never been to the sea in winter, but now it is summer. Summer is warm and sunny. It is a good time for a vacation.",
+  "My brother Anton is going too. He says: 'Anna, this will be the best vacation!' I think that he is right.",
+
+  "I am preparing for the trip. First, I buy train tickets. The tickets are not expensive. We travel at night, and in the morning we are there.",
+  "Then I go to the shop. I buy a swimsuit, a hat, and sunscreen. I also buy new sandals. They are red and very comfortable.",
+  "At home, I pack my suitcase. I take dresses, shorts, and T-shirts. I take a towel and a book. The suitcase is heavy, but Anton helps me.",
+
+  "In the evening we go to the railway station. There are many people at the station. Everyone is in a hurry. People are looking for their trains and their cars.",
+  "We find our train. It is blue and long. Our car is number seven. We go inside and find our seats.",
+  "The train is moving. I look out the window. The city stays behind. I think: 'I am going to the sea!' I am in a great mood.",
+
+  "On the train, we drink tea. The conductor brings us tea and cookies. The cookies are sweet and delicious.",
+  "Anton reads a magazine. I listen to music and look at the fields. The fields are green, and the sky is red. This is the sunset.",
+  "Then we go to sleep. The bed on the train is narrow but comfortable. The train rocks, and I fall asleep quickly.",
+
+  "In the morning I wake up early. I look out the window and see the sea. It is big and blue. I cannot believe that it is so beautiful.",
+  "The train stops. We step out onto the station platform. The air is warm and smells of the sea. White birds cry above us.",
+  "We take a taxi and drive to the hotel. The driver is kind. He tells us about the town. I listen to everything and smile.",
+
+  "Our hotel is small and white. It stands next to the sea. The hotel has a beautiful garden. Flowers and large trees grow in the garden.",
+  "I have a separate room. There is a bed, a desk, and a wardrobe. The window overlooks the sea. I open the window and listen to the waves.",
+  "Anton lives in the next room. We are both pleased. The receptionist says: 'Welcome!' We say: 'Thank you!'",
+
+  "After breakfast we go to the beach. The beach is big and clean. The sand is soft and warm. There are many people on the beach, but there is enough room.",
+  "I put on my hat and put cream on my skin. Anton laughs. He says that I am very afraid of the sun. But I know: the sun can be dangerous.",
+  "Then we go into the water. The water is cool and clear. I do not swim for long because I do not swim very well. Anton swims far out.",
+
+  "At one o'clock we go to have lunch. There is a small restaurant next to the beach. People are sitting there eating fish. We also want fish.",
+  "I order fish with potatoes and a salad. Anton orders soup and meat. We drink lemonade. It is cold and sour.",
+  "The waiter brings the food. Everything is very delicious. I say: 'This is the best lunch of my life!' Anton replies: 'You always say that.'",
+
+  "In the evening we walk around the town. The streets here are narrow and old. The houses are yellow and white. Flowers stand on the balconies.",
+  "We go to the market. Fruits, vegetables, and souvenirs are sold at the market. The sellers speak loudly and smile. I buy peaches. They are sweet and juicy.",
+  "I also buy a small seashell. The seller says that it brings good luck. I put the seashell in my bag. I want to take it home.",
+
+  "In the evening we go to the seaside promenade. It is a long walk by the sea. Families are strolling here, and quiet music plays.",
+  "We buy ice cream. Mine is strawberry, and Anton's is chocolate. We sit on a bench and look at the sea. The sun sets, and the water turns golden.",
+  "I say: 'How wonderful!' Anton is silent and smiles. He is also happy. We sit for a long time and say nothing.",
+
+  "On the fourth day it rains. The sky is grey, and it is cold outside. We stay at the hotel. I feel a bit sad.",
+  "But then I think: 'Rain is good too.' I take a book and sit by the window. I drink hot tea and read.",
+  "Anton plays cards with another guest. They laugh loudly. Towards evening the rain stops. The sun comes out, and a rainbow appears.",
+
+  "At the hotel I meet a young woman. Her name is Maria. She is also on vacation here. Maria lives in another city and works as a doctor.",
+  "We have breakfast and take walks together. Maria talks about her work. I talk about the shop and about books. We enjoy talking.",
+  "Maria loves the sea just like I do. Together we swim and collect seashells. I think: 'How good that I came here!'",
+
+  "One day we go on an excursion. The bus goes into the mountains. The road is long, but the view is very beautiful. I take photos of everything around.",
+  "In the mountains it is cool and quiet. We walk along the trail. The guide talks about the history of these places. I do not understand everything, but I listen with interest.",
+  "We stop at the summit. From here you can see the whole sea. It looks like a huge blue mirror. I look for a long time and do not want to leave.",
+
+  "The vacation is coming to an end. Today is our last evening. We go to a restaurant and order lots of tasty food. Maria joins us.",
+  "We talk about the good times. Anton remembers how he fell into the water. We all laugh. Maria writes down my phone number.",
+  "Then we go to the beach for the last time. At night the sea is quiet and dark. There are many stars in the sky. I tell the sea: 'Goodbye. I will return.'",
+
+  "In the morning we pack our suitcases. The suitcase has become heavier because I bought many souvenirs. I carry gifts for mom, dad, Lena, and Olga.",
+  "We go to the station. Maria sees us off. She hugs me and says: 'Write to me!' I promise that I will write.",
+  "On the train I look out the window. The sea stays behind. I feel a little sad, but I am very happy. I have many wonderful memories.",
+
+  "At home it is quiet and cozy. I open the windows and put things away. I place the seashell on the shelf. Now it reminds me of the sea.",
+  "I call mom. I tell her about everything: about the sea, the market, and Maria. Mom listens and says: 'I am glad you had a good rest.'",
+  "Tomorrow I go to work. I am not sad. I know that I have a job I love, a kind family, and good friends. Soon there will be a new vacation."
+];
+
+// Ukrainian (uk)
+const ukParagraphs: string[] = [
+  "Скоро у мене відпустка. Я дуже рада. Відпустка два тижні. Я хочу поїхати на море.",
+  "Я ніколи не була на морі взимку, але зараз літо. Літо тепле й сонячне. Це гарний час для відпочинку.",
+  "Мій брат Антон теж їде. Він каже: «Анно, це буде найкраща відпустка!» Я думаю, що він має рацію.",
+
+  "Я готуюся до поїздки. Спочатку я купую квитки на поїзд. Квитки коштують недорого. Ми їдемо вночі, і вранці ми на місці.",
+  "Потім я йду в магазин. Я купую купальник, капелюх і крем від сонця. Ще я купую нові сандалі. Вони червоні й дуже зручні.",
+  "Вдома я збираю валізу. Я беру сукні, шорти та футболки. Я беру рушник і книгу. Валіза важка, але Антон допомагає мені.",
+
+  "Увечері ми їдемо на вокзал. На вокзалі багато людей. Усі поспішають. Люди шукають свої поїзди та свої вагони.",
+  "Ми знаходимо наш поїзд. Він синій і довгий. Наш вагон номер сім. Ми заходимо і знаходимо свої місця.",
+  "Поїзд їде. Я дивлюся у вікно. Місто залишається позаду. Я думаю: «Я їду на море!» У мене чудовий настрій.",
+
+  "У поїзді ми п'ємо чай. Провідниця приносить нам чай і печиво. Печиво солодке і смачне.",
+  "Антон читає журнал. Я слухаю музику і дивлюся на поля. Поля зелені, а небо червоне. Це захід сонця.",
+  "Потім ми лягаємо спати. Ліжко в поїзді вузьке, але зручне. Поїзд гойдається, і я швидко засинаю.",
+
+  "Вранці я прокидаюся рано. Я дивлюся у вікно і бачу море. Воно велике і синє. Я не можу повірити, що воно таке красиве.",
+  "Поїзд зупиняється. Ми виходимо на вокзал. Повітря тепле і пахне морем. Над нами кричать білі птахи.",
+  "Ми беремо таксі і їдемо в готель. Водій добрий. Він розповідає нам про місто. Я все слухаю і посміхаюся.",
+
+  "Наш готель маленький і білий. Він стоїть поруч із морем. У готелю є гарний сад. У саду ростуть квіти і великі дерева.",
+  "У мене окрема кімната. Там є ліжко, стіл і шафа. Вікно виходить на море. Я відкриваю вікно і слухаю хвилі.",
+  "Антон живе в сусідній кімнаті. Ми обоє задоволені. Адміністратор каже: «Ласкаво просимо!» Ми кажемо: «Дякуємо!»",
+
+  "Після сніданку ми йдемо на пляж. Пляж великий і чистий. Пісок м'який і теплий. На пляжі багато людей, але місця вистачає.",
+  "Я одягаю капелюх і мажу шкіру кремом. Антон сміється. Він каже, що я дуже боюся сонця. Але я знаю: сонце буває небезпечним.",
+  "Потім ми йдемо у воду. Вода прохолодна і чиста. Я плаваю недовго, бо я не дуже добре плаваю. Антон плаває далеко.",
+
+  "О першій годині ми йдемо обідати. Поруч із пляжем є маленький ресторан. Там сидять люди і їдять рибу. Нам теж хочеться риби.",
+  "Я замовляю рибу з картоплею і салат. Антон замовляє суп і м'ясо. Ми п'ємо лимонад. Він холодний і кислий.",
+  "Офіціант приносить їжу. Все дуже смачно. Я кажу: «Це найкращий обід у моєму житті!» Антон відповідає: «Ти завжди так кажеш».",
+
+  "Увечері ми гуляємо містом. Вулиці тут вузькі та старі. Будинки жовті та білі. На балконах стоять квіти.",
+  "Ми йдемо на ринок. На ринку продають фрукти, овочі та сувеніри. Продавці голосно розмовляють і посміхаються. Я купую персики. Вони солодкі й соковиті.",
+  "Ще я купую маленьку мушлю. Продавець каже, що це на удачу. Я кладу мушлю в сумку. Я хочу взяти її додому.",
+
+  "Увечері ми йдемо на набережну. Це довга дорога біля моря. Тут гуляють сім'ї, і грає тиха музика.",
+  "Ми купуємо морозиво. У мене полуничне, а в Антона шоколадне. Ми сидимо на лавці і дивимося на море. Сонце сідає, і вода стає золотою.",
+  "Я кажу: «Як гарно!» Антон мовчить і посміхається. Він теж щасливий. Ми довго сидимо і нічого не говоримо.",
+
+  "На четвертий день іде дощ. Небо сіре, і на вулиці холодно. Ми залишаємося в готелі. Мені трохи сумно.",
+  "Але потім я думаю: «Дощ — це теж добре». Я беру книгу і сідаю біля вікна. Я п'ю гарячий чай і читаю.",
+  "Антон грає в карти з іншим гостем. Вони голосно сміються. Надвечір дощ закінчується. Виходить сонце, і з'являється веселка.",
+
+  "У готелі я знайомлюся з дівчиною. Її звати Марія. Вона теж відпочиває тут. Марія живе в іншому місті й працює лікарем.",
+  "Ми разом снідаємо і гуляємо. Марія розповідає про свою роботу. Я розповідаю про магазин і про книги. Нам цікаво розмовляти.",
+  "Марія любить море, як і я. Ми разом плаваємо і збираємо мушлі. Я думаю: «Як добре, що я поїхала сюди!»",
+
+  "В один день ми їдемо на екскурсію. Автобус їде в гори. Дорога довга, але краєвид дуже гарний. Я фотографую все навколо.",
+  "У горах прохолодно і тихо. Ми йдемо стежкою. Гід розповідає про історію цих місць. Я не все розумію, але слухаю з цікавістю.",
+  "На вершині ми зупиняємося. Звідси видно все море. Воно як велике синє дзеркало. Я довго дивлюся і не хочу йти.",
+
+  "Відпустка закінчується. Сьогодні наш останній вечір. Ми йдемо в ресторан і замовляємо багато смачної їжі. Марія йде з нами.",
+  "Ми говоримо про те, що було гарно. Антон згадує, як він упав у воду. Ми всі сміємося. Марія записує мій номер телефону.",
+  "Потім ми йдемо на пляж востаннє. Вночі море тихе й темне. На небі багато зірок. Я кажу морю: «До побачення. Я повернуся».",
+
+  "Вранці ми збираємо валізи. Валіза стала важчою, бо я купила багато сувенірів. Я везу подарунки мамі, татові, Олені та Ользі.",
+  "Ми їдемо на вокзал. Марія проводжає нас. Вона обіймає мене і каже: «Пиши мені!» Я обіцяю, що напишу.",
+  "У поїзді я дивлюся у вікно. Море залишається позаду. Мені трохи сумно, але я дуже щаслива. У мене багато хороших спогадів.",
+
+  "Вдома тихо і затишно. Я відкриваю вікна і розкладаю речі. Я ставлю мушлю на полицю. Тепер вона нагадує мені про море.",
+  "Я телефоную мамі. Я розповідаю їй про все: про море, про ринок, про Марію. Мама слухає і каже: «Я рада, що ти відпочила».",
+  "Завтра я йду на роботу. Я не сумую. Я знаю, що у мене є улюблена робота, добра родина і хороші друзі. Скоро буде нова відпустка."
+];
+
+// German (de)
+const deParagraphs: string[] = [
+  "Bald habe ich Urlaub. Ich freue mich sehr. Der Urlaub dauert zwei Wochen. Ich möchte ans Meer fahren.",
+  "Im Winter war ich noch nie am Meer, aber jetzt ist Sommer. Der Sommer ist warm und sonnig. Das ist eine gute Zeit zum Ausruhen.",
+  "Mein Bruder Anton fährt auch mit. Er sagt: 'Anna, das wird der beste Urlaub!' Ich glaube, er hat recht.",
+
+  "Ich bereite mich auf die Reise vor. Zuerst kaufe ich Fahrkarten für den Zug. Die Fahrkarten sind nicht teuer. Wir fahren nachts, und morgens sind wir da.",
+  "Dann gehe ich ins Geschäft. Ich kaufe einen Badeanzug, einen Hut und Sonnencreme. Außerdem kaufe ich neue Sandalen. Sie sind rot und sehr bequem.",
+  "Zu Hause packe ich meinen Koffer. Ich nehme Kleider, Shorts und T-Shirts mit. Ich nehme ein Handtuch und ein Buch. Der Koffer ist schwer, aber Anton hilft mir.",
+
+  "Am Abend fahren wir zum Bahnhof. Am Bahnhof sind viele Menschen. Alle haben es eilig. Die Menschen suchen ihre Züge und ihre Wagen.",
+  "Wir finden unseren Zug. Er ist blau und lang. Unser Wagen hat die Nummer sieben. Wir steigen ein und finden unsere Plätze.",
+  "Der Zug fährt ab. Ich schaue aus dem Fenster. Die Stadt bleibt zurück. Ich denke: 'Ich fahre ans Meer!' Ich habe ausgezeichnete Laune.",
+
+  "Im Zug trinken wir Tee. Die Schaffnerin bringt uns Tee und Kekse. Die Kekse sind süß und lecker.",
+  "Anton liest eine Zeitschrift. Ich höre Musik und schaue auf die Felder. Die Felder sind grün und der Himmel ist rot. Das ist der Sonnenuntergang.",
+  "Dann gehen wir schlafen. Das Bett im Zug ist schmal, aber bequem. Der Zug wiegt sich, und ich schlafe schnell ein.",
+
+  "Am Morgen wache ich früh auf. Ich schaue aus dem Fenster und sehe das Meer. Es ist groß und blau. Ich kann nicht glauben, dass es so schön ist.",
+  "Der Zug hält an. Wir steigen am Bahnhof aus. Die Luft ist warm und riecht nach Meer. Über uns rufen weiße Vögel.",
+  "Wir nehmen ein Taxi und fahren zum Hotel. Der Fahrer ist freundlich. Er erzählt uns von der Stadt. Ich höre zu und lächle.",
+
+  "Unser Hotel ist klein und weiß. Es steht direkt am Meer. Das Hotel hat einen schönen Garten. Im Garten wachsen Blumen und große Bäume.",
+  "Ich habe ein eigenes Zimmer. Dort gibt es ein Bett, einen Tisch und einen Schrank. Das Fenster blickt auf das Meer. Ich öffne das Fenster und höre den Wellen zu.",
+  "Anton wohnt im Nachbarzimmer. Wir sind beide zufrieden. Der Rezeptionist sagt: 'Herzlich willkommen!' Wir sagen: 'Vielen Dank!'",
+
+  "Nach dem Frühstück gehen wir an den Strand. Der Strand ist groß und sauber. Der Sand ist weich und warm. Am Strand sind viele Menschen, aber es gibt genug Platz.",
+  "Ich setze meinen Hut auf und creme mich ein. Anton lacht. Er sagt, dass ich große Angst vor der Sonne habe. Aber ich weiß: Die Sonne kann gefährlich sein.",
+  "Dann gehen wir ins Wasser. Das Wasser ist kühl und klar. Ich schwimme nicht lange, weil ich nicht sehr gut schwimmen kann. Anton schwimmt weit hinaus.",
+
+  "Um ein Uhr gehen wir zu Mittag essen. Neben dem Strand gibt es ein kleines Restaurant. Dort sitzen Menschen und essen Fisch. Wir möchten auch Fisch.",
+  "Ich bestelle Fisch mit Kartoffeln und Salat. Anton bestellt Suppe und Fleisch. Wir trinken Limonade. Sie ist kalt und sauer.",
+  "Der Kellner bringt das Essen. Alles ist sehr lecker. Ich sage: 'Das ist das beste Mittagessen meines Lebens!' Anton antwortet: 'Das sagst du immer.'",
+
+  "Am Abend spazieren wir durch die Stadt. Die Straßen hier sind eng und alt. Die Häuser sind gelb und weiß. Auf den Balkonen stehen Blumen.",
+  "Wir gehen zum Markt. Auf dem Markt werden Obst, Gemüse und Souvenirs verkauft. Die Verkäufer sprechen laut und lächeln. Ich kaufe Pfirsiche. Sie sind süß und saftig.",
+  "Ich kaufe auch eine kleine Muschel. Der Verkäufer sagt, das bringt Glück. Ich stecke die Muschel in meine Tasche. Ich möchte sie mit nach Hause nehmen.",
+
+  "Am Abend gehen wir zur Uferpromenade. Das ist ein langer Weg am Meer. Hier spazieren Familien, und leise Musik spielt.",
+  "Wir kaufen Eis. Meines ist Erdbeere und Antons Schokolade. Wir sitzen auf einer Bank und schauen aufs Meer. Die Sonne geht unter, und das Wasser wird golden.",
+  "Ich sage: 'Wie schön!' Anton schweigt und lächelt. Er ist auch glücklich. Wir sitzen lange da und sagen nichts.",
+
+  "Am vierten Tag regnet es. Der Himmel ist grau, und draußen ist es kalt. Wir bleiben im Hotel. Ich bin ein wenig traurig.",
+  "Aber dann denke ich: 'Regen ist auch schön.' Ich nehme ein Buch und setze mich ans Fenster. Ich trinke heißen Tee und lese.",
+  "Anton spielt Karten mit einem anderen Gast. Sie lachen laut. Gegen Abend hört der Regen auf. Die Sonne kommt heraus, und ein Regenbogen erscheint.",
+
+  "Im Hotel lerne ich eine junge Frau kennen. Sie heißt Maria. Sie macht hier auch Urlaub. Maria lebt in einer anderen Stadt und arbeitet als Ärztin.",
+  "Wir frühstücken zusammen und gehen spazieren. Maria erzählt von ihrer Arbeit. Ich erzähle vom Geschäft und von Büchern. Wir unterhalten uns gerne.",
+  "Maria liebt das Meer genauso wie ich. Zusammen schwimmen wir und sammeln Muscheln. Ich denke: 'Wie gut, dass ich hierher gefahren bin!'",
+
+  "An einem Tag machen wir einen Ausflug. Der Bus fährt in die Berge. Der Weg ist lang, aber die Aussicht ist wunderschön. Ich fotografiere alles um mich herum.",
+  "In den Bergen ist es kühl und still. Wir gehen den Pfad entlang. Der Reiseleiter erzählt von der Geschichte dieser Orte. Ich verstehe nicht alles, aber ich höre mit Interesse zu.",
+  "Auf dem Gipfel halten wir an. Von hier aus sieht man das ganze Meer. Es ist wie ein riesiger blauer Spiegel. Ich schaue lange hin und möchte nicht gehen.",
+
+  "Der Urlaub geht zu Ende. Heute ist unser letzter Abend. Wir gehen in ein Restaurant und bestellen viel leckeres Essen. Maria kommt mit uns.",
+  "Wir sprechen darüber, was schön war. Anton erinnert sich daran, wie er ins Wasser gefallen ist. Wir lachen alle. Maria schreibt meine Telefonnummer auf.",
+  "Dann gehen wir ein letztes Mal an den Strand. Nachts ist das Meer ruhig und dunkel. Am Himmel sind viele Sterne. Ich sage zum Meer: 'Auf Wiedersehen. Ich komme wieder.'",
+
+  "Am Morgen packen wir unsere Koffer. Der Koffer ist schwerer geworden, weil ich viele Souvenirs gekauft habe. Ich bringe Geschenke für Mama, Papa, Lena und Olga mit.",
+  "Wir fahren zum Bahnhof. Maria verabschiedet uns. Sie umarmt mich und sagt: 'Schreib mir!' Ich verspreche, dass ich schreiben werde.",
+  "Im Zug schaue ich aus dem Fenster. Das Meer bleibt zurück. Ich bin ein wenig traurig, aber sehr glücklich. Ich habe viele schöne Erinnerungen.",
+
+  "Zu Hause ist es ruhig und gemütlich. Ich öffne die Fenster und räume die Sachen auf. Ich stelle die Muschel ins Regal. Jetzt erinnert sie mich an das Meer.",
+  "Ich rufe Mama an. Ich erzähle ihr von allem: vom Meer, vom Markt, von Maria. Mama hört zu und sagt: 'Ich freue mich, dass du dich erholt hast.'",
+  "Morgen gehe ich zur Arbeit. Ich bin nicht traurig. Ich weiß, dass ich eine geliebte Arbeit, eine gute Familie und tolle Freunde habe. Bald gibt es einen neuen Urlaub."
+];
+
+// French (fr)
+const frParagraphs: string[] = [
+  "Bientôt, je suis en vacances. Je suis très heureuse. Les vacances durent deux semaines. Je veux aller à la mer.",
+  "Je ne suis jamais allée à la mer en hiver, mais maintenant c'est l'été. L'été est chaud et ensoleillé. C'est une bonne période pour se reposer.",
+  "Mon frère Anton vient aussi. Il dit : « Anna, ce seront les meilleures vacances ! » Je pense qu'il a raison.",
+
+  "Je me prépare pour le voyage. D'abord, j'achète des billets de train. Les billets ne coûtent pas cher. Nous voyageons de nuit, et le matin nous sommes arrivés.",
+  "Ensuite, je vais au magasin. J'achète un maillot de bain, un chapeau et de la crème solaire. J'achète aussi de nouvelles sandales. Elles sont rouges et très confortables.",
+  "À la maison, je fais ma valise. Je prends des robes, des shorts et des t-shirts. Je prends une serviette et un livre. La valise est lourde, mais Anton m'aide.",
+
+  "Le soir, nous allons à la gare. Il y a beaucoup de monde à la gare. Tout le monde est pressé. Les gens cherchent leurs trains et leurs voitures.",
+  "Nous trouvons notre train. Il est bleu et long. Notre voiture est la numéro sept. Nous montons et trouvons nos places.",
+  "Le train part. Je regarde par la fenêtre. La ville reste derrière nous. Je pense : « Je vais à la mer ! » J'ai une excellente humeur.",
+
+  "Dans le train, nous buvons du thé. La contrôleuse nous apporte du thé et des biscuits. Les biscuits sont sucrés et délicieux.",
+  "Anton lit un magazine. J'écoute de la musique et je regarde les champs. Les champs sont verts et le ciel est rouge. C'est le coucher du soleil.",
+  "Ensuite, nous allons nous coucher. Le lit dans le train est étroit mais confortable. Le train se balance, et je m'endors rapidement.",
+
+  "Le matin, je me réveille tôt. Je regarde par la fenêtre et je vois la mer. Elle est grande et bleue. Je n'arrive pas à croire qu'elle soit si belle.",
+  "Le train s'arrête. Nous descendons sur le quai de la gare. L'air est chaud et sent la mer. Au-dessus de nous, des oiseaux blancs crient.",
+  "Nous prenons un taxi et allons à l'hôtel. Le chauffeur est gentil. Il nous parle de la ville. J'écoute tout et je souris.",
+
+  "Notre hôtel est petit et blanc. Il se trouve près de la mer. L'hôtel a un joli jardin. Des fleurs et de grands arbres y poussent.",
+  "J'ai une chambre individuelle. Il y a un lit, une table et une armoire. La fenêtre donne sur la mer. J'ouvre la fenêtre et j'écoute les vagues.",
+  "Anton habite dans la chambre voisine. Nous sommes tous les deux contents. Le réceptionniste dit : « Bienvenue ! » Nous disons : « Merci ! »",
+
+  "Après le petit déjeuner, nous allons à la plage. La plage est grande et propre. Le sable est doux et chaud. Il y a beaucoup de monde, mais il y a assez de place.",
+  "Je mets mon chapeau et j'applique de la crème sur ma peau. Anton rit. Il dit que j'ai très peur du soleil. Mais je sais : le soleil peut être dangereux.",
+  "Ensuite, nous allons dans l'eau. L'eau est fraîche et claire. Je ne nage pas longtemps, car je ne nage pas très bien. Anton nage loin.",
+
+  "À treize heures, nous allons déjeuner. Près de la plage, il y a un petit restaurant. Les gens y sont assis et mangent du poisson. Nous voulons aussi du poisson.",
+  "Je commande du poisson avec des pommes de terre et une salade. Anton commande de la soupe et de la viande. Nous buvons de la limonade. Elle est fraîche et acidulée.",
+  "Le serveur apporte le repas. Tout est très délicieux. Je dis : « C'est le meilleur déjeuner de ma vie ! » Anton répond : « Tu dis toujours cela. »",
+
+  "Le soir, nous nous promenons en ville. Les rues ici sont étroites et anciennes. Les maisons sont jaunes et blanches. Il y a des fleurs sur les balcons.",
+  "Nous allons au marché. Au marché, on vend des fruits, des légumes et des souvenirs. Les vendeurs parlent fort et sourient. J'achète des pêches. Elles sont douces et juteuses.",
+  "J'achète aussi un petit coquillage. Le vendeur dit que cela porte bonheur. Je mets le coquillage dans mon sac. Je veux l'emporter à la maison.",
+
+  "Le soir, nous allons sur la promenade du front de mer. C'est un long chemin au bord de la mer. Des familles s'y promènent, et une musique douce résonne.",
+  "Nous achetons des glaces. La mienne est à la fraise, et celle d'Anton est au chocolat. Nous nous asseyons sur un banc et regardons la mer. Le soleil se couche et l'eau devient dorée.",
+  "Je dis : « Comme c'est agréable ! » Anton se tait et sourit. Il est heureux lui aussi. Nous restons longtemps assis sans rien dire.",
+
+  "Le quatrième jour, il pleut. Le ciel est gris et il fait froid dehors. Nous restons à l'hôtel. Je suis un peu triste.",
+  "Mais ensuite je pense : « La pluie, c'est bien aussi. » Je prends un livre et je m'assois près de la fenêtre. Je bois du thé chaud et je lis.",
+  "Anton joue aux cartes avec un autre client. Ils rient fort. Vers le soir, la pluie s'arrête. Le soleil apparaît, et un arc-en-ciel se dessine.",
+
+  "À l'hôtel, je fais la connaissance d'une jeune fille. Elle s'appelle Maria. Elle est aussi en vacances ici. Maria vit dans une autre ville et travaille comme médecin.",
+  "Nous prenons le petit déjeuner ensemble et nous promenons. Maria parle de son travail. Je parle du magasin et des livres. Nous aimons discuter.",
+  "Maria aime la mer tout comme moi. Ensemble, nous nageons et ramassons des coquillages. Je pense : « Quelle bonne idée d'être venue ici ! »",
+
+  "Un jour, nous partons en excursion. Le bus monte dans les montagnes. La route est longue, mais la vue est magnifique. Je prends des photos de tout ce qui nous entoure.",
+  "Dans les montagnes, il fait frais et calme. Nous marchons sur le sentier. Le guide raconte l'histoire de ces lieux. Je ne comprends pas tout, mais j'écoute avec intérêt.",
+  "Au sommet, nous nous arrêtons. D'ici, on voit toute la mer. Elle ressemble à un grand miroir bleu. Je regarde longtemps et je ne veux pas partir.",
+
+  "Les vacances touchent à leur fin. Ce soir, c'est notre dernière soirée. Nous allons au restaurant et commandons beaucoup de plats délicieux. Maria vient avec nous.",
+  "Nous parlons de tout ce qui a été merveilleux. Anton se souvient du moment où il est tombé dans l'eau. Nous rions tous. Maria note mon numéro de téléphone.",
+  "Ensuite, nous allons à la plage une dernière fois. La nuit, la mer est calme et sombre. Il y a beaucoup d'étoiles dans le ciel. Je dis à la mer : « Au revoir. Je reviendrai. »",
+
+  "Le matin, nous préparons nos valises. La valise est devenue plus lourde, car j'ai acheté beaucoup de souvenirs. J'apporte des cadeaux à maman, papa, Léna et Olga.",
+  "Nous allons à la gare. Maria nous accompagne. Elle me serre dans ses bras et me dit : « Écris-moi ! » Je lui promets d'écrire.",
+  "Dans le train, je regarde par la fenêtre. La mer reste derrière. Je suis un peu triste, mais très heureuse. J'ai beaucoup de merveilleux souvenirs.",
+
+  "À la maison, c'est calme et douillet. J'ouvre les fenêtres et je range mes affaires. Je pose le coquillage sur l'étagère. Maintenant, il me rappelle la mer.",
+  "J'appelle maman. Je lui raconte tout : la mer, le marché, Maria. Maman écoute et dit : « Je suis contente que tu te sois bien reposée. »",
+  "Demain, je vais au travail. Je ne suis pas triste. Je sais que j'ai un travail que j'aime, une famille aimante et de bons amis. Bientôt viendront de nouvelles vacances."
+];
+
+// Spanish (es)
+const esParagraphs: string[] = [
+  "Pronto tengo vacaciones. Estoy muy contenta. Las vacaciones duran dos semanas. Quiero ir al mar.",
+  "Nunca he estado en el mar en invierno, pero ahora es verano. El verano es cálido y soleado. Es un buen momento para descansar.",
+  "Mi hermano Antón también viene. Él dice: «¡Anna, estas serán las mejores vacaciones!» Creo que tiene razón.",
+
+  "Me preparo para el viaje. Primero compro los billetes de tren. Los billetes son baratos. Viajamos de noche y por la mañana ya estamos allí.",
+  "Luego voy a la tienda. Compro un bañador, un sombrero y crema solar. También compro sandalias nuevas. Son rojas y muy cómodas.",
+  "En casa hago la maleta. Llevo vestidos, pantalones cortos y camisetas. Llevo una toalla y un libro. La maleta pesa, pero Antón me ayuda.",
+
+  "Por la noche vamos a la estación. Hay mucha gente en la estación. Todos tienen prisa. La gente busca sus trenes y sus vagones.",
+  "Encontramos nuestro tren. Es azul y largo. Nuestro vagón es el número siete. Entramos y encontramos nuestros asientos.",
+  "El tren se mueve. Miro por la ventana. La ciudad queda atrás. Pienso: «¡Voy al mar!» Tengo un humor excelente.",
+
+  "En el tren tomamos té. La revisora nos trae té y galletas. Las galletas son dulces y deliciosas.",
+  "Antón lee una revista. Yo escucho música y miro los campos. Los campos son verdes y el cielo es rojo. Es la puesta de sol.",
+  "Luego nos vamos a dormir. La cama en el tren es estrecha pero cómoda. El tren se mece y me duermo rápido.",
+
+  "Por la mañana me despierto temprano. Miro por la ventana y veo el mar. Es grande y azul. No puedo creer que sea tan hermoso.",
+  "El tren se detiene. Salimos a la estación. El aire es cálido y huele a mar. Sobre nosotros chillan pájaros blancos.",
+  "Tomamos un taxi y vamos al hotel. El conductor es amable. Nos habla de la ciudad. Lo escucho todo y sonrío.",
+
+  "Nuestro hotel es pequeño y blanco. Está cerca del mar. El hotel tiene un bonito jardín. En el jardín crecen flores y grandes árboles.",
+  "Tengo una habitación individual. Hay una cama, una mesa y un armario. La ventana da al mar. Abro la ventana y escucho las olas.",
+  "Antón vive en la habitación de al lado. Los dos estamos contentos. El recepcionista dice: «¡Bienvenidos!» Nosotros decimos: «¡Gracias!»",
+
+  "Después del desayuno vamos a la playa. La playa es grande y limpia. La arena es suave y cálida. Hay mucha gente en la playa, pero hay espacio suficiente.",
+  "Me pongo el sombrero y me pongo crema en la piel. Antón se ríe. Dice que le tengo mucho miedo al sol. Pero yo sé: el sol puede ser peligroso.",
+  "Luego entramos en el agua. El agua está fresca y transparente. No nado mucho tiempo, porque no sé nadar muy bien. Antón nada lejos.",
+
+  "A la una vamos a almorzar. Cerca de la playa hay un restaurante pequeño. La gente está sentada allí comiendo pescado. Nosotros también queremos pescado.",
+  "Pido pescado con patatas y ensalada. Antón pide sopa y carne. Bebemos limonada. Está fría y ácida.",
+  "El camarero trae la comida. Todo está muy rico. Digo: «¡Es el mejor almuerzo de mi vida!» Antón responde: «Siempre dices lo mismo».",
+
+  "Por la tarde paseamos por la ciudad. Las calles aquí son estrechas y antiguas. Las casas son amarillas y blancas. Hay flores en los balcones.",
+  "Vamos al mercado. En el mercado venden fruta, verdura y recuerdos. Los vendedores hablan alto y sonríen. Compro melocotones. Son dulces y jugosos.",
+  "También compro una pequeña concha. El vendedor dice que da buena suerte. Pongo la concha en mi bolso. Quiero llevármela a casa.",
+
+  "Por la noche vamos al paseo marítimo. Es un largo camino junto al mar. Las familias pasean aquí y suena una música suave.",
+  "Compramos helado. El mío es de fresa y el de Antón de chocolate. Nos sentamos en un banco y miramos al mar. El sol se pone y el agua se vuelve dorada.",
+  "Digo: «¡Qué bien!» Antón calla y sonríe. Él también es feliz. Nos quedamos sentados mucho rato sin decir nada.",
+
+  "El cuarto día llueve. El cielo está gris y hace frío afuera. Nos quedamos en el hotel. Estoy un poco triste.",
+  "Pero luego pienso: «La lluvia también es buena». Cojo un libro y me siento junto a la ventana. Tomo té caliente y leo.",
+  "Antón juega a las cartas con otro huésped. Se ríen a carcajadas. Hacia el atardecer deja de llover. Sale el sol y aparece un arcoíris.",
+
+  "En el hotel conozco a una chica. Se llama María. Ella también está de vacaciones aquí. María vive en otra ciudad y trabaja como médica.",
+  "Desayunamos juntas y paseamos. María me cuenta sobre su trabajo. Yo le cuento sobre la tienda y sobre libros. Nos gusta conversar.",
+  "A María le gusta el mar igual que a mí. Juntas nadamos y recogemos conchas. Pienso: «¡Qué bien que haya venido aquí!»",
+
+  "Un día vamos de excursión. El autobús va a las montañas. El camino es largo, pero la vista es muy hermosa. Hago fotos de todo alrededor.",
+  "En las montañas hace fresco y está tranquilo. Caminamos por el sendero. El guía cuenta la historia de estos lugares. No lo entiendo todo, pero escucho con interés.",
+  "En la cumbre nos detenemos. Desde aquí se ve todo el mar. Parece un gran espejo azul. Miro durante mucho tiempo y no quiero marcharme.",
+
+  "Las vacaciones se acaban. Hoy es nuestra última noche. Vamos a un restaurante y pedimos mucha comida rica. María viene con nosotros.",
+  "Hablamos de lo bueno que ha sido todo. Antón recuerda cuando se cayó al agua. Todos nos reímos. María anota mi número de teléfono.",
+  "Luego vamos a la playa por última vez. De noche el mar está tranquilo y oscuro. Hay muchas estrellas en el cielo. Le digo al mar: «Adiós. Volveré».",
+
+  "Por la mañana hacemos las maletas. La maleta pesa más porque he comprado muchos recuerdos. Llevo regalos para mamá, papá, Lena y Olga.",
+  "Vamos a la estación. María nos despide. Me abraza y me dice: «¡Escríbeme!» Le prometo que le escribiré.",
+  "En el tren miro por la ventana. El mar queda atrás. Me siento un poco triste, pero muy feliz. Tengo muchos recuerdos hermosos.",
+
+  "En casa hay silencio y comodidad. Abro las ventanas y ordeno las cosas. Pongo la concha en la estantería. Ahora me recuerda al mar.",
+  "Llamo a mamá. Le cuento todo: sobre el mar, el mercado y María. Mamá escucha y dice: «Me alegro de que hayas descansado».",
+  "Mañana voy a trabajar. No estoy triste. Sé que tengo un trabajo que me gusta, una buena familia y buenos amigos. Pronto habrá unas nuevas vacaciones."
+];
+
+// Italian (it)
+const itParagraphs: string[] = [
+  "Presto ho le vacanze. Sono molto contenta. Le vacanze durano due settimane. Voglio andare al mare.",
+  "Non sono mai stata al mare in inverno, ma adesso è estate. L'estate è calda e soleggiata. È un buon momento per riposare.",
+  "Anche mio fratello Anton viene. Dice: «Anna, questa sarà la vacanza più bella!» Penso che abbia ragione.",
+
+  "Mi preparo per il viaggio. Prima compro i biglietti del treno. I biglietti non costano molto. Viaggiamo di notte e la mattina siamo arrivati.",
+  "Poi vado in negozio. Compro un costume da bagno, un cappello e una crema solare. Compro anche sandali nuovi. Sono rossi e comodissimi.",
+  "A casa preparo la valigia. Prendo vestiti, pantaloncini e magliette. Prendo un asciugamano e un libro. La valigia è pesante, ma Anton mi aiuta.",
+
+  "La sera andiamo alla stazione. C'è molta gente alla stazione. Tutti hanno fretta. La gente cerca i propri treni e le proprie carrozze.",
+  "Troviamo il nostro treno. È blu e lungo. La nostra carrozza è la numero sette. Saliamo e troviamo i nostri posti.",
+  "Il treno parte. Guardo fuori dalla finestra. La città resta indietro. Penso: «Vado al mare!» Ho un umore eccellente.",
+
+  "In treno beviamo il tè. La capotreno ci porta tè e biscotti. I biscotti sono dolci e squisiti.",
+  "Anton legge una rivista. Io ascolto la musica e guardo i campi. I campi sono verdi e il cielo è rosso. È il tramonto.",
+  "Poi andiamo a dormire. Il letto in treno è stretto ma comodo. Il treno dondola e mi addormento velocemente.",
+
+  "La mattina mi sveglio presto. Guardo fuori dalla finestra e vedo il mare. È grande e blu. Non riesco a credere che sia così bello.",
+  "Il treno si ferma. Scendiamo alla stazione. L'aria è calda e profuma di mare. Sopra di noi gridano uccelli bianchi.",
+  "Prendiamo un taxi e andiamo all'albergo. L'autista è gentile. Ci racconta della città. Ascolto tutto e sorrido.",
+
+  "Il nostro albergo è piccolo e bianco. Si trova vicino al mare. L'albergo ha un bel giardino. Nel giardino crescono fiori e grandi alberi.",
+  "Ho una stanza singola. Ci sono un letto, un tavolo e un armadio. La finestra dà sul mare. Apro la finestra e ascolto le onde.",
+  "Anton vive nella stanza accanto. Siamo entrambi soddisfatti. Il receptionist dice: «Benvenuti!» Noi diciamo: «Grazie!»",
+
+  "Dopo colazione andiamo in spiaggia. La spiaggia è grande e pulita. La sabbia è morbida e calda. C'è molta gente sulla spiaggia, ma c'è spazio a sufficienza.",
+  "Metto il cappello e mi metto la crema sulla pelle. Anton ride. Dice che ho molta paura del sole. Ma io so: il sole può essere pericoloso.",
+  "Poi entriamo in acqua. L'acqua è fresca e limpida. Non nuoto a lungo, perché non so nuotare molto bene. Anton nuota lontano.",
+
+  "All'una andiamo a pranzo. Vicino alla spiaggia c'è un piccolo ristorante. C'è gente seduta che mangia pesce. Anche noi abbiamo voglia di pesce.",
+  "Ordino pesce con patate e un'insalata. Anton ordina zuppa e carne. Beviamo limonata. È fredda e aspra.",
+  "Il cameriere porta il cibo. È tutto buonissimo. Dico: «È il pranzo più buono della mia vita!» Anton risponde: «Lo dici sempre».",
+
+  "La sera passeggiamo per la città. Le strade qui sono strette e antiche. Le case sono gialle e bianche. Sui balconi ci sono fiori.",
+  "Andiamo al mercato. Al mercato vendono frutta, verdura e souvenir. I venditori parlano ad alta voce e sorridono. Compro delle pesche. Sono dolci e succose.",
+  "Compro anche una piccola conchiglia. Il venditore dice che porta fortuna. Metto la conchiglia nella borsa. Voglio portarla a casa.",
+
+  "La sera andiamo sul lungomare. È una lunga strada accanto al mare. Qui passeggiano le famiglie e suona una musica tranquilla.",
+  "Compriamo un gelato. Il mio è alla fragola e quello di Anton al cioccolato. Ci sediamo su una panchina e guardiamo il mare. Il sole tramonta e l'acqua diventa dorata.",
+  "Dico: «Che bello!» Anton tace e sorride. Anche lui è felice. Rimaniamo seduti a lungo senza dire nulla.",
+
+  "Il quarto giorno piove. Il cielo è grigio e fuori fa freddo. Rimaniamo in albergo. Sono un po' triste.",
+  "Ma poi penso: «Anche la pioggia va bene». Prendo un libro e mi siedo vicino alla finestra. Bevo tè caldo e leggo.",
+  "Anton gioca a carte con un altro ospite. Ridono rumorosamente. Verso sera la pioggia finisce. Esce il sole e compare un arcobaleno.",
+
+  "In albergo conosco una ragazza. Si chiama Maria. Anche lei è in vacanza qui. Maria vive in un'altra città e lavora come medico.",
+  "Facciamo colazione insieme e passeggiamo. Maria racconta del suo lavoro. Io le racconto del negozio e dei libri. Ci piace parlare.",
+  "Maria ama il mare proprio come me. Insieme nuotiamo e raccogliamo conchiglie. Penso: «Che bello essere venuta qui!»",
+
+  "Un giorno andiamo in escursione. L'autobus sale sulle montagne. La strada è lunga, ma la vista è spettacolare. Fotografo tutto intorno.",
+  "In montagna è fresco e silenzioso. Camminiamo lungo il sentiero. La guida racconta la storia di questi luoghi. Non capisco tutto, ma ascolto con interesse.",
+  "In cima ci fermiamo. Da qui si vede tutto il mare. Sembra un grande specchio blu. Guardo a lungo e non voglio andarmene.",
+
+  "La vacanza sta per finire. Oggi è la nostra ultima sera. Andiamo al ristorante e ordiniamo tanto cibo delizioso. Maria viene con noi.",
+  "Parliamo di tutto ciò che è stato bello. Anton ricorda quando è caduto in acqua. Ridiamo tutti. Maria segna il mio numero di telefono.",
+  "Poi andiamo in spiaggia per l'ultima volta. Di notte il mare è calmo e scuro. Ci sono molte stelle in cielo. Dico al mare: «Arrivederci. Ritornerò».",
+
+  "La mattina prepariamo le valigie. La valigia è diventata più pesante perché ho comprato molti souvenir. Porto regali a mamma, papà, Lena e Olga.",
+  "Andiamo alla stazione. Maria ci accompagna. Mi abbraccia e dice: «Scrivimi!» Le prometto che le scriverò.",
+  "In treno guardo fuori dalla finestra. Il mare rimane indietro. Sono un po' triste, ma molto felice. Ho tantissimi bei ricordi.",
+
+  "A casa c'è silenzio e calore. Apro le finestre e metto a posto le cose. Appoggio la conchiglia sulla mensola. Ora mi ricorda il mare.",
+  "Chiamo la mamma. Le racconto tutto: del mare, del mercato, di Maria. La mamma ascolta e dice: «Sono felice che tu ti sia riposata».",
+  "Domani vado al lavoro. Non sono triste. So di avere un lavoro che amo, una famiglia affettuosa e buoni amici. Presto ci saranno nuove vacanze."
+];
+
+// Polish (pl)
+const plParagraphs: string[] = [
+  "Niedługo mam urlop. Bardzo się cieszę. Urlop trwa dwa tygodnie. Chcę pojechać nad morze.",
+  "Nigdy nie byłam nad morzem zimą, ale teraz jest lato. Lato jest ciepłe i słoneczne. To dobry czas na odpoczynek.",
+  "Mój brat Antoni też jedzie. Mówi: «Aniu, to będzie najlepszy urlop!» Myślę, że ma rację.",
+
+  "Przygotowuję się do podróży. Najpierw kupuję bilety na pociąg. Bilety nie są drogie. Jedziemy w nocy, a rano jesteśmy na miejscu.",
+  "Potem idę do sklepu. Kupuję strój kąpielowy, kapelusz i krem do opalania. Kupuję też nowe sandały. Są czerwone i bardzo wygodne.",
+  "W domu pakuję walizkę. Biorę sukienki, szorty i koszulki. Biorę ręcznik i książkę. Walizka jest ciężka, ale Antoni mi pomaga.",
+
+  "Wieczorem jedziemy na dworzec. Na dworcu jest dużo ludzi. Wszyscy się spieszą. Ludzie szukają swoich pociągów i wagonów.",
+  "Znajdujemy nasz pociąg. Jest niebieski i długi. Nasz wagon ma numer siedem. Wchodzimy i znajdujemy nasze miejsca.",
+  "Pociąg rusza. Patrzę przez okno. Miasto zostaje w tyle. Myślę: «Jadę nad morze!» Mam wspaniały nastrój.",
+
+  "W pociągu pijemy herbatę. Konduktorka przynosi nam herbatę i ciastka. Ciastka są słodkie i pyszne.",
+  "Antoni czyta czasopismo. Ja słucham muzyki i patrzę na pola. Pola są zielone, a niebo czerwone. To zachód słońca.",
+  "Potem kładziemy się spać. Łóżko w pociągu jest wąskie, ale wygodne. Pociąg kołysze i szybko zasypiam.",
+
+  "Rano budzę się wcześnie. Patrzę przez okno i widzę morze. Jest wielkie i błękitne. Nie mogę uwierzyć, że jest takie piękne.",
+  "Pociąg się zatrzymuje. Wychodzimy na peron. Powietrze jest ciepłe i pachnie morzem. Nad nami krzyczą białe ptaki.",
+  "Bierzemy taksówkę i jedziemy do hotelu. Kierowca jest miły. Opowiada nam o mieście. Słucham wszystkiego i uśmiecham się.",
+
+  "Nasz hotel jest mały i biały. Stoi blisko morza. Przy hotelu jest piękny ogród. W ogrodzie rosną kwiaty i duże drzewa.",
+  "Mam osobny pokój. Jest tam łóżko, stół i szafa. Okno wychodzi na morze. Otwieram okno i słucham fal.",
+  "Antoni mieszka w pokoju obok. Oboje jesteśmy zadowoleni. Recepcjonista mówi: «Witamy!» My mówimy: «Dziękujemy!»",
+
+  "Po śniadaniu idziemy na plażę. Plaża jest duża i czysta. Piasek jest miękki i ciepły. Na plaży jest dużo ludzi, ale miejsca wystarcza.",
+  "Zakładam kapelusz i smaruję skórę kremem. Antoni się śmieje. Mówi, że bardzo boję się słońca. Ale wiem: słońce bywa niebezpieczne.",
+  "Potem wchodzimy do wody. Woda jest chłodna i przejrzysta. Nie pływam długo, bo nie pływam zbyt dobrze. Antoni odpływa daleko.",
+
+  "O pierwszej idziemy na obiad. Obok plaży jest mała restauracja. Siedzą tam ludzie i jedzą ryby. My też mamy ochotę na rybę.",
+  "Zamawiam rybę z ziemniakami i sałatkę. Antoni zamawia zupę i mięso. Pijemy lemoniadę. Jest zimna i kwaśna.",
+  "Kelner przynosi jedzenie. Wszystko jest bardzo smaczne. Mówię: «To najlepszy obiad w moim życiu!» Antoni odpowiada: «Zawsze tak mówisz».",
+
+  "Wieczorem spacerujemy po mieście. Ulice tutaj są wąskie i stare. Domy są żółte i białe. Na balkonach stoją kwiaty.",
+  "Idziemy na targ. Na targu sprzedają owoce, warzywa i pamiątki. Sprzedawcy mówią głośno i uśmiechają się. Kupuję brzoskwinie. Są słodkie i soczyste.",
+  "Kupuję też małą muszelkę. Sprzedawca mówi, że to na szczęście. Wkładam muszelkę do torebki. Chcę zabrać ją do domu.",
+
+  "Wieczorem idziemy na promenadę. To długa aleja nad morzem. Spacerują tu rodziny i gra cicha muzyka.",
+  "Kupujemy lody. Moje są truskawkowe, a Antoniego czekoladowe. Siedzimy na ławce i patrzymy na morze. Słońce zachodzi, a woda staje się złota.",
+  "Mówię: «Jak wspaniale!» Antoni milczy i uśmiecha się. On też jest szczęśliwy. Długo siedzimy i nic nie mówimy.",
+
+  "Czwartego dnia pada deszcz. Niebo jest szare, a na dworze jest zimno. Zostajemy w hotelu. Jest mi trochę smutno.",
+  "Ale potem myślę: «Deszcz też jest dobry». Biorę książkę i siadam przy oknie. Piję gorącą herbatę i czytam.",
+  "Antoni gra w karty z innym gościem. Głośno się śmieją. Pod wieczór deszcz ustaje. Wychodzi słońce i pojawia się tęcza.",
+
+  "W hotelu poznaję dziewczynę. Ma na imię Maria. Ona też spędza tu wakacje. Maria mieszka w innym mieście i pracuje jako lekarz.",
+  "Razem jemy śniadania i spacerujemy. Maria opowiada o swojej pracy. Ja opowiadam o sklepie i książkach. Miło nam się rozmawia.",
+  "Maria kocha morze tak samo jak ja. Razem pływamy i zbieramy muszle. Myślę: «Jak dobrze, że tu przyjechałam!»",
+
+  "Jednego dnia jedziemy na wycieczkę. Autobus jedzie w góry. Droga jest długa, ale widok jest przepiękny. Fotografuję wszystko dookoła.",
+  "W górach jest chłodno i cicho. Idziemy szlakiem. Przewodnik opowiada o historii tych miejsc. Nie wszystko rozumiem, ale słucham z zaciekawieniem.",
+  "Na szczycie zatrzymujemy się. Stąd widać całe morze. Wygląda jak wielkie błękitne lustro. Długo patrzę i nie chcę odchodzić.",
+
+  "Urlop się kończy. Dzisiaj jest nasz ostatni wieczór. Idziemy do restauracji i zamawiamy dużo pysznego jedzenia. Maria idzie z nami.",
+  "Rozmawiamy o tym, co było piękne. Antoni wspomina, jak wpadł do wody. Wszyscy się śmiejemy. Maria zapisuje mój numer telefonu.",
+  "Potem idziemy na plażę po raz ostatni. W nocy morze jest ciche i ciemne. Na niebie świeci mnóstwo gwiazd. Mówię morzu: «Do widzenia. Wrócę».",
+
+  "Rano pakujemy walizki. Walizka stała się cięższa, bo kupiłam dużo pamiątek. Wiozę prezenty dla mamy, taty, Leny i Olgi.",
+  "Jedziemy na dworzec. Maria nas odprowadza. Przytula mnie i mówi: «Pisz do mnie!» Obiecuję, że napiszę.",
+  "W pociągu patrzę przez okno. Morze zostaje w tyle. Jest mi trochę smutno, ale jestem bardzo szczęśliwa. Mam mnóstwo pięknych wspomnień.",
+
+  "W domu jest cicho i przytulnie. Otwieram okna i rozpakowuję rzeczy. Kładę muszelkę na półce. Teraz przypomina mi o morzu.",
+  "Dzwonię do mamy. Opowiadam jej o wszystkim: o morzu, targu, Marii. Mama słucha i mówi: «Cieszę się, że odpoczęłaś».",
+  "Jutro idę do pracy. Nie smucę się. Wiem, że mam pracę, którą lubię, dobrą rodzinę i wiernych przyjaciół. Niedługo będzie kolejny urlop."
+];
+
+// Portuguese (pt)
+const ptParagraphs: string[] = [
+  "Em breve terei férias. Estou muito feliz. As férias duram duas semanas. Quero ir ao mar.",
+  "Nunca estive no mar no inverno, mas agora é verão. O verão é quente e ensolarado. É uma boa época para descansar.",
+  "O meu irmão Anton também vai. Ele diz: 'Anna, estas serão as melhores férias!' Acho que ele tem razão.",
+
+  "Estou a preparar-me para a viagem. Primeiro compro os bilhetes de comboio. Os bilhetes não são caros. Viajamos de noite e de manhã chegamos lá.",
+  "Depois vou à loja. Compro um fato de banho, um chapéu e protetor solar. Também compro sandálias novas. São vermelhas e muito confortáveis.",
+  "Em casa faço a mala. Levo vestidos, calções e t-shirts. Levo uma toalha e um livro. A mala está pesada, mas o Anton ajuda-me.",
+
+  "À noite vamos para a estação. Há muita gente na estação. Todos têm pressa. As pessoas procuram os seus comboios e carruagens.",
+  "Encontramos o nosso comboio. É azul e comprido. A nossa carruagem é a número sete. Entramos e encontramos os nossos lugares.",
+  "O comboio parte. Olho pela janela. A cidade fica para trás. Penso: 'Vou para o mar!' O meu humor está excelente.",
+
+  "No comboio bebemos chá. A revisora traz-nos chá e bolachas. As bolachas são doces e deliciosas.",
+  "O Anton lê uma revista. Eu oiço música e olho para os campos. Os campos são verdes e o céu está vermelho. É o pôr do sol.",
+  "Depois vamos dormir. A cama no comboio é estreita, mas confortável. O comboio balança e adormeço depressa.",
+
+  "De manhã acordo cedo. Olho pela janela e vejo o mar. É grande e azul. Mal posso acreditar que seja tão bonito.",
+  "O comboio para. Saímos para a plataforma da estação. O ar está quente e cheira a mar. Pássaros brancos gritam por cima de nós.",
+  "Apanhamos um táxi e vamos para o hotel. O motorista é simpático. Fala-nos sobre a cidade. Oiço tudo e sorrio.",
+
+  "O nosso hotel é pequeno e branco. Fica junto ao mar. O hotel tem um belo jardim. No jardim crescem flores e grandes árvores.",
+  "Tenho um quarto individual. Há uma cama, uma mesa e um guarda-roupa. A janela dá para o mar. Abro a janela e escuto as ondas.",
+  "O Anton fica no quarto ao lado. Estamos ambos contentes. O rececionista diz: 'Bem-vindos!' Nós dizemos: 'Obrigado!'",
+
+  "Depois do pequeno-almoço vamos à praia. A praia é grande e limpa. A areia é suave e quente. Há muitas pessoas na praia, mas há espaço suficiente.",
+  "Ponho o meu chapéu e passo protetor na pele. O Anton ri-se. Diz que tenho muito medo do sol. Mas eu sei: o sol pode ser perigoso.",
+  "Depois entramos na água. A água está fresca e límpida. Não nado muito tempo, porque não nado muito bem. O Anton nada para longe.",
+
+  "À uma hora vamos almoçar. Perto da praia há um pequeno restaurante. Há pessoas sentadas a comer peixe. Nós também queremos peixe.",
+  "Peço peixe com batatas e salada. O Anton pede sopa e carne. Bebemos limonada. É fresca e ácida.",
+  "O empregado traz a comida. Está tudo muito saboroso. Digo: 'É o melhor almoço da minha vida!' O Anton responde: 'Dizes sempre isso.'",
+
+  "À noite passeamos pela cidade. As ruas aqui são estreitas e antigas. As casas são amarelas e brancas. Há flores nas varandas.",
+  "Vamos ao mercado. No mercado vendem frutas, legumes e lembranças. Os vendedores falam alto e sorriem. Compro pêssegos. São doces e sumarentos.",
+  "Também compro uma conchinha. O vendedor diz que dá sorte. Ponho a concha na mala. Quero levá-la para casa.",
+
+  "À noite vamos ao calçadão à beira-mar. É um longo passeio junto ao mar. Famílias passeiam aqui e ouve-se uma música suave.",
+  "Compramos gelado. O meu é de morango e o do Anton é de chocolate. Sentamo-nos num banco a olhar para o mar. O sol põe-se e a água fica dourada.",
+  "Digo: 'Que maravilha!' O Anton cala-se e sorri. Ele também está feliz. Ficamos muito tempo sentados sem dizer nada.",
+
+  "No quarto dia chove. O céu está cinzento e faz frio lá fora. Ficamos no hotel. Fico um pouco triste.",
+  "Mas depois penso: 'A chuva também é boa.' Pego num livro e sento-me à janela. Bebo chá quente e leio.",
+  "O Anton joga cartas com outro hóspede. Riem alto. Ao fim da tarde a chuva para. O sol aparece e surge um arco-íris.",
+
+  "No hotel conheço uma rapariga. Chama-se Maria. Também está aqui de férias. A Maria vive noutra cidade e é médica.",
+  "Tomamos o pequeno-almoço juntas e passeamos. A Maria fala do seu trabalho. Eu falo sobre a loja e sobre livros. Gostamos de conversar.",
+  "A Maria adora o mar tal como eu. Nadamos juntas e apanhamos conchas. Penso: 'Que bom ter vindo para aqui!'",
+
+  "Num dos dias fazemos uma excursão. O autocarro sobe às montanhas. A estrada é longa, mas a vista é magnífica. Tiro fotos a tudo em redor.",
+  "Nas montanhas está fresco e silencioso. Andamos pelo trilho. O guia conta a história destes locais. Não compreendo tudo, mas oiço com interesse.",
+  "No cimo paramos. Daqui avista-se todo o mar. Parece um grande espelho azul. Fico muito tempo a olhar e não quero ir embora.",
+
+  "As férias estão a terminar. Hoje é a nossa última noite. Vamos a um restaurante e pedimos muita comida saborosa. A Maria vem connosco.",
+  "Falamos sobre tudo o que foi bom. O Anton lembra-se de quando caiu à água. Rimo-nos todos. A Maria anota o meu número de telefone.",
+  "Depois vamos à praia pela última vez. À noite o mar está calmo e escuro. Há muitas estrelas no céu. Digo ao mar: 'Adeus. Hei de voltar.'",
+
+  "De manhã fazemos as malas. A mala ficou mais pesada porque comprei muitas lembranças. Levo presentes para a mãe, o pai, a Lena e a Olga.",
+  "Vamos para a estação. A Maria despede-se de nós. Abraça-me e diz: 'Escreve-me!' Prometo-lhe que escreverei.",
+  "No comboio olho pela janela. O mar fica para trás. Fico com uma pontinha de tristeza, mas muito feliz. Tenho muitas recordações bonitas.",
+
+  "Em casa está silêncio e aconchego. Abro as janelas e arrumo as coisas. Ponho a concha na prateleira. Agora lembra-me o mar.",
+  "Ligo à mãe. Conto-lhe tudo: sobre o mar, o mercado, a Maria. A mãe escuta e diz: 'Fico contente por teres descansado.'",
+  "Amanhã vou trabalhar. Não estou triste. Sei que tenho um emprego que adoro, uma família carinhosa e bons amigos. Em breve haverá novas férias."
+];
+
+// Dutch (nl)
+const nlParagraphs: string[] = [
+  "Binnenkort heb ik vakantie. Ik ben erg blij. De vakantie duurt twee weken. Ik wil naar zee.",
+  "Ik ben nog nooit in de winter naar zee geweest, maar nu is het zomer. De zomer is warm en zonnig. Het is een goede tijd om uit te rusten.",
+  "Mijn broer Anton gaat ook mee. Hij zegt: 'Anna, dit wordt de beste vakantie!' Ik denk dat hij gelijk heeft.",
+
+  "Ik bereid me voor op de reis. Eerst koop ik treinkaartjes. De kaartjes zijn niet duur. We reizen 's nachts en 's ochtends zijn we ter plaatse.",
+  "Daarna ga ik naar de winkel. Ik koop een badpak, een hoed en zonnebrandcrème. Ook koop ik nieuwe sandalen. Ze zijn rood en heel comfortabel.",
+  "Thuis pak ik mijn koffer. Ik neem jurken, shorts en T-shirts mee. Ik neem een handdoek en een boek mee. De koffer is zwaar, maar Anton helpt me.",
+
+  "'s Avonds gaan we naar het station. Er zijn veel mensen op het station. Iedereen heeft haast. Mensen zoeken hun treinen en rijtuigen.",
+  "We vinden onze trein. Hij is blauw en lang. Ons rijtuig is nummer zeven. We stappen in en vinden onze plaatsen.",
+  "De trein rijdt weg. Ik kijk uit het raam. De stad blijft achter ons. Ik denk: 'Ik ga naar zee!' Ik heb een opperbest humeur.",
+
+  "In de trein drinken we thee. De conductrice brengt ons thee en koekjes. De koekjes zijn zoet en lekker.",
+  "Anton leest een tijdschrift. Ik luister naar muziek en kijk naar de velden. De velden zijn groen en de lucht is rood. Dat is de zonsondergang.",
+  "Daarna gaan we slapen. Het bed in de trein is smal maar comfortabel. De trein wiegt en ik val snel in slaap.",
+
+  "'s Ochtends word ik vroeg wakker. Ik kijk uit het raam en zie de zee. Hij is groot en blauw. Ik kan niet geloven dat hij zo mooi is.",
+  "De trein stopt. We stappen uit op het perron. De lucht is warm en ruikt naar de zee. Witte vogels krijsen boven ons.",
+  "We nemen een taxi en rijden naar het hotel. De chauffeur is vriendelijk. Hij vertelt ons over de stad. Ik luister naar alles en glimlach.",
+
+  "Ons hotel is klein en wit. Het staat vlak bij de zee. Het hotel heeft een mooie tuin. In de tuin groeien bloemen en grote bomen.",
+  "Ik heb een aparte kamer. Er is een bed, een tafel en een kledingkast. Het raam kijkt uit op de zee. Ik doe het raam open en luister naar de golven.",
+  "Anton woont in de kamer ernaast. We zijn beiden tevreden. De receptionist zegt: 'Welkom!' Wij zeggen: 'Dank u wel!'",
+
+  "Na het ontbijt gaan we naar het strand. Het strand is groot en schoon. Het zand is zacht en warm. Er zijn veel mensen op het strand, maar er is genoeg ruimte.",
+  "Ik zet mijn hoed op en smeer me in met crème. Anton lacht. Hij zegt dat ik erg bang ben voor de zon. Maar ik weet: de zon kan gevaarlijk zijn.",
+  "Daarna gaan we het water in. Het water is koel en helder. Ik zwem niet lang, want ik kan niet zo goed zwemmen. Anton zwemt ver weg.",
+
+  "Om één uur gaan we lunchen. Vlak bij het strand is een klein restaurant. Er zitten mensen vis te eten. Wij hebben ook trek in vis.",
+  "Ik bestel vis met aardappelen en een salade. Anton bestelt soep en vlees. We drinken limonade. Die is koud en zuur.",
+  "De ober brengt het eten. Alles smaakt heerlijk. Ik zeg: 'Dit is de lekkerste lunch van mijn leven!' Anton antwoordt: 'Dat zeg je altijd.'",
+
+  "'s Avonds wandelen we door de stad. De straten zijn hier smal en oud. De huizen zijn geel en wit. Op de balkons staan bloemen.",
+  "We gaan naar de markt. Op de markt verkopen ze fruit, groenten en souvenirs. De verkopers praten luid en glimlachen. Ik koop perziken. Ze zijn zoet en sappig.",
+  "Ook koop ik een kleine schelp. De verkoper zegt dat het geluk brengt. Ik stop de schelp in mijn tas. Ik wil hem mee naar huis nemen.",
+
+  "'s Avonds gaan we naar de boulevard. Het is een lange wandeling langs de zee. Gezinnen wandelen hier en er klinkt rustige muziek.",
+  "We kopen ijs. Het mijne is aardbei en dat van Anton chocolade. We zitten op een bankje en kijken naar de zee. De zon gaat onder en het water kleurt goud.",
+  "Ik zeg: 'Wat heerlijk!' Anton zwijgt en glimlacht. Hij is ook gelukkig. We zitten lange tijd stil bij elkaar.",
+
+  "Op de vierde dag regent het. De lucht is grijs en buiten is het koud. We blijven in het hotel. Ik ben een beetje somber.",
+  "Maar dan bedenk ik: 'Regen is ook fijn.' Ik pak een boek en ga bij het raam zitten. Ik drink hete thee en lees.",
+  "Anton speelt kaarten met een andere gast. Ze lachen luidkeels. Tegen de avond stopt de regen. De zon komt door en er verschijnt een regenboog.",
+
+  "In het hotel ontmoet ik een meisje. Ze heet Maria. Ze is hier ook op vakantie. Maria woont in een andere stad en werkt als arts.",
+  "We ontbijten samen en maken wandelingen. Maria vertelt over haar werk. Ik vertel over de winkel en over boeken. We praten graag met elkaar.",
+  "Maria houdt net zoveel van de zee als ik. Samen zwemmen we en zoeken we schelpen. Ik denk: 'Wat fijn dat ik hierheen ben gekomen!'",
+
+  "Op een dag gaan we op excursie. De bus rijdt de bergen in. De weg is lang, maar het uitzicht is prachtig. Ik maak overal foto's van.",
+  "In de bergen is het koel en rustig. We lopen over het pad. De gids vertelt over de geschiedenis van deze streek. Ik begrijp niet alles, maar luister geboeid.",
+  "Bovenop de top stoppen we. Vanaf hier kun je de hele zee overzien. Het lijkt wel een enorme blauwe spiegel. Ik kijk lang en wil niet weggaan.",
+
+  "De vakantie loopt ten einde. Vandaag is onze laatste avond. We gaan naar een restaurant en bestellen veel lekker eten. Maria gaat met ons mee.",
+  "We praten over alles wat fijn was. Anton herinnert zich hoe hij in het water viel. We lachen allemaal. Maria noteert mijn telefoonnummer.",
+  "Daarna gaan we voor de laatste keer naar het strand. 's Nachts is de zee rustig en donker. Er staan veel sterren aan de hemel. Ik zeg tegen de zee: 'Tot ziens. Ik kom terug.'",
+
+  "'s Ochtends pakken we onze koffers. De koffer is zwaarder geworden omdat ik veel souvenirs heb gekocht. Ik neem cadeautjes mee voor mama, papa, Lena en Olga.",
+  "We gaan naar het station. Maria zwaait ons uit. Ze omhelst me en zegt: 'Schrijf me!' Ik beloof dat ik zal schrijven.",
+  "In de trein kijk ik uit het raam. De zee blijft achter. Ik voel me een beetje weemoedig, maar heel gelukkig. Ik heb zoveel mooie herinneringen.",
+
+  "Thuis is het stil en gezellig. Ik doe de ramen open en ruim mijn spullen op. Ik zet de schelp op de plank. Nu herinnert hij me aan de zee.",
+  "Ik bel mijn moeder. Ik vertel haar over alles: over de zee, de markt, over Maria. Mama luistert en zegt: 'Ik ben blij dat je lekker uitgerust bent.'",
+  "Morgen ga ik weer aan het werk. Ik ben niet somber. Ik weet dat ik een fijne baan heb, een lieve familie en goede vrienden. Binnenkort komt er weer een vakantie."
+];
+
+// Swedish (sv)
+const svParagraphs: string[] = [
+  "Snart har jag semester. Jag är väldigt glad. Semestern varar i två veckor. Jag vill åka till havet.",
+  "Jag har aldrig varit vid havet på vintern, men nu är det sommar. Sommaren är varm och solig. Det är en fin tid för vila.",
+  "Min bror Anton åker också med. Han säger: 'Anna, det här blir den bästa semestern!' Jag tror att han har rätt.",
+
+  "Jag förbereder mig för resan. Först köper jag tågbiljetter. Biljetterna är inte dyra. Vi åker på natten, och på morgonen är vi framme.",
+  "Sedan går jag till affären. Jag köper baddräkt, solhatt och solkräm. Jag köper också nya sandaler. De är röda och väldigt bekväma.",
+  "Hemma packar jag resväskan. Jag tar med klänningar, shorts och t-shirts. Jag tar en handduk och en bok. Resväskan är tung, men Anton hjälper mig.",
+
+  "På kvällen åker vi till stationen. Det är mycket folk på stationen. Alla har bråttom. Folk letar efter sina tåg och vagnar.",
+  "Vi hittar vårt tåg. Det är blått och långt. Vår vagn har nummer sju. Vi kliver på och hittar våra platser.",
+  "Tåget rullar iväg. Jag tittar ut genom fönstret. Staden lämnas bakom oss. Jag tänker: 'Jag åker till havet!' Jag är på strålande humör.",
+
+  "På tåget dricker vi te. Konduktören bär in te och kakor till oss. Kakorna är söta och goda.",
+  "Anton läser en tidskrift. Jag lyssnar på musik och tittar ut över fälten. Fälten är gröna och himlen är röd. Det är solnedgång.",
+  "Sedan lägger vi oss för att sova. Sängen på tåget är smal men bekväm. Tåget gungar mjukt och jag somnar snabbt.",
+
+  "På morgonen vaknar jag tidigt. Jag tittar ut genom fönstret och ser havet. Det är stort och blått. Jag kan inte fatta att det är så vackert.",
+  "Tåget stannar. Vi kliver ut på perrongen. Luften är varm och doftar av hav. Ovanför oss ropar vita fåglar.",
+  "Vi tar en taxi och åker till hotellet. Chauffören är vänlig. Han berättar om staden för oss. Jag lyssnar på allt och ler.",
+
+  "Vårt hotell är litet och vitt. Det ligger alldeles intill havet. Hotellet har en vacker trädgård. I trädgården växer blommor och stora träd.",
+  "Jag har ett eget rum. Där finns en säng, ett bord och en garderob. Fönstret vetter mot havet. Jag öppnar fönstret och lyssnar på vågorna.",
+  "Anton bor i rummet intill. Vi är båda nöjda. Receptionisten säger: 'Välkomna!' Vi svarar: 'Tack så mycket!'",
+
+  "Efter frukosten går vi till stranden. Stranden är stor och ren. Sanden är mjuk och varm. Det är mycket folk på stranden, men det finns gott om plats.",
+  "Jag sätter på mig hatten och smörjer in huden med solkräm. Anton skrattar. Han säger att jag är väldigt rädd för solen. Men jag vet: solen kan vara farlig.",
+  "Sedan går vi i vattnet. Vattnet är svalt och klart. Jag simmar inte så länge, för jag simmar inte särskilt bra. Anton simmar långt ut.",
+
+  "Klockan ett går vi och äter lunch. Bredvid stranden finns en liten restaurang. Där sitter folk och äter fisk. Vi vill också ha fisk.",
+  "Jag beställer fisk med potatis och sallad. Anton beställer soppa och kött. Vi dricker saft. Den är kall och syrlig.",
+  "Servitören kommer in med maten. Allt är jättegott. Jag säger: 'Det här är mitt livs godaste lunch!' Anton svarar: 'Det säger du alltid.'",
+
+  "På kvällen promenerar vi i staden. Gatorna här är trånga och gamla. Husen är gula och vita. På balkongerna står blommor.",
+  "Vi går till marknaden. På marknaden säljs frukt, grönsaker och souvenirer. Försäljarna pratar högt och ler. Jag köper persikor. De är söta och saftiga.",
+  "Jag köper också en liten snäcka. Försäljaren säger att den ger tur. Jag stoppar snäckan i väskan. Jag vill ta med den hem.",
+
+  "På kvällen går vi till strandpromenaden. Det är en lång väg längs havet. Familjer promenerar här och stillsam musik spelas.",
+  "Vi köper glass. Min är jordgubbe och Antons är choklad. Vi sitter på en bänk och blickar ut över havet. Solen går ner och vattnet blir gyllene.",
+  "Jag säger: 'Vad underbart!' Anton är tyst och ler. Han är också lycklig. Vi sitter länge och säger ingenting.",
+
+  "På fjärde dagen regnar det. Himlen är grå och det är kallt ute. Vi stannar på hotellet. Jag känner mig lite dämpad.",
+  "Men sedan tänker jag: 'Regn är också fint.' Jag tar en bok och slår mig ner vid fönstret. Jag dricker varmt te och läser.",
+  "Anton spelar kort med en annan gäst. De skrattar högt. Framåt kvällen slutar det regna. Solen bryter fram och en regnbåge visar sig.",
+
+  "På hotellet lär jag känna en tjej. Hon heter Maria. Hon har också semester här. Maria bor i en annan stad och arbetar som läkare.",
+  "Vi äter frukost ihop och promenerar. Maria berättar om sitt arbete. Jag berättar om butiken och om böcker. Vi har trevligt när vi pratar.",
+  "Maria älskar havet precis som jag. Tillsammans simmar vi och plockar snäckor. Jag tänker: 'Vad roligt att jag åkte hit!'",
+
+  "En dag åker vi på en utflykt. Bussen kör upp i bergen. Vägen är lång men utsikten är fantastisk. Jag fotograferar allt omkring oss.",
+  "Uppe i bergen är det svalt och stilla. Vi vandrar längs stigen. Guiden berättar om platsens historia. Jag förstår inte allt, men lyssnar intresserat.",
+  "På toppen stannar vi till. Härifrån ser man hela havet. Det ser ut som en enorm blå spegel. Jag tittar länge och har ingen lust att gå därifrån.",
+
+  "Semestern närmar sig sitt slut. I kväll är vår sista kväll. Vi går på restaurang och beställer massor av god mat. Maria följer med oss.",
+  "Vi pratar om allt som har varit fint. Anton minns när han ramlade i vattnet. Vi skrattar allihop. Maria skriver ner mitt telefonnummer.",
+  "Sedan går vi till stranden en sista gång. På natten är havet tyst och mörkt. På himlen glittrar tusentals stjärnor. Jag säger till havet: 'Adjö. Jag kommer tillbaka.'",
+
+  "På morgonen packar vi våra väskor. Väskan har blivit tyngre eftersom jag köpt så många souvenirer. Jag tar med presenter till mamma, pappa, Lena och Olga.",
+  "Vi åker till stationen. Maria följer oss dit. Hon kramar om mig och säger: 'Skriv till mig!' Jag lovar att jag ska skriva.",
+  "På tåget tittar jag ut genom fönstret. Havet försvinner i fjärran bakom oss. Jag känner ett litet vemod, men är väldigt lycklig. Jag har så många fina minnen.",
+
+  "Hemma är det tyst och ombonat. Jag öppnar fönstren och plockar upp sakerna. Jag ställer snäckan på hyllan. Nu påminner den mig om havet.",
+  "Jag ringer till mamma. Jag berättar allt för henne: om havet, marknaden, om Maria. Mamma lyssnar och säger: 'Vad glad jag är att du fick vila ut.'",
+  "I morgon ska jag till jobbet. Jag sörjer inte. Jag vet att jag har ett arbete jag tycker om, en fin familj och goda vänner. Snart blir det en ny semester."
+];
+
+// Turkish (tr)
+const trParagraphs: string[] = [
+  "Yakında iznim başlıyor. Çok mutluyum. Tatil iki hafta sürecek. Denize gitmek istiyorum.",
+  "Kışın hiç denize gitmedim ama şimdi yaz mevsimi. Yaz sıcak ve güneşli. Dinlenmek için çok güzel bir zaman.",
+  "Kardeşim Anton da benimle geliyor. 'Anna, bu hayatımızın en güzel tatili olacak!' diyor. Bence haklı.",
+
+  "Yolculuğa hazırlanıyorum. Önce tren biletlerimizi alıyorum. Biletler pahalı değil. Gece yolculuk yapıyoruz ve sabah oradayız.",
+  "Sonra mağazaya gidiyorum. Bir mayo, bir şapka ve güneş kremi alıyorum. Ayrıca yeni sandaletler alıyorum. Kırmızı renkteler ve çok rahatlar.",
+  "Evde bavulumu hazırlıyorum. Elbiselerimi, şortlarımı ve tişörtlerimi alıyorum. Bir havlu ve bir kitap alıyorum. Bavul ağır ama Anton bana yardım ediyor.",
+
+  "Akşam gara gidiyoruz. Garda çok insan var. Herkes acele ediyor. İnsanlar trenlerini ve vagonlarını arıyor.",
+  "Trenimizi buluyoruz. Mavi ve uzun bir tren. Vagonumuz yedi numara. İçeri girip yerlerimizi buluyoruz.",
+  "Tren hareket ediyor. Pencereden dışarı bakıyorum. Şehir arkamızda kalıyor. 'Denize gidiyorum!' diye düşünüyorum. Keyfim çok yerinde.",
+
+  "Trende çay içiyoruz. Kondüktör bize çay ve bisküvi getiriyor. Bisküviler tatlı ve lezzetli.",
+  "Anton dergi okuyor. Ben müzik dinliyorum ve tarlalara bakıyorum. Tarlalar yeşil, gökyüzü ise kırmızı. Güneş batıyor.",
+  "Sonra uyumaya hazırlanıyoruz. Trendeki yatak dar ama rahat. Tren sallanıyor ve hemen uykuya dalıyorum.",
+
+  "Sabah erkenden uyanıyorum. Pencereden bakıyorum ve denizi görüyorum. Uçsuz bucaksız ve masmavi. Bu kadar güzel olduğuna inanamıyorum.",
+  "Tren duruyor. İstasyona iniyoruz. Hava ılık ve mis gibi deniz kokuyor. Tepemizde beyaz martılar ötüyor.",
+  "Bir taksiye binip otele gidiyoruz. Şoför çok cana yakın. Bize şehri anlatıyor. Her şeyi dinleyip gülümsüyorum.",
+
+  "Otelimiz küçük ve beyaz. Denizin hemen yanında duruyor. Otelin güzel bir bahçesi var. Bahçede çiçekler ve büyük ağaçlar yetişiyor.",
+  "Kendime ait bir odam var. İçinde yatak, masa ve gardırop var. Penceresi denize bakıyor. Pencereyi açıp dalgaların sesini dinliyorum.",
+  "Anton yan odada kalıyor. İkimiz de çok memnunuz. Resepsiyonist 'Hoş geldiniz!' diyor. Biz de 'Teşekkür ederiz!' diyoruz.",
+
+  "Kahvaltıdan sonra sahile gidiyoruz. Plaj geniş ve tertemiz. Kum yumuşak ve sıcacık. Sahilde çok insan var ama yer herkese yetiyor.",
+  "Şapkamı takıyorum ve cildime krem sürüyorum. Anton gülüyor. Güneşten çok korktuğumu söylüyor. Ama biliyorum: güneş bazen tehlikeli olabilir.",
+  "Sonra suya giriyoruz. Su serin ve berrak. Çok iyi yüzemediğim için fazla açılmıyorum. Anton ise uzaklara kadar yüzüyor.",
+
+  "Saat birde öğle yemeğine gidiyoruz. Sahilin yanında küçük bir restoran var. İnsanlar oturmuş balık yiyor. Biz de balık istiyoruz.",
+  "Patatesli balık ve salata sipariş ediyorum. Anton çorba ve et söylüyor. Limonata içiyoruz. Soğuk ve ekşi.",
+  "Garson yemekleri getiriyor. Her şey çok lezzetli. 'Bu hayatımın en güzel öğle yemeği!' diyorum. Anton, 'Bunu hep söylersin,' diye cevap veriyor.",
+
+  "Akşam şehirde dolaşıyoruz. Buradaki sokaklar dar ve tarihi. Evler sarı ve beyaz. Balkonlarda saksı çiçekleri var.",
+  "Pazara gidiyoruz. Pazarda meyve, sebze ve hediyelik eşya satılıyor. Satıcılar yüksek sesle konuşup gülümsüyor. Şeftali alıyorum. Tatlı ve sulu.",
+  "Ayrıca küçük bir deniz kabuğu alıyorum. Satıcı bunun şans getireceğini söylüyor. Kabuğu çantama koyuyorum. Onu eve götürmek istiyorum.",
+
+  "Akşam kordon boyuna gidiyoruz. Deniz kenarında uzun bir yürüyüş yolu. Burada aileler dolaşıyor ve hafif bir müzik çalıyor.",
+  "Dondurma alıyoruz. Benimki çilekli, Anton'unki çikolatalı. Bir banka oturup denizi izliyoruz. Güneş batıyor ve sular altın rengine bürünüyor.",
+  "Ben 'Ne kadar güzel!' diyorum. Anton sessizce gülümsüyor. O da mutlu. Uzun süre hiç konuşmadan oturuyoruz.",
+
+  "Dördüncü gün yağmur yağıyor. Gökyüzü gri ve dışarısı soğuk. Otelde kalıyoruz. Biraz hüzünleniyorum.",
+  "Ama sonra 'Yağmur da güzeldir' diye düşünüyorum. Bir kitap alıp pencerenin kenarına oturuyorum. Sıcak çayımı yudumlayıp kitap okuyorum.",
+  "Anton başka bir misafirle kağıt oynuyor. Kahkahalarla gülüyorlar. Akşama doğru yağmur diniyor. Güneş açıyor ve gökkuşağı beliriyor.",
+
+  "Otelde bir kızla tanışıyorum. Adı Maria. O da burada tatil yapıyor. Maria başka bir şehirde yaşıyor ve doktor olarak çalışıyor.",
+  "Birlikte kahvaltı yapıp geziyoruz. Maria bana işini anlatıyor. Ben de mağazadan ve kitaplardan bahsediyorum. Sohbet etmek çok keyifli.",
+  "Maria da tıpkı benim gibi denizi çok seviyor. Birlikte yüzüyoruz ve deniz kabukları topluyoruz. 'İyi ki buraya gelmişim!' diye düşünüyorum.",
+
+  "Bir gün tura katılıyoruz. Otobüs dağlara çıkıyor. Yol uzun ama manzara büyüleyici. Etrafımdaki her şeyin fotoğrafını çekiyorum.",
+  "Dağlarda hava serin ve dingin. Patikada yürüyoruz. Rehber buraların tarihini anlatıyor. Her şeyi anlamasam da ilgiyle dinliyorum.",
+  "Zirvede mola veriyoruz. Buradan bütün deniz ayaklarımızın altında. Büyük mavi bir ayna gibi. Uzun uzun bakıyorum ve hiç ayrılmak istemiyorum.",
+
+  "Tatil sona eriyor. Bugün son akşamımız. Bir restorana gidip bir sürü lezzetli yemek sipariş ediyoruz. Maria da bizimle geliyor.",
+  "Ne kadar güzel geçtiğini konuşuyoruz. Anton suya nasıl düştüğünü hatırlatıyor. Hepimiz gülüyoruz. Maria telefon numaramı kaydediyor.",
+  "Sonra son bir kez sahile iniyoruz. Gece vakti deniz sakin ve karanlık. Gökyüzünde binlerce yıldız parlıyor. Denize 'Hoşça kal. Yine geleceğim,' diyorum.",
+
+  "Sabah bavullarımızı topluyoruz. Çok fazla hatıra eşyası aldığım için bavul ağırlaşmış. Anneme, babama, Lena'ya ve Olga'ya hediyeler götürüyorum.",
+  "Gara gidiyoruz. Maria bizi uğurluyor. Bana sarılıp 'Bana yaz!' diyor. Yazacağıma söz veriyorum.",
+  "Trende camdan dışarı bakıyorum. Deniz geride kalıyor. İçimde tatlı bir hüzün var ama çok mutluyum. Bir sürü güzel anı biriktirdim.",
+
+  "Evde sessizlik ve huzur var. Pencereleri açıp eşyalarımı yerleştiriyorum. Deniz kabuğunu rafa koyuyorum. Artık bana hep denizi hatırlatacak.",
+  "Annemi arıyorum. Ona her şeyi anlatıyorum: denizi, pazarı, Maria'yı. Annem dinleyip 'Güzelce dinlendiğine çok sevindim,' diyor.",
+  "Yarın işe gidiyorum. Üzülmüyorum. Sevdiğim bir işim, şefkatli bir ailem ve iyi dostlarım olduğunu biliyorum. Yakında yeni bir tatil olacak."
+];
+
+// Chinese (zh)
+const zhParagraphs: string[] = [
+  "我马上就要休假了。我非常高兴。假期有两个星期。我想去海边。",
+  "我冬天从没去过海边，但现在是夏天。夏天温暖而充满阳光。这是度假休息的好时光。",
+  "我哥哥安东也一起去。他说：“安娜，这会是最好的一次假期！”我觉得他是对的。",
+
+  "我正在为旅行做准备。首先我买好了火车票。车票不贵。我们坐夜车，早晨就能到达目的地。",
+  "然后我去商店购物。我买了一套泳衣、一顶遮阳帽和防晒霜。我还买了一双新凉鞋。它们是红色的，穿起来非常舒服。",
+  "在家里我收拾行李箱。我带了裙子、短裤和T恤。我还带了一条毛巾和一本书。行李箱很重，但安东帮我提。",
+
+  "傍晚我们去火车站。车站里有很多人。大家都很匆忙。人们在寻找各自的列车和车厢。",
+  "我们找到了我们的火车。它是蓝色的，长长的。我们的车厢是七号车厢。我们走进去并找到了自己的座位。",
+  "火车开动了。我看着窗外。城市被甩在身后。我想：“我要去海边了！”我的心情好极了。",
+
+  "在火车上我们喝茶。乘务员给我们送来了茶和饼干。饼干又甜又香脆。",
+  "安东在看杂志。我听着音乐，看着田野。田野是绿色的，天空是红色的。那是美丽的日落。",
+  "随后我们准备睡觉。火车上的铺位虽然窄，但很舒服。列车轻轻晃动着，我很快就睡着了。",
+
+  "早晨我很早就醒来了。我望向窗外，看到了大海。它是那么宽阔湛蓝。我简直不敢相信它竟然如此美丽。",
+  "火车停了下来。我们走上车站站台。空气温暖，带着海水的清香。白色的海鸟在我们头顶鸣叫。",
+  "我们叫了一辆出租车去旅馆。司机人很好。他向我们介绍这座城市。我认真倾听并微笑着。",
+
+  "我们的旅馆小巧而洁白。它就坐落在海边。旅馆有一个漂亮的花园。花园里盛开着花朵，长着大树。",
+  "我有一间独立的房间。里面有床、桌子和衣柜。窗户朝向大海。我打开窗，聆听着海浪的声音。",
+  "安东住在隔壁房间。我们俩都很满意。前台接待员说：“欢迎光临！”我们说：“谢谢！”",
+
+  "早餐后我们走向海滩。海滩又大又干净。沙子柔软温热。海滩上有很多人，但空间很宽敞。",
+  "我戴上帽子，在皮肤上涂抹防晒霜。安东笑了。他说我很害怕晒太阳。但我知道：阳光有时是很危险的。",
+  "随后我们走向海水中。海水清凉透彻。我游得时间不长，因为我游得不太好。安东游得很远。",
+
+  "一点钟我们去吃午餐。海滩旁边有一家小餐馆。人们坐在那里吃鱼。我们也想吃鱼。",
+  "我点了一份炸鱼配土豆和沙拉。安东点了汤和肉。我们喝柠檬水。冰凉爽口，带着酸甜。",
+  "服务员端来了食物。味道极其鲜美。我说：“这是我人生中最棒的一顿午餐！”安东回答：“你每次都这么说。”",
+
+  "傍晚我们在城里漫步。这里的街道古老而狭窄。房屋呈黄色和白色。阳台上摆满了鲜花。",
+  "我们去了集市。集市上出售水果、蔬菜和纪念品。摊主们大声交谈并微笑着。我买了桃子。它们又甜又多汁。",
+  "我还买了一个小贝壳。摊主说这能带来好运。我把贝壳放进包里。我想把它带回家。",
+
+  "傍晚我们来到海滨长廊散步。这是沿着海边的一条长街。许多家庭在这里散步，耳边响着轻柔的音乐。",
+  "我们买了冰淇淋。我的是草莓味的，安东的是巧克力的。我们坐在长椅上凝望大海。夕阳西下，海面被染成了金色。",
+  "我说：“真惬意啊！”安东微笑着没有说话。他也感到很幸福。我们静静地坐了很久，什么也没说。",
+
+  "第四天下起了雨。天空灰蒙蒙的，外面很冷。我们留在了旅馆里。我心里有一点点难过。",
+  "但随后我想：“下雨天其实也很好。”我拿了一本书坐在窗前。我一边喝着热茶一边阅读。",
+  "安东和另一位客人打牌。他们开怀大笑。傍晚时分雨停了。太阳出来了，天上出现了一道彩虹。",
+
+  "在旅馆里我结识了一位年轻姑娘。她叫玛丽亚。她也是来这里度假的。玛丽亚住在另一个城市，是一名医生。",
+  "我们一起吃早餐并散步。玛丽亚讲起她的工作。我讲起我的商店和书本。我们聊得很投机。",
+  "玛丽亚和我一样深爱大海。我们一起游泳并捡贝壳。我想：“来到这里真是太好了！”",
+
+  "有一天我们去参加了远足。大巴开往群山。路途遥远，但风景非常壮美。我拍下了周围所有的美景。",
+  "山里清凉而宁静。我们沿着步道前行。导游讲述着这些地方的历史。我虽然听不懂所有内容，但一直兴致盎然地听着。",
+  "在山顶我们驻足停留。从这里可以俯瞰整片大海。它宛如一面巨大的蓝色镜子。我凝视了很久，舍不得离开。",
+
+  "假期就要结束了。今晚是我们在这里的最后一个夜晚。我们去了一家餐厅，点了许多美味的佳肴。玛丽亚也和我们在一起。",
+  "我们畅谈旅途中的快乐时光。安东想起了自己掉进水里的趣事。我们都笑了起来。玛丽亚记下了我的电话号码。",
+  "随后我们最后一次来到海滩。夜晚的大海平静而深邃。夜空中繁星闪烁。我对大海轻声说：“再见。我一定会再来的。”",
+
+  "早晨我们收拾行李。行李箱变得更重了，因为我买了许多纪念品。我给妈妈、爸爸、列娜和奥尔加都带了礼物。",
+  "我们赶往火车站。玛丽亚为我们送行。她拥抱了我并说：“记得给我写信！”我答应她一定会写。",
+  "在火车上我凝望窗外。大海渐渐留在了身后。我心里略带伤感，但感到无比幸福。我留下了无数美好的回忆。",
+
+  "家里宁静而温馨。我打开窗户，收拾好行李。我把小贝壳摆在了架子上。现在它总能让我想起大海。",
+  "我给妈妈打电话。我把一切都告诉了她：大海、集市、玛丽亚。妈妈微笑着听完并说：“很高兴你玩得这么开心。”",
+  "明天我就要去上班了。我并不沮丧。我知道我有热爱的工作、温暖的家庭和亲切的朋友。很快又会有新的假期到来。"
+];
+
+// Japanese (ja)
+const jaParagraphs: string[] = [
+  "もうすぐ休暇です。とても嬉しいです。休暇は二週間あります。海に行きたいです。",
+  "冬に海へ行ったことはありませんが、今は夏です。夏は暖かく晴れています。休むにはとても良い時期です。",
+  "兄のアントンも一緒に行きます。彼は「アンナ、最高の休暇になるよ！」と言っています。彼の言う通りだと思います。",
+
+  "旅行の準備をしています。まず電車の切符を買います。切符は高くありません。夜に出発して、朝には到着します。",
+  "それからお店に行きます。水着と帽子、日焼け止めを買います。新しいサンダルも買います。赤くてとても履き心地が良いです。",
+  "家でスーツケースに荷物を詰めます。ワンピースやショートパンツ、Tシャツを入れます。タオルと本も入れます。スーツケースは重いですが、アントンが手伝ってくれます。",
+
+  "夕方、私たちは駅に向かいます。駅にはたくさんの人がいます。みんな急いでいます。人々は自分の電車や車両を探しています。",
+  "私たちは電車を見つけます。青くて長い電車です。私たちの車両は7号車です。乗り込んで自分たちの席を見つけます。",
+  "電車が動き出します。窓の外を眺めます。街が後ろへと遠ざかっていきます。「海へ行くんだ！」と思うと、とても晴れやかな気分になります。",
+
+  "電車の中でお茶を飲みます。車掌さんが温かいお茶とクッキーを持ってきてくれます。クッキーは甘くて美味しいです。",
+  "アントンは雑誌を読んでいます。私は音楽を聴きながら野原を眺めます。草原は緑で、空は赤く染まっています。夕暮れ時です。",
+  "それから眠りにつきます。電車のベッドは狭いですが快適です。電車が揺れて、私はすぐに眠ってしまいます。",
+
+  "朝、早く目が覚めます。窓の外を見ると海が見えます。広大で青いです。こんなに美しいなんて信じられません。",
+  "電車が止まります。私たちは駅のホームに降ります。空気は暖かく、潮の香りがします。頭上では白い鳥たちが鳴いています。",
+  "タクシーに乗ってホテルへ向かいます。運転手さんは親切です。街のことをいろいろ教えてくれます。私は楽しく耳を傾けながら微笑みます。",
+
+  "私たちのホテルは小さくて白い建物です。海のすぐそばに建っています。ホテルには綺麗な庭があります。庭には花や大きな木が生えています。",
+  "私には個室があります。ベッド、机、クローゼットがあります。窓からは海が見えます。窓を開けて波の音に耳を澄ませます。",
+  "アントンは隣の部屋に泊まっています。二人とも大満足です。フロントの人が「ようこそ！」と言い、私たちは「ありがとうございます！」と答えます。",
+
+  "朝食の後、私たちはビーチへ向かいます。ビーチは広くて清潔です。砂は柔らかくて温かいです。人がたくさんいますが、十分な広さがあります。",
+  "私は帽子をかぶり、肌にクリームを塗ります。アントンが笑います。私が日差しを怖がりすぎていると言います。でも、日光は危険なこともあるのです。",
+  "それから海に入ります。水はひんやりとして透明です。私は泳ぎがあまり得意ではないので長くは泳ぎません。アントンは遠くまで泳ぎます。",
+
+  "1時に昼食を食べに行きます。ビーチの近くに小さなレストランがあります。人々が座って魚を食べています。私たちも魚が食べたくなります。",
+  "私は魚料理とポテト、サラダを注文します。アントンはスープと肉を注文します。私たちはレモネードを飲みます。冷たくて甘酸っぱいです。",
+  "ウェイターが料理を運んできます。どれもとても美味しいです。「人生で最高の昼食だわ！」と言うと、アントンは「いつもそう言うね」と笑います。",
+
+  "夕方、街を散歩します。ここの小道は狭くて歴史があります。家々は黄色と白で塗られています。バルコニーには花が飾られています。",
+  "私たちは市場へ行きます。市場では果物や野菜、お土産が売られています。売り子さんたちは大きな声で話しながら微笑んでいます。私は桃を買います。甘くてとてもジューシーです。",
+  "小さな貝殻も一つ買います。店主が幸運のお守りだと言ってくれます。私は貝殻をバッグにしまいます。家に持って帰りたいです。",
+
+  "夜、私たちは海沿いの遊歩道へ行きます。海に沿って長く続く道です。家族連れが散歩し、静かな音楽が流れています。",
+  "私たちはアイスクリームを買います。私はイチゴ味、アントンはチョコレート味です。ベンチに座って海を眺めます。日が沈み、海面が黄金色に輝きます。",
+  "「なんて素敵なんだろう！」と私が言うと、アントンは静かに微笑みます。彼も幸せそうです。私たちは何も言わずに長い間座っています。",
+
+  "四日目は雨が降ります。空は灰色で、外は寒いです。私たちはホテルにとどまります。私は少し寂しくなります。",
+  "でも「雨の日も悪くないわ」と思い直します。私は本を手に取って窓辺に座ります。温かいお茶を飲みながら読書を楽しみます。",
+  "アントンは他の宿泊客とトランプをしています。二人で大きな声で笑い合っています。夕方には雨が上がります。太陽が顔を出し、虹がかかります。",
+
+  "ホテルで一人の若い女性と知り合います。名前はマリアです。彼女もここで休暇を過ごしています。マリアは別の街に住んでいて、医師として働いています。",
+  "私たちは一緒に朝食を食べ、散歩をします。マリアは自分の仕事について話してくれます。私はお店のことや本について話します。話すのがとても楽しいです。",
+  "マリアも私と同じくらい海が大好きです。一緒に泳ぎ、貝殻を拾います。「ここに来て本当によかった！」と心から思います。",
+
+  "ある日、私たちはツアーに出かけます。バスは山へと向かいます。道のりは長いですが、景色は素晴らしいです。周りの風景をたくさん写真に収めます。",
+  "山の中は涼しくて静かです。私たちは小道を歩きます。ガイドさんがこの土地の歴史を語ってくれます。すべては理解できなくても、興味深く聴き入ります。",
+  "山頂で立ち止まります。ここからは海全体が見渡せます。まるで大きな青い鏡のようです。いつまでも眺めていたくて、その場を離れたくありません。",
+
+  "休暇が終わりに近づいています。今夜が最後の夜です。私たちはレストランへ行き、美味しい料理をたくさん注文します。マリアも一緒です。",
+  "楽しかった出来事について語り合います。アントンが水に落ちた時のことを思い出します。みんなで笑い合います。マリアが私の電話番号を控えます。",
+  "その後、最後にもう一度ビーチへ行きます。夜の海は静かで深いです。空には満天の星が輝いています。海に向かって「さようなら。また来るね」と告げます。",
+
+  "朝、私たちは荷造りをします。お土産をたくさん買ったので、スーツケースは一段と重くなりました。母、父、レーナ、オリガへのお土産を詰めます。",
+  "私たちは駅へ向かいます。マリアが見送りに来てくれます。彼女は私を抱きしめて「手紙を書いてね！」と言います。私は必ず書くと約束します。",
+  "電車の中で窓の外を見つめます。海が遠ざかっていきます。少し寂しいですが、とても幸せです。素敵な思い出がたくさんできました。",
+
+  "家は静かで落ち着きます。窓を開けて荷物を片付けます。買ってきた貝殻を棚に飾ります。これでいつでも海を思い出すことができます。",
+  "母に電話をかけます。海のこと、市場のこと、マリアのことなど、すべてを話します。母は耳を傾け、「ゆっくり休めてよかったね」と言ってくれます。",
+  "明日から仕事です。悲しくはありません。大好きな仕事、優しい家族、そして素晴らしい友達がいるからです。またすぐに新しい休暇がやってきます。"
+];
+
+// Korean (ko)
+const koParagraphs: string[] = [
+  "곧 휴가가 시작됩니다. 정말 기쁩니다. 휴가는 2주 동안입니다. 저는 바다에 가고 싶습니다.",
+  "겨울에는 바다에 가본 적이 없지만, 지금은 여름입니다. 여름은 따뜻하고 햇살이 눈부십니다. 휴식을 취하기에 아주 좋은 때입니다.",
+  "오빠 안톤도 함께 갑니다. 그는 '안나야, 이번 휴가가 최고가 될 거야!'라고 말합니다. 오빠 말이 맞는 것 같습니다.",
+
+  "저는 여행 준비를 합니다. 먼저 기차표를 예매합니다. 표는 비싸지 않습니다. 우리는 밤에 출발해서 아침에 도착합니다.",
+  "그런 다음 가게에 갑니다. 수영복, 모자, 선크림을 삽니다. 새 샌들도 삽니다. 빨간색이고 아주 편안합니다.",
+  "집에서 여행 가방을 쌉니다. 원피스, 반바지, 티셔츠를 챙깁니다. 수건과 책도 한 권 넣습니다. 가방이 무겁지만 안톤이 도와줍니다.",
+
+  "저녁에 우리는 기차역으로 갑니다. 역에는 사람들이 많습니다. 다들 서두르고 있습니다. 사람들은 자신의 기차와 칸을 찾고 있습니다.",
+  "우리는 기차를 찾습니다. 파랗고 긴 기차입니다. 우리 칸은 7호차입니다. 안으로 들어가 자리를 잡습니다.",
+  "기차가 출발합니다. 창밖을 바라봅니다. 도시가 뒤로 멀어집니다. '내가 바다로 가고 있구나!' 생각하니 기분이 최고입니다.",
+
+  "기차 안에서 차를 마십니다. 승무원이 따뜻한 차와 과자를 가져다줍니다. 과자가 달콤하고 맛있습니다.",
+  "안톤은 잡지를 읽습니다. 저는 음악을 들으며 들판을 바라봅니다. 들판은 푸르고 하늘은 붉게 물듭니다. 아름다운 노을입니다.",
+  "그런 다음 잠자리에 듭니다. 기차 침대는 좁지만 편안합니다. 기차가 흔들리자 금세 잠에 빠져듭니다.",
+
+  "아침에 일찍 일어납니다. 창밖을 보니 바다가 보입니다. 크고 푸릅니다. 이렇게 아름답다니 믿기지 않습니다.",
+  "기차가 멈춥니다. 우리는 역 플랫폼으로 나옵니다. 공기가 따뜻하고 바다 향기가 납니다. 머리 위로 하얀 새들이 지저귑니다.",
+  "택시를 타고 호텔로 향합니다. 기사님이 친절하십니다. 도시에 대해 여러 이야기를 들려주십니다. 저는 귀담아들으며 미소를 짓습니다.",
+
+  "우리 호텔은 작고 하얗습니다. 바다 바로 옆에 서 있습니다. 호텔에는 예쁜 정원이 있습니다. 정원에는 꽃들과 큰 나무들이 자라고 있습니다.",
+  "저에게는 아담한 방이 하나 있습니다. 침대, 탁자, 옷장이 있습니다. 창문은 바다를 향해 열려 있습니다. 창문을 열고 파도 소리를 듣습니다.",
+  "안톤은 옆방에 묵습니다. 둘 다 아주 마음에 듭니다. 직원이 '환영합니다!'라고 인사하자 우리는 '감사합니다!'라고 답합니다.",
+
+  "아침을 먹고 해변으로 향합니다. 해변은 넓고 깨끗합니다. 모래는 부드럽고 따뜻합니다. 해변에 사람이 많지만 공간은 넉넉합니다.",
+  "모자를 쓰고 피부에 크림을 바릅니다. 안톤이 웃습니다. 햇볕을 너무 무서워한다고 놀립니다. 하지만 햇빛은 위험할 수 있다는 걸 압니다.",
+  "그런 다음 물속으로 들어갑니다. 물이 시원하고 투명합니다. 수영을 잘하지 못해서 오래 수영하지는 않습니다. 안톤은 멀리까지 헤엄쳐 갑니다.",
+
+  "1시에 점심을 먹으러 갑니다. 해변 근처에 작은 식당이 있습니다. 사람들이 앉아 생선을 먹고 있습니다. 우리도 생선 요리를 먹고 싶어집니다.",
+  "저는 감자를 곁들인 생선과 샐러드를 주문합니다. 안톤은 수프와 고기를 시킵니다. 레모네이드를 마십니다. 시원하고 상큼합니다.",
+  "웨이터가 음식을 가져옵니다. 모든 음식이 정말 맛있습니다. '내 인생 최고의 점심이야!'라고 말하자 안톤은 '너는 항상 그렇게 말하잖아'라며 웃습니다.",
+
+  "저녁에는 시내를 산책합니다. 이곳의 골목길은 좁고 고즈넉합니다. 집들은 노란색과 흰색입니다. 발코니마다 꽃들이 놓여 있습니다.",
+  "우리는 시장으로 갑니다. 시장에서는 과일, 채소, 기념품을 팝니다. 상인들은 큰 소리로 정겹게 이야기하며 미소를 짓습니다. 복숭아를 삽니다. 달콤하고 과즙이 풍부합니다.",
+  "작은 조개껍데기도 하나 삽니다. 상인이 행운을 가져다줄 거라고 말합니다. 가방에 조개껍데기를 넣습니다. 집에 가져가고 싶습니다.",
+
+  "밤에는 해안 산책로로 갑니다. 바다를 따라 길게 이어진 길입니다. 가족들이 산책을 즐기고 잔잔한 음악이 흘러나옵니다.",
+  "아이스크림을 삽니다. 제 것은 딸기 맛이고 안톤 것은 초콜릿 맛입니다. 벤치에 앉아 바다를 바라봅니다. 해가 지고 바다가 황금빛으로 물듭니다.",
+  "제가 '정말 좋다!'라고 감탄하자 안톤은 말없이 미소 짓습니다. 그도 행복해 보입니다. 우리는 한동안 말없이 가만히 앉아 있습니다.",
+
+  "나흘째 되는 날 비가 내립니다. 하늘은 회색이고 밖은 쌀쌀합니다. 우리는 호텔 안에 머뭅니다. 조금 아쉬운 마음이 듭니다.",
+  "하지만 곧 '비 오는 날도 운치 있어'라고 생각합니다. 책을 한 권 집어 들고 창가에 앉습니다. 따뜻한 차를 마시며 독서를 즐깁니다.",
+  "안톤은 다른 투숙객과 카드 게임을 합니다. 다들 큰 소리로 유쾌하게 웃습니다. 저녁 무렵 비가 그칩니다. 햇살이 비추고 무지개가 떠오릅니다.",
+
+  "호텔에서 한 아가씨를 알게 됩니다. 이름은 마리아입니다. 그녀도 이곳으로 휴가를 왔습니다. 마리아는 다른 도시에 살며 의사로 일하고 있습니다.",
+  "우리는 함께 아침을 먹고 산책을 합니다. 마리아는 자신의 일에 대해 이야기해 줍니다. 저는 가게 일과 책에 대해 이야기합니다. 대화가 정말 즐겁습니다.",
+  "마리아도 저만큼이나 바다를 사랑합니다. 함께 수영하고 조개껍데기를 모읍니다. '이곳에 오길 정말 잘했어!'라는 생각이 듭니다.",
+
+  "어느 날 우리는 투어를 떠납니다. 버스는 산을 향해 올라갑니다. 길은 멀지만 풍경이 감탄스러울 만큼 아름답습니다. 주변 풍경을 사진에 담습니다.",
+  "산속은 시원하고 고요합니다. 우리는 오솔길을 따라 걷습니다. 가이드가 이 지역의 역사에 대해 설명해 줍니다. 다 알아듣지는 못하지만 흥미롭게 듣습니다.",
+  "정상에서 잠시 멈춥니다. 이곳에서는 온 바다가 한눈에 내려다보입니다. 마치 거대한 푸른 거울 같습니다. 오랫동안 바라보며 발길을 떼지 못합니다.",
+
+  "휴가가 끝나갑니다. 오늘이 우리의 마지막 밤입니다. 우리는 식당에 가서 맛있는 음식을 푸짐하게 주문합니다. 마리아도 함께합니다.",
+  "우리는 즐거웠던 기억들을 나눕니다. 안톤이 물에 빠졌던 순간을 떠올립니다. 모두 함께 웃습니다. 마리아가 제 전화번호를 적어 갑니다.",
+  "그 후 마지막으로 해변에 나갑니다. 밤바다는 잔잔하고 짙은 어둠에 감싸여 있습니다. 하늘에는 별들이 가득합니다. 바다에게 '안녕. 꼭 다시 올게'라고 속삭입니다.",
+
+  "아침에 우리는 짐을 쌉니다. 기념품을 많이 사서 가방이 한층 무거워졌습니다. 엄마, 아빠, 레나, 올가를 위한 선물을 챙깁니다.",
+  "역으로 향합니다. 마리아가 배웅을 나옵니다. 그녀는 저를 꼭 안아주며 '꼭 편지해!'라고 말합니다. 저는 꼭 연락하겠다고 약속합니다.",
+  "기차 안에서 창밖을 내다봅니다. 바다가 저 멀리 뒤로 물러납니다. 조금 서운하지만 마음은 벅차게 행복합니다. 아름다운 추억이 가득합니다.",
+
+  "집에 돌아오니 아늑하고 편안합니다. 창문을 활짝 열고 짐을 정리합니다. 선반 위에 작은 조개껍데기를 올려놓습니다. 이제 매일 바다를 떠올릴 수 있습니다.",
+  "엄마에게 전화를 겁니다. 바다, 시장, 마리아에 대해 모두 들려드립니다. 엄마는 가만히 들으시더니 '푹 쉬고 온 것 같아 정말 기쁘구나'라고 하십니다.",
+  "내일부터 다시 출근합니다. 아쉽지 않습니다. 저에게는 사랑하는 일, 다정한 가족, 좋은 친구들이 있으니까요. 곧 또 새로운 휴가가 찾아올 테니까요."
+];
+
+// Arabic (ar)
+const arParagraphs: string[] = [
+  "قريباً ستبدأ عطلتي. أنا سعيدة جداً. العطلة مدتها أسبوعان. أريد أن أذهب إلى البحر.",
+  "لم أذهب إلى البحر في الشتاء من قبل، لكن الآن فصل الصيف. الصيف دافئ ومشمس. إنه وقت رائع للاستراحة.",
+  "أخي أنطون ذاهب معي أيضاً. يقول: «يا آنا، ستكون هذه أفضل عطلة!» وأعتقد أنه محق.",
+
+  "أنا أستعد للرحلة. أولاً، أشتري تذاكر القطار. التذاكر ليست باهظة الثمن. نسافر ليلاً، وفي الصباح نكون قد وصلنا.",
+  "بعد ذلك أذهب إلى المتجر. أشتري ملابس سباحة وقبعة وواقي شمس. كما أشتري صندلاً جديداً. إنه أحمر ومريح للغاية.",
+  "في المنزل أرتب حقيبتي. آخذ الفساتين والسراويل القصيرة والقمصان. آخذ منشفة وكتاباً. الحقيبة ثقيلة، لكن أنطون يساعدني.",
+
+  "في المساء نذهب إلى محطة القطار. هناك أناس كثيرون في المحطة. الجميع في عجلة من أمرهم. الناس يبحثون عن قطاراتهم وعرباتهم.",
+  "نجد قطارنا. إنه أزرق وطويل. عربتنا رقم سبعة. ندخل ونجد مقاعدنا.",
+  "يتحرك القطار. أنظر من النافذة. المدينة تبقى في الوراء. أفكر: «أنا ذاهبة إلى البحر!» مزاجي في غاية الروعة.",
+
+  "في القطار نشرب الشاي. تحضر لنا المضيفة شاياً وبسكويتاً. البسكويت حلو ولذيذ.",
+  "أنطون يقرأ مجلة. أنا أستمع إلى الموسيقى وأنظر إلى الحقول. الحقول خضراء والسماء حمراء. إنه وقت الغروب.",
+  "ثم نذهب للنوم. السرير في القطار ضيق لكنه مريح. القطار يتمايل وأنا أنام بسرعة.",
+
+  "في الصباح أستيقظ مبكراً. أنظر من النافذة فأرى البحر. إنه كبير وأزرق. لا أكاد أصدق كم هو جميل.",
+  "يتوقف القطار. نخرج إلى رصيف المحطة. الهواء دافئ وتفوح منه رائحة البحر. وطيور بيضاء تصدح فوقنا.",
+  "نستقل سيارة أجرة ونتوجه إلى الفندق. السائق لطيف. يروي لنا الكثير عن المدينة. أستمع إلى كل شيء وأبتسم.",
+
+  "فندقنا صغير وأبيض. يقع بالقرب من البحر. الفندق محاط بحديقة جميلة. تنمو في الحديقة أزهار وأشجار باسقة.",
+  "لدي غرفة خاصة. فيها سرير وطاولة وخزانة ملابس. النافذة تطل على البحر. أفتح النافذة وأستمع إلى هدير الأمواج.",
+  "أنطون يقيم في الغرفة المجاورة. كِلانا مسرور. موظف الاستقبال يقول: «أهلاً وسهلاً!» ونحن نقول: «شكراً جزيلاً!»",
+
+  "بعد تناول الإفطار نذهب إلى الشاطئ. الشاطئ واسع ونظيف. الرمال ناعمة ودافئة. يوجد الكثير من الناس على الشاطئ، لكن المكان يتسع للجميع.",
+  "أرتدي قبعتي وأضع الواقي على بشرتي. يضحك أنطون. يقول إنني أخاف كثيراً من الشمس. لكني أعلم: الشمس قد تكون ضارة أحياناً.",
+  "ثم ننزل إلى الماء. الماء منعش وصافٍ. لا أسبح طويلاً لأنني لست ماهرة جداً في السباحة. أنطون يسبح بعيداً.",
+
+  "في الساعة الواحدة نذهب لتناول الغداء. بجانب الشاطئ يوجد مطعم صغير. الناس يجلسون هناك ويأكلون السمك. نحن أيضاً نشتهي السمك.",
+  "أطلب سمكاً مع بطاطس وسلطة. أنطون يطلب حساءً ولحماً. نشرب عصير الليمون. إنه بارد وحامض.",
+  "يحضر النادل الطعام. كل شيء شهي للغاية. أقول: «هذا ألذ غداء في حياتي!» يجيب أنطون: «أنتِ دائماً تقولين ذلك».",
+
+  "في المساء نتجول في أرجاء المدينة. الشوارع هنا ضيقة وقديمة. البيوت صفراء وبيضاء. وتزين الشرفات باقات الزهور.",
+  "نذهب إلى السوق. يباع في السوق الفواكه والخضار والهدايا التذكارية. البائعون يتحدثون بصوت عالٍ ويبتسمون. أشتري خوخاً. إنه حلو ومليء بالعصير.",
+  "كما أشتري صدفة بحرية صغيرة. يقول البائع إنها تجلب الحظ. أضع الصدفة في حقيبتي. أريد أن آخذها معي إلى البيت.",
+
+  "في المساء نذهب إلى الكورنيش. إنه ممشى طويل بمحاذاة البحر. تتنزه هنا العائلات وتعزف موسيقى هادئة.",
+  "نشتري مثلجات. نكهتي بالفراولة ونكهة أنطون بالشوكولاتة. نجلس على مقعد ونتأمل البحر. تغرب الشمس وتتحول المياه إلى لون ذهبي ساحر.",
+  "أقول: «كم هذا جميل!» يبتسم أنطون في صمت. هو أيضاً يشعر بالسعادة. نجلس طويلاً دون أن ننطق بكلمة.",
+
+  "في اليوم الرابع تهطل الأمطار. السماء رمادية والطقس بارد في الخارج. نبقى في الفندق. أشعر بقليل من الحزن.",
+  "لكن سرعان ما أفكر: «المطر جميل أيضاً». آخذ كتاباً وأجلس بجانب النافذة. أرتشف شاياً ساخناً وأقرأ.",
+  "يلعب أنطون الورق مع نزيل آخر. يضحكون بصوت عالٍ. ومع حلول المساء يتوقف المطر. تشرق الشمس ويظهر قوس قزح.",
+
+  "في الفندق أتعرف على فتاة. اسمها ماريا. هي أيضاً تقضي إجازتها هنا. تعيش ماريا في مدينة أخرى وتعمل طبيبة.",
+  "نتناول الإفطار معاً ونتنزه. تحدثني ماريا عن عملها. وأحدثها عن المتجر وعن الكتب. الحديث بيننا ممتع للغاية.",
+  "ماريا تعشق البحر مثلي تماماً. نسبح معاً ونجمع الأصداف. أفكر: «كم أنا محظوظة بمجيئي إلى هنا!»",
+
+  "في أحد الأيام نذهب في جولة سياحية. تصعد الحافلة إلى الجبال. الطريق طويل لكن المشهد رائع للغاية. ألتقط صوراً لكل ما حولي.",
+  "في الجبال يسود الهدوء والنسيم العليل. نمشي على طول المسار. المرشد يروي تاريخ هذه الأماكن. لا أفهم كل شيء، لكني أستمع بشغف.",
+  "عند القمة نتوقف. من هنا يبدو البحر بأكمله. يشبه مرآة زرقاء عملاقة. أنظر طويلاً ولا أرغب في المغادرة.",
+
+  "أيام العطلة تشرف على الانتهاء. الليلة هي ليلتنا الأخيرة. نذهب إلى مطعم ونطلب الكثير من الأطباق اللذيذة. ماريا ترافقنا.",
+  "نتحدث عن كل اللحظات الجميلة. يتذكر أنطون كيف سقط في الماء. نضحك جميعاً. تسجل ماريا رقم هاتفي.",
+  "ثم نذهب إلى الشاطئ لآخر مرة. في الليل يبدو البحر هادئاً وداكناً. السماء تلمع بآلاف النجوم. أقول للبحر: «إلى اللقاء. سأعود يوماً ما».",
+
+  "في الصباح نحزم حقائبنا. أصبحت الحقيبة أثقل لأنني اشتريت الكثير من الهدايا. أحمل هدايا لأمي وأبي ولينا وأولغا.",
+  "نتوجه إلى المحطة. تأتي ماريا لتوديعنا. تعانقني وتقول: «اكتبي لي!» أعدها بأنني سأكتب لها بالتأكيد.",
+  "في القطار أنظر من النافذة. يتراجع البحر إلى الوراء. يغمرني شجن خفيف، لكني أشعر بسعادة غامرة. لقد جمعت الكثير من الذكريات الطيبة.",
+
+  "في المنزل يعم الهدوء والدفء. أفتح النوافذ وأرتب أغراضي. أضع الصدفة على الرف. الآن ستذكرني دائماً بالبحر.",
+  "أتصل بأمي. أخبرها بكل شيء: عن البحر، والسوق، وماريا. تستمع أمي وتقول: «يسعدني جداً أنكِ نلتِ قسطاً طيباً من الراحة».",
+  "غداً أعود إلى العمل. لست حزينة. أعلم أن لدي عملاً أحبه، وعائلة حنونة، وأصدقاء مخلصين. وقريباً ستأتي عطلة جديدة."
+];
+
+// Hebrew (he)
+const heParagraphs: string[] = [
+  "בקרוב יוצאת לחופשה. אני מאושרת מאוד. החופשה נמשכת שבועיים. אני רוצה לנסוע לים.",
+  "מעולם לא הייתי בים בחורף, אבל עכשיו קיץ. הקיץ חם ושמשי. זהו זמן מצוין למנוחה.",
+  "אחי אנטון נוסע איתי גם כן. הוא אומר: 'אנה, זו תהיה החופשה הכי טובה!' ואני חושבת שהוא צודק.",
+
+  "אני מתכוננת לנסיעה. קודם כל אני קונה כרטיסי רכבת. הכרטיסים אינם יקרים. אנחנו נוסעים בלילה, ובבוקר כבר נגיע.",
+  "אחר כך אני הולכת לחנות. אני קונה בגד ים, כובע וקרם הגנה. בנוסף אני קונה סנדלים חדשים. הם אדומים ונוחים במיוחד.",
+  "בבית אני אורזת את המזוודה. אני לוקחת שמלות, מכנסיים קצרים וחולצות. אני לוקחת מגבת וספר. המזוודה כבדה, אך אנטון עוזר לי.",
+
+  "בערב אנחנו נוסעים לתחנת הרכבת. יש המון אנשים בתחנה. כולם ממהרים. אנשים מחפשים את הרכבות והקרונות שלהם.",
+  "אנחנו מוצאים את הרכבת שלנו. היא כחולה וארוכה. הקרון שלנו הוא מספר שבע. אנחנו נכנסים ומוצאים את המקומות שלנו.",
+  "הרכבת מתחילה לנסוע. אני מביטה מבעד לחלון. העיר נשארת מאחור. אני חושבת: 'אני נוסעת לים!' מצב הרוח שלי מרומם.",
+
+  "ברכבת אנחנו שותים תה. הכרטיסנית מביאה לנו תה ועוגיות. העוגיות מתוקות וטעימות.",
+  "אנטון קורא מגזין. אני מאזינה למוזיקה ומביטה בשדות. השדות ירוקים והשמיים אדמדמים. זו שקיעה מרהיבה.",
+  "אחר כך אנחנו הולכים לישון. המיטה ברכבת צרה אך נוחה. הרכבת מתנדנדת ואני נרדמת במהירות.",
+
+  "בבוקר אני מתעוררת מוקדם. אני מביטה מבעד לחלון ורואה את הים. הוא עצום וכחול. קשה לי להאמין שהוא כל כך יפה.",
+  "הרכבת עוצרת. אנחנו יורדים לרציף התחנה. האוויר חמים ומריח מים. מעלינו חגים וצווחים עופות לבנים.",
+  "אנחנו לוקחים מונית ונוסעים למלון. הנהג חביב ומסביר פנים. הוא מספר לנו על העיר. אני מקשיבה לכל מילה ומחייכת.",
+
+  "המלון שלנו קטן ולבן. הוא ניצב ממש ליד הים. למלון יש גינה נהדרת. בגינה צומחים פרחים ועצים גבוהים.",
+  "יש לי חדר נפרד משלי. יש בו מיטה, שולחן וארון. החלון משקיף אל הים. אני פותחת את החלון ומקשיבה לגלים.",
+  "אנטון גר בחדר הסמוך. שנינו מרוצים מאוד. פקיד הקבלה אומר: 'ברוכים הבאים!' ואנחנו עונים: 'תודה רבה!'",
+
+  "לאחר ארוחת הבוקר אנחנו הולכים לחוף. החוף רחב ידיים ונקי. החול רך וחמים. יש הרבה אנשים בחוף, אבל המקום מספיק לכולם.",
+  "אני חובשת כובע ומורחת קרם הגנה על העור. אנטון צוחק. הוא אומר שאני מפחדת יותר מדי מהשמש. אך אני יודעת: השמש עלולה להיות מסוכנת.",
+  "לאחר מכן אנחנו נכנסים למים. המים קרירים וצלולים. אינני שוחה זמן רב, כי אינני שוחה טוב במיוחד. אנטון שוחה למרחקים.",
+
+  "בשעה אחת אנחנו הולכים לאכול ארוחת צהריים. ליד החוף יש מסעדה קטנה. אנשים יושבים שם ואוכלים דגים. גם לנו מתחשק דג.",
+  "אני מזמינה דג עם תפוחי אדמה וסלט. אנטון מזמין מרק ובשר. אנחנו שותים לימונדה צוננת וחמצמצה.",
+  "המלצר מגיש את האוכל. הכל טעים להפליא. אני אומרת: 'זו ארוחת הצהריים הכי טובה בחיי!' אנטון משיב: 'את תמיד אומרת את זה'.",
+
+  "בערב אנחנו מטיילים בעיר. הרחובות כאן צרים ועתיקים. הבתים צהובים ולבנים. על המרפסות פורחים פרחים יפהפיים.",
+  "אנחנו הולכים לשוק. בשוק מוכרים פירות, ירקות ומזכרות. המוכרים מדברים בקול רם ומחייכים. אני קונה אפרסקים מתוקים ועסיסיים.",
+  "אני קונה גם צדף קטן. המוכר אומר שזה מביא מזל טוב. אני שמה את הצדף בתיק. אני רוצה לקחת אותו איתי הביתה.",
+
+  "בערב אנחנו יוצאים לטיילת. זוהי דרך ארוכה ויפהפייה לאורך הים. משפחות מטיילות כאן ומוזיקה שקטה מתנגנת ברקע.",
+  "אנחנו קונים גלידה. שלי בטעם תות ושלו בטעם שוקולד. אנחנו יושבים על ספסל וצופים בים. השמש שוקעת והמים הופכים מוזהבים.",
+  "אני אומרת: 'כמה נפלא!' אנטון שותק ומחייך. גם הוא מאושר. אנחנו יושבים יחד זמן רב מבלי להוציא מילה.",
+
+  "ביום הרביעי יורד גשם. השמיים אפורים ובחוץ קריר. אנחנו נשארים במלון. אני חשה מעט עצובה.",
+  "אך מיד אני חושבת: 'גם יום גשום הוא דבר נהדר'. אני לוקחת ספר ומתיישבת ליד החלון. אני לוגמת תה חם וקוראת בהנאה.",
+  "אנטון משחק קלפים עם אורח אחר. הם צוחקים בקול רם. לקראת הערב הגשם פוסק. השמש מבצבצת וקשת מרהיבה מופיעה.",
+
+  "במלון אני מכירה בחורה צעירה. שמה מריה. גם היא נופשת כאן. מריה מתגוררת בעיר אחרת ועובדת כרופאה.",
+  "אנחנו אוכלות יחד ארוחת בוקר ומטיילות. מריה מספרת על עבודתה. אני מספרת על החנות ועל ספרים. השיחה בינינו מרתקת.",
+  "מריה אוהבת את הים ממש כמוני. יחד אנחנו שוחות ואוספות צדפים. אני חושבת: 'כמה טוב שבאתי לכאן!'",
+
+  "באחד הימים אנחנו יוצאים לסיור מאורגן. האוטובוס נוסע אל עבר ההרים. הדרך ארוכה, אך הנוף עוצר נשימה. אני מצלמת כל פינה מסביב.",
+  "בהרים האוויר קריר ושקט. אנחנו צועדים בשביל. המדריך מספר על ההיסטוריה של המקומות האלה. אינני מבינה הכל, אך מקשיבה בעניין רב.",
+  "בפסגה אנחנו עוצרים. מכאן נשקף מראה הים במלוא הדרו. הוא נראה כמו מראת ענק כחולה. אני מביטה זמן רב ואינני רוצה לעזוב.",
+
+  "החופשה מתקרבת לסיומה. הערב הוא הערב האחרון שלנו. אנחנו הולכים למסעדה ומזמינים שפע מאכלים משובחים. מריה מצטרפת אלינו.",
+  "אנחנו משוחחים על כל החוויות הנפלאות. אנטון נזכר איך מעד ונפל למים. כולנו צוחקים מכל הלב. מריה רושמת את מספר הטלפון שלי.",
+  "לאחר מכן אנחנו יורדים לחוף בפעם האחרונה. בלילה הים שקט וכהה. בשמיים מנצנצים אינספור כוכבים. אני לוחשת לים: 'להתראות. עוד אחזור'.",
+
+  "בבוקר אנחנו אורזים את המזוודות. המזוודה הפכה כבדה בהרבה כי קניתי שפע מזכרות. אני מביאה מתנות לאמא, לאבא, ללנה ולאולגה.",
+  "אנחנו נוסעים לתחנה. מריה מלווה אותנו. היא מחבקת אותי בחום ואומרת: 'תכתבי לי!' ואני מבטיחה שאכתוב בהקדם.",
+  "ברכבת אני מביטה מהחלון. הים נסוג ומתרחק מאחור. עולה בי עצב קל, אך אני מאושרת מעומק הלב. צברתי שפע זיכרונות יקרים.",
+
+  "בבית שקט ונעים. אני פותחת את החלונות ומסדרת את החפצים. אני מניחה את הצדף על המדף. כעת הוא יזכיר לי תמיד את הים.",
+  "אני מתקשרת לאמא. אני מספרת לה על הכל: על הים, על השוק, על מריה. אמא מקשיבה בחיוך ואומרת: 'אני כל כך שמחה שנחת היטב'.",
+  "מחר אני חוזרת לעבודה. אינני עצובה כלל. אני יודעת שיש לי עבודה שאני אוהבת, משפחה תומכת וחברים נאמנים. ובקרוב תגיע חופשה חדשה."
+];
+
+const allTranslations: Record<string, string[]> = {
+  ru: ruParagraphs,
+  en: enParagraphs,
+  uk: ukParagraphs,
+  de: deParagraphs,
+  fr: frParagraphs,
+  es: esParagraphs,
+  it: itParagraphs,
+  pl: plParagraphs,
+  pt: ptParagraphs,
+  nl: nlParagraphs,
+  sv: svParagraphs,
+  tr: trParagraphs,
+  zh: zhParagraphs,
+  ja: jaParagraphs,
+  ko: koParagraphs,
+  ar: arParagraphs,
+  he: heParagraphs
+};
+
+const titleTranslations: Record<string, string> = {
+  ru: "Анна едет на море (Уровень A1)",
+  en: "Anna Goes to the Sea (Level A1)",
+  de: "Anna fährt ans Meer (Niveau A1)",
+  uk: "Анна їде на море (Рівень A1)",
+  fr: "Anna va à la mer (Niveau A1)",
+  es: "Anna va al mar (Nivel A1)",
+  it: "Anna va al mare (Livello A1)",
+  pl: "Anna jedzie nad morze (Poziom A1)",
+  zh: "安娜去海边 (A1级别)",
+  ja: "アンナ、海へ行く (レベルA1)",
+  ko: "안나, 바다로 가다 (레벨 A1)",
+  pt: "Anna vai ao mar (Nível A1)",
+  ar: "آنا تذهب إلى البحر (المستوى A1)",
+  tr: "Anna Denize Gidiyor (A1 Seviyesi)",
+  nl: "Anna gaat naar zee (Niveau A1)",
+  sv: "Anna åker till havet (Nivå A1)",
+  he: "אנה נוסעת לים (רמה A1)"
+};
+
+// Generate file content
+const fileContent = `import { ReadingDocument } from '../types';
+
+export const ANNA_SEA_ARTICLE: ReadingDocument = {
+  id: 'anna_sea_a1_001',
+  title: 'Анна едет на море (Уровень A1)',
+  author: 'LingoTwice Stories',
+  sourceLang: 'ru',
+  targetLang: 'en',
+  category: 'dialogue',
+  createdAt: 1715010000000,
+  lastReadAt: Date.now(),
+  readingProgress: 0,
+  wordCount: 820,
+  isSample: true,
+  coverImage: '/assets/images/anna_sea_a1_1794132835800.jpg',
+  titleTranslations: ${JSON.stringify(titleTranslations, null, 2)},
+  passages: ${JSON.stringify(
+    ruParagraphs.map((text, idx) => ({
+      id: 'anna_sea_p' + (idx + 1),
+      order: idx,
+      sourceText: text,
+      translations: Object.fromEntries(
+        Object.entries(allTranslations).map(([lang, arr]) => [lang, arr[idx] || text])
+      )
+    })),
+    null,
+    2
+  )},
+  translations: ${JSON.stringify(allTranslations, null, 2)}
+};
+`;
+
+const outputPath = path.resolve(process.cwd(), 'src/constants/annaSeaArticle.ts');
+fs.writeFileSync(outputPath, fileContent, 'utf-8');
+console.log('Successfully created src/constants/annaSeaArticle.ts with 48 passages and 17 language translations!');

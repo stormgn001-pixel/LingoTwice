@@ -1,9 +1,11 @@
 import { ReadingDocument } from '../types';
 import { SCHLIEMANN_ARTICLE } from './schliemannArticle';
 import { ANNA_ARTICLE } from './annaArticle';
+import { ANNA_SEA_ARTICLE } from './annaSeaArticle';
 
 export const SAMPLE_DOCUMENTS: ReadingDocument[] = [
   ANNA_ARTICLE,
+  ANNA_SEA_ARTICLE,
   SCHLIEMANN_ARTICLE,
   {
     id: 'future_humanity_tech_001',

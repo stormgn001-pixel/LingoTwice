@@ -108,9 +108,21 @@ export default function App() {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const sanitized = sanitizeDocuments(parsed);
-          const existingIds = new Set(sanitized.map(d => d.id));
+          const sampleMap = new Map(SAMPLE_DOCUMENTS.map(s => [s.id, s]));
+          const updated = sanitized.map(doc => {
+            if (doc.isSample && sampleMap.has(doc.id)) {
+              const fresh = sampleMap.get(doc.id)!;
+              return {
+                ...fresh,
+                readingProgress: doc.readingProgress ?? 0,
+                lastReadAt: doc.lastReadAt ?? fresh.lastReadAt
+              };
+            }
+            return doc;
+          });
+          const existingIds = new Set(updated.map(d => d.id));
           const missingSamples = SAMPLE_DOCUMENTS.filter(sample => !existingIds.has(sample.id));
-          return sanitizeDocuments([...missingSamples, ...sanitized]);
+          return sanitizeDocuments([...missingSamples, ...updated]);
         }
       }
     } catch {}

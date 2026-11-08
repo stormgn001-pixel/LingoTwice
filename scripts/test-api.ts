@@ -144,7 +144,29 @@ async function runTests() {
 
   const inSample = SAMPLE_DOCUMENTS.some(d => d.id === 'annas_day_a1_001');
   assert(inSample, 'ANNA_ARTICLE must be registered in SAMPLE_DOCUMENTS');
-  console.log('[PASS] "Один день Анны (Уровень A1)" verified with 45 passages across all 17 supported languages and registered in library.');
+  assert(ANNA_ARTICLE.translations.ru[0].startsWith('Меня зовут Анна'), 'Header "Знакомство" must be stripped from narrative text');
+  assert(ANNA_ARTICLE.translations.en[0].startsWith('My name is Anna'), 'Header "Introduction" must be stripped from narrative text');
+  console.log('[PASS] "Один день Анны (Уровень A1)" verified with clean narrative passages across all 17 supported languages.');
+
+  // Test 7: Verify Anna Goes to the Sea A1 library story and all 17 translations
+  console.log('Test 7: Checking "Анна едет на море" library story and 17 language translations...');
+  const { ANNA_SEA_ARTICLE } = await import('../src/constants/annaSeaArticle');
+
+  assert(ANNA_SEA_ARTICLE, 'ANNA_SEA_ARTICLE must be defined');
+  assert.strictEqual(ANNA_SEA_ARTICLE.id, 'anna_sea_a1_001');
+  assert(ANNA_SEA_ARTICLE.title.includes('A1'), 'Title should indicate level A1');
+  assert(ANNA_SEA_ARTICLE.coverImage && ANNA_SEA_ARTICLE.coverImage.length > 0, 'Cover image must be specified');
+  assert.strictEqual(ANNA_SEA_ARTICLE.passages.length, 48, 'Anna Sea story should have 48 passages');
+
+  for (const lang of requiredLangs) {
+    assert(ANNA_SEA_ARTICLE.titleTranslations[lang as any], `Missing title translation for ${lang}`);
+    assert(Array.isArray(ANNA_SEA_ARTICLE.translations[lang]), `Missing translation array for ${lang}`);
+    assert.strictEqual(ANNA_SEA_ARTICLE.translations[lang].length, 48, `Translation array for ${lang} must have 48 paragraphs`);
+  }
+
+  const inSampleSea = SAMPLE_DOCUMENTS.some(d => d.id === 'anna_sea_a1_001');
+  assert(inSampleSea, 'ANNA_SEA_ARTICLE must be registered in SAMPLE_DOCUMENTS');
+  console.log('[PASS] "Анна едет на море (Уровень A1)" verified with 48 passages across all 17 supported languages and registered in library.');
 
   console.log('=== All Diagnostic & API Tests Completed Successfully! ===');
 }
