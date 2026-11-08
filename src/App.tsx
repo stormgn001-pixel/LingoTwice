@@ -19,9 +19,11 @@ import {
   UserStats,
   VocabularyEntry,
   WordLookupResponse,
+  InterfaceLanguage,
 } from './types';
 import { apiService } from './services/api';
 import { getDueVocabulary } from './services/srs';
+import { SEO_DATA_MAP, SEO_LANGUAGES_LIST } from './constants/seoData';
 
 const STORAGE_KEYS = {
   DOCUMENTS: 'linguatwin_documents_v3',
@@ -136,16 +138,83 @@ export default function App() {
     return SAMPLE_DOCUMENTS[0].id;
   });
 
-  const [vocabulary, setVocabulary] = useState<VocabularyEntry[]>([]);
-  const [preferences, setPreferences] = useState<ReadingPreferences>(() => {
+  const getInitialUiLang = (): InterfaceLanguage => {
+    if (typeof window !== 'undefined') {
+      const match = window.location.pathname.match(/^\/([a-z]{2})(\/|$)/i);
+      if (match) {
+        const code = match[1].toLowerCase() as InterfaceLanguage;
+        if (SEO_LANGUAGES_LIST.includes(code as any)) {
+          return code;
+        }
+      }
+    }
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.PREFERENCES);
-      return saved ? JSON.parse(saved) : DEFAULT_PREFERENCES;
-    } catch {
-      return DEFAULT_PREFERENCES;
-    }
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.uiLang && SEO_LANGUAGES_LIST.includes(parsed.uiLang as any)) {
+          return parsed.uiLang;
+        }
+      }
+    } catch {}
+    return 'ru';
+  };
+
+  const [vocabulary, setVocabulary] = useState<VocabularyEntry[]>([]);
+  const [preferences, setPreferences] = useState<ReadingPreferences>(() => {
+    const initialUi = getInitialUiLang();
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.PREFERENCES);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...DEFAULT_PREFERENCES, ...parsed, uiLang: initialUi };
+      }
+    } catch {}
+    return { ...DEFAULT_PREFERENCES, uiLang: initialUi };
   });
   const [stats, setStats] = useState<UserStats>(DEFAULT_STATS);
+
+  // Synchronize browser URL, document title, and SEO tags with active UI language
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const currentPath = window.location.pathname;
+    if (currentPath.endsWith('.html')) return;
+
+    const targetPath = `/${preferences.uiLang}/`;
+    if (currentPath !== targetPath && (currentPath === '/' || /^\/[a-z]{2}(\/|$)/i.test(currentPath))) {
+      window.history.pushState(null, '', targetPath);
+    }
+
+    const seo = SEO_DATA_MAP[preferences.uiLang as keyof typeof SEO_DATA_MAP];
+    if (seo) {
+      document.title = seo.title;
+      document.documentElement.lang = preferences.uiLang;
+      if (seo.rtl) {
+        document.documentElement.setAttribute('dir', 'rtl');
+      } else {
+        document.documentElement.removeAttribute('dir');
+      }
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.setAttribute('content', seo.description);
+      const canonical = document.querySelector('link[rel="canonical"]');
+      if (canonical) canonical.setAttribute('href', `https://lingotwice.com/${preferences.uiLang}/`);
+    }
+  }, [preferences.uiLang]);
+
+  // Handle browser back / forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const match = window.location.pathname.match(/^\/([a-z]{2})(\/|$)/i);
+      if (match) {
+        const code = match[1].toLowerCase() as InterfaceLanguage;
+        if (SEO_LANGUAGES_LIST.includes(code as any) && code !== preferences.uiLang) {
+          setPreferences((prev) => ({ ...prev, uiLang: code }));
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [preferences.uiLang]);
 
   // Dynamic Google Analytics GA4 Page View tracking for SPA view transitions
   useEffect(() => {

@@ -1,32 +1,460 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- Root default URL -->
   <url>
     <loc>https://lingotwice.com/</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://lingotwice.com/ru/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://lingotwice.com/en/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://lingotwice.com/de/" />
+    <xhtml:link rel="alternate" hreflang="uk" href="https://lingotwice.com/uk/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://lingotwice.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://lingotwice.com/es/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://lingotwice.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://lingotwice.com/pl/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lingotwice.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lingotwice.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://lingotwice.com/ko/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://lingotwice.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="ar" href="https://lingotwice.com/ar/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lingotwice.com/tr/" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://lingotwice.com/nl/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="https://lingotwice.com/sv/" />
+    <xhtml:link rel="alternate" hreflang="he" href="https://lingotwice.com/he/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lingotwice.com/" />
+  </url>
+  <url>
+    <loc>https://lingotwice.com/ru/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://lingotwice.com/ru/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://lingotwice.com/en/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://lingotwice.com/de/" />
+    <xhtml:link rel="alternate" hreflang="uk" href="https://lingotwice.com/uk/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://lingotwice.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://lingotwice.com/es/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://lingotwice.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://lingotwice.com/pl/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lingotwice.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lingotwice.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://lingotwice.com/ko/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://lingotwice.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="ar" href="https://lingotwice.com/ar/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lingotwice.com/tr/" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://lingotwice.com/nl/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="https://lingotwice.com/sv/" />
+    <xhtml:link rel="alternate" hreflang="he" href="https://lingotwice.com/he/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lingotwice.com/" />
+  </url>
+  <url>
+    <loc>https://lingotwice.com/en/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://lingotwice.com/ru/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://lingotwice.com/en/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://lingotwice.com/de/" />
+    <xhtml:link rel="alternate" hreflang="uk" href="https://lingotwice.com/uk/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://lingotwice.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://lingotwice.com/es/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://lingotwice.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://lingotwice.com/pl/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lingotwice.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lingotwice.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://lingotwice.com/ko/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://lingotwice.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="ar" href="https://lingotwice.com/ar/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lingotwice.com/tr/" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://lingotwice.com/nl/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="https://lingotwice.com/sv/" />
+    <xhtml:link rel="alternate" hreflang="he" href="https://lingotwice.com/he/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lingotwice.com/" />
+  </url>
+  <url>
+    <loc>https://lingotwice.com/de/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://lingotwice.com/ru/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://lingotwice.com/en/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://lingotwice.com/de/" />
+    <xhtml:link rel="alternate" hreflang="uk" href="https://lingotwice.com/uk/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://lingotwice.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://lingotwice.com/es/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://lingotwice.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://lingotwice.com/pl/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lingotwice.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lingotwice.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://lingotwice.com/ko/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://lingotwice.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="ar" href="https://lingotwice.com/ar/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lingotwice.com/tr/" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://lingotwice.com/nl/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="https://lingotwice.com/sv/" />
+    <xhtml:link rel="alternate" hreflang="he" href="https://lingotwice.com/he/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lingotwice.com/" />
+  </url>
+  <url>
+    <loc>https://lingotwice.com/uk/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://lingotwice.com/ru/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://lingotwice.com/en/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://lingotwice.com/de/" />
+    <xhtml:link rel="alternate" hreflang="uk" href="https://lingotwice.com/uk/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://lingotwice.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://lingotwice.com/es/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://lingotwice.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://lingotwice.com/pl/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lingotwice.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lingotwice.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://lingotwice.com/ko/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://lingotwice.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="ar" href="https://lingotwice.com/ar/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lingotwice.com/tr/" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://lingotwice.com/nl/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="https://lingotwice.com/sv/" />
+    <xhtml:link rel="alternate" hreflang="he" href="https://lingotwice.com/he/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lingotwice.com/" />
+  </url>
+  <url>
+    <loc>https://lingotwice.com/fr/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://lingotwice.com/ru/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://lingotwice.com/en/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://lingotwice.com/de/" />
+    <xhtml:link rel="alternate" hreflang="uk" href="https://lingotwice.com/uk/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://lingotwice.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://lingotwice.com/es/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://lingotwice.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://lingotwice.com/pl/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lingotwice.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lingotwice.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://lingotwice.com/ko/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://lingotwice.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="ar" href="https://lingotwice.com/ar/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lingotwice.com/tr/" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://lingotwice.com/nl/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="https://lingotwice.com/sv/" />
+    <xhtml:link rel="alternate" hreflang="he" href="https://lingotwice.com/he/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lingotwice.com/" />
+  </url>
+  <url>
+    <loc>https://lingotwice.com/es/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://lingotwice.com/ru/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://lingotwice.com/en/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://lingotwice.com/de/" />
+    <xhtml:link rel="alternate" hreflang="uk" href="https://lingotwice.com/uk/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://lingotwice.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://lingotwice.com/es/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://lingotwice.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://lingotwice.com/pl/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lingotwice.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lingotwice.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://lingotwice.com/ko/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://lingotwice.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="ar" href="https://lingotwice.com/ar/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lingotwice.com/tr/" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://lingotwice.com/nl/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="https://lingotwice.com/sv/" />
+    <xhtml:link rel="alternate" hreflang="he" href="https://lingotwice.com/he/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lingotwice.com/" />
+  </url>
+  <url>
+    <loc>https://lingotwice.com/it/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://lingotwice.com/ru/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://lingotwice.com/en/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://lingotwice.com/de/" />
+    <xhtml:link rel="alternate" hreflang="uk" href="https://lingotwice.com/uk/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://lingotwice.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://lingotwice.com/es/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://lingotwice.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://lingotwice.com/pl/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lingotwice.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lingotwice.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://lingotwice.com/ko/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://lingotwice.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="ar" href="https://lingotwice.com/ar/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lingotwice.com/tr/" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://lingotwice.com/nl/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="https://lingotwice.com/sv/" />
+    <xhtml:link rel="alternate" hreflang="he" href="https://lingotwice.com/he/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lingotwice.com/" />
+  </url>
+  <url>
+    <loc>https://lingotwice.com/pl/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://lingotwice.com/ru/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://lingotwice.com/en/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://lingotwice.com/de/" />
+    <xhtml:link rel="alternate" hreflang="uk" href="https://lingotwice.com/uk/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://lingotwice.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://lingotwice.com/es/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://lingotwice.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://lingotwice.com/pl/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lingotwice.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lingotwice.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://lingotwice.com/ko/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://lingotwice.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="ar" href="https://lingotwice.com/ar/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lingotwice.com/tr/" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://lingotwice.com/nl/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="https://lingotwice.com/sv/" />
+    <xhtml:link rel="alternate" hreflang="he" href="https://lingotwice.com/he/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lingotwice.com/" />
+  </url>
+  <url>
+    <loc>https://lingotwice.com/zh/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://lingotwice.com/ru/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://lingotwice.com/en/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://lingotwice.com/de/" />
+    <xhtml:link rel="alternate" hreflang="uk" href="https://lingotwice.com/uk/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://lingotwice.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://lingotwice.com/es/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://lingotwice.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://lingotwice.com/pl/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lingotwice.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lingotwice.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://lingotwice.com/ko/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://lingotwice.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="ar" href="https://lingotwice.com/ar/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lingotwice.com/tr/" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://lingotwice.com/nl/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="https://lingotwice.com/sv/" />
+    <xhtml:link rel="alternate" hreflang="he" href="https://lingotwice.com/he/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lingotwice.com/" />
+  </url>
+  <url>
+    <loc>https://lingotwice.com/ja/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://lingotwice.com/ru/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://lingotwice.com/en/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://lingotwice.com/de/" />
+    <xhtml:link rel="alternate" hreflang="uk" href="https://lingotwice.com/uk/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://lingotwice.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://lingotwice.com/es/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://lingotwice.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://lingotwice.com/pl/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lingotwice.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lingotwice.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://lingotwice.com/ko/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://lingotwice.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="ar" href="https://lingotwice.com/ar/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lingotwice.com/tr/" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://lingotwice.com/nl/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="https://lingotwice.com/sv/" />
+    <xhtml:link rel="alternate" hreflang="he" href="https://lingotwice.com/he/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lingotwice.com/" />
+  </url>
+  <url>
+    <loc>https://lingotwice.com/ko/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://lingotwice.com/ru/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://lingotwice.com/en/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://lingotwice.com/de/" />
+    <xhtml:link rel="alternate" hreflang="uk" href="https://lingotwice.com/uk/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://lingotwice.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://lingotwice.com/es/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://lingotwice.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://lingotwice.com/pl/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lingotwice.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lingotwice.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://lingotwice.com/ko/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://lingotwice.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="ar" href="https://lingotwice.com/ar/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lingotwice.com/tr/" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://lingotwice.com/nl/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="https://lingotwice.com/sv/" />
+    <xhtml:link rel="alternate" hreflang="he" href="https://lingotwice.com/he/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lingotwice.com/" />
+  </url>
+  <url>
+    <loc>https://lingotwice.com/pt/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://lingotwice.com/ru/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://lingotwice.com/en/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://lingotwice.com/de/" />
+    <xhtml:link rel="alternate" hreflang="uk" href="https://lingotwice.com/uk/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://lingotwice.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://lingotwice.com/es/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://lingotwice.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://lingotwice.com/pl/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lingotwice.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lingotwice.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://lingotwice.com/ko/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://lingotwice.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="ar" href="https://lingotwice.com/ar/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lingotwice.com/tr/" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://lingotwice.com/nl/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="https://lingotwice.com/sv/" />
+    <xhtml:link rel="alternate" hreflang="he" href="https://lingotwice.com/he/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lingotwice.com/" />
+  </url>
+  <url>
+    <loc>https://lingotwice.com/ar/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://lingotwice.com/ru/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://lingotwice.com/en/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://lingotwice.com/de/" />
+    <xhtml:link rel="alternate" hreflang="uk" href="https://lingotwice.com/uk/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://lingotwice.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://lingotwice.com/es/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://lingotwice.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://lingotwice.com/pl/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lingotwice.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lingotwice.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://lingotwice.com/ko/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://lingotwice.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="ar" href="https://lingotwice.com/ar/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lingotwice.com/tr/" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://lingotwice.com/nl/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="https://lingotwice.com/sv/" />
+    <xhtml:link rel="alternate" hreflang="he" href="https://lingotwice.com/he/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lingotwice.com/" />
+  </url>
+  <url>
+    <loc>https://lingotwice.com/tr/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://lingotwice.com/ru/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://lingotwice.com/en/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://lingotwice.com/de/" />
+    <xhtml:link rel="alternate" hreflang="uk" href="https://lingotwice.com/uk/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://lingotwice.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://lingotwice.com/es/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://lingotwice.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://lingotwice.com/pl/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lingotwice.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lingotwice.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://lingotwice.com/ko/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://lingotwice.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="ar" href="https://lingotwice.com/ar/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lingotwice.com/tr/" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://lingotwice.com/nl/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="https://lingotwice.com/sv/" />
+    <xhtml:link rel="alternate" hreflang="he" href="https://lingotwice.com/he/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lingotwice.com/" />
+  </url>
+  <url>
+    <loc>https://lingotwice.com/nl/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://lingotwice.com/ru/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://lingotwice.com/en/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://lingotwice.com/de/" />
+    <xhtml:link rel="alternate" hreflang="uk" href="https://lingotwice.com/uk/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://lingotwice.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://lingotwice.com/es/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://lingotwice.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://lingotwice.com/pl/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lingotwice.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lingotwice.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://lingotwice.com/ko/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://lingotwice.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="ar" href="https://lingotwice.com/ar/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lingotwice.com/tr/" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://lingotwice.com/nl/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="https://lingotwice.com/sv/" />
+    <xhtml:link rel="alternate" hreflang="he" href="https://lingotwice.com/he/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lingotwice.com/" />
+  </url>
+  <url>
+    <loc>https://lingotwice.com/sv/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://lingotwice.com/ru/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://lingotwice.com/en/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://lingotwice.com/de/" />
+    <xhtml:link rel="alternate" hreflang="uk" href="https://lingotwice.com/uk/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://lingotwice.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://lingotwice.com/es/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://lingotwice.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://lingotwice.com/pl/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lingotwice.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lingotwice.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://lingotwice.com/ko/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://lingotwice.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="ar" href="https://lingotwice.com/ar/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lingotwice.com/tr/" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://lingotwice.com/nl/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="https://lingotwice.com/sv/" />
+    <xhtml:link rel="alternate" hreflang="he" href="https://lingotwice.com/he/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lingotwice.com/" />
+  </url>
+  <url>
+    <loc>https://lingotwice.com/he/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://lingotwice.com/ru/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://lingotwice.com/en/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://lingotwice.com/de/" />
+    <xhtml:link rel="alternate" hreflang="uk" href="https://lingotwice.com/uk/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://lingotwice.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://lingotwice.com/es/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://lingotwice.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://lingotwice.com/pl/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lingotwice.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://lingotwice.com/ja/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://lingotwice.com/ko/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://lingotwice.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="ar" href="https://lingotwice.com/ar/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://lingotwice.com/tr/" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://lingotwice.com/nl/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="https://lingotwice.com/sv/" />
+    <xhtml:link rel="alternate" hreflang="he" href="https://lingotwice.com/he/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lingotwice.com/" />
   </url>
   <url>
     <loc>https://lingotwice.com/about.html</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://lingotwice.com/contact.html</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://lingotwice.com/privacy.html</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://lingotwice.com/terms.html</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>

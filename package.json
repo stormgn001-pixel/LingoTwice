@@ -1,6 +1,6 @@
 {
   "name": "lingotwice",
-  "description": "Bilingual Parallel Reading Browser & Language Learning Platform",
+  "description": "Multilingual Web Application for Learning Languages via Parallel Reading",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,9 @@
   },
   "scripts": {
     "dev": "tsx server.ts",
+    "prebuild": "tsx scripts/generate-multilingual-html.ts",
     "build": "vite build",
+    "postbuild": "tsx scripts/generate-multilingual-html.ts --postbuild",
     "start": "node server.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
