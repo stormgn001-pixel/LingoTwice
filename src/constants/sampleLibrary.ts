@@ -2,10 +2,14 @@ import { ReadingDocument } from '../types';
 import { SCHLIEMANN_ARTICLE } from './schliemannArticle';
 import { ANNA_ARTICLE } from './annaArticle';
 import { ANNA_SEA_ARTICLE } from './annaSeaArticle';
+import { ANNA_GUEST_ARTICLE } from './annaGuestArticle';
+import { ANNA_DOCTOR_ARTICLE } from './annaDoctorArticle';
 
 export const SAMPLE_DOCUMENTS: ReadingDocument[] = [
   ANNA_ARTICLE,
   ANNA_SEA_ARTICLE,
+  ANNA_GUEST_ARTICLE,
+  ANNA_DOCTOR_ARTICLE,
   SCHLIEMANN_ARTICLE,
   {
     id: 'future_humanity_tech_001',

@@ -168,6 +168,46 @@ async function runTests() {
   assert(inSampleSea, 'ANNA_SEA_ARTICLE must be registered in SAMPLE_DOCUMENTS');
   console.log('[PASS] "Анна едет на море (Уровень A1)" verified with 48 passages across all 17 supported languages and registered in library.');
 
+  // Test 8: Verify Anna Goes Visiting A1 library story and all 17 translations
+  console.log('Test 8: Checking "Анна идёт в гости" library story and 17 language translations...');
+  const { ANNA_GUEST_ARTICLE } = await import('../src/constants/annaGuestArticle');
+
+  assert(ANNA_GUEST_ARTICLE, 'ANNA_GUEST_ARTICLE must be defined');
+  assert.strictEqual(ANNA_GUEST_ARTICLE.id, 'anna_guest_a1_001');
+  assert(ANNA_GUEST_ARTICLE.title.includes('A1'), 'Title should indicate level A1');
+  assert(ANNA_GUEST_ARTICLE.coverImage && ANNA_GUEST_ARTICLE.coverImage.length > 0, 'Cover image must be specified');
+  assert.strictEqual(ANNA_GUEST_ARTICLE.passages.length, 45, 'Anna Guest story should have 45 passages');
+
+  for (const lang of requiredLangs) {
+    assert(ANNA_GUEST_ARTICLE.titleTranslations[lang as any], `Missing title translation for ${lang}`);
+    assert(Array.isArray(ANNA_GUEST_ARTICLE.translations[lang]), `Missing translation array for ${lang}`);
+    assert.strictEqual(ANNA_GUEST_ARTICLE.translations[lang].length, 45, `Translation array for ${lang} must have 45 paragraphs`);
+  }
+
+  const inSampleGuest = SAMPLE_DOCUMENTS.some(d => d.id === 'anna_guest_a1_001');
+  assert(inSampleGuest, 'ANNA_GUEST_ARTICLE must be registered in SAMPLE_DOCUMENTS');
+  console.log('[PASS] "Анна идёт в гости (Уровень A1)" verified with 45 passages across all 17 supported languages and registered in library.');
+
+  // Test 9: Verify Anna Goes to the Doctor A1 library story and all 17 translations
+  console.log('Test 9: Checking "Анна идёт к врачу" library story and 17 language translations...');
+  const { ANNA_DOCTOR_ARTICLE } = await import('../src/constants/annaDoctorArticle');
+
+  assert(ANNA_DOCTOR_ARTICLE, 'ANNA_DOCTOR_ARTICLE must be defined');
+  assert.strictEqual(ANNA_DOCTOR_ARTICLE.id, 'anna_doctor_a1_001');
+  assert(ANNA_DOCTOR_ARTICLE.title.includes('A1'), 'Title should indicate level A1');
+  assert(ANNA_DOCTOR_ARTICLE.coverImage && ANNA_DOCTOR_ARTICLE.coverImage.length > 0, 'Cover image must be specified');
+  assert.strictEqual(ANNA_DOCTOR_ARTICLE.passages.length, 44, 'Anna Doctor story should have 44 passages');
+
+  for (const lang of requiredLangs) {
+    assert(ANNA_DOCTOR_ARTICLE.titleTranslations[lang as any], `Missing title translation for ${lang}`);
+    assert(Array.isArray(ANNA_DOCTOR_ARTICLE.translations[lang]), `Missing translation array for ${lang}`);
+    assert.strictEqual(ANNA_DOCTOR_ARTICLE.translations[lang].length, 44, `Translation array for ${lang} must have 44 paragraphs`);
+  }
+
+  const inSampleDoctor = SAMPLE_DOCUMENTS.some(d => d.id === 'anna_doctor_a1_001');
+  assert(inSampleDoctor, 'ANNA_DOCTOR_ARTICLE must be registered in SAMPLE_DOCUMENTS');
+  console.log('[PASS] "Анна идёт к врачу (Уровень A1)" verified with 44 passages across all 17 supported languages and registered in library.');
+
   console.log('=== All Diagnostic & API Tests Completed Successfully! ===');
 }
 
