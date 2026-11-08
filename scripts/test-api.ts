@@ -124,6 +124,28 @@ async function runTests() {
   assert.strictEqual(fallbackStatus.hasSubscription, false);
   console.log('[PASS] Client graceful fallback on 503 executed successfully without crashing UI or showing server errors.');
 
+  // Test 6: Verify Anna's Day A1 library story and all 17 translations
+  console.log('Test 6: Checking "Один день Анны" library story and 17 language translations...');
+  const { ANNA_ARTICLE } = await import('../src/constants/annaArticle');
+  const { SAMPLE_DOCUMENTS } = await import('../src/constants/sampleLibrary');
+
+  assert(ANNA_ARTICLE, 'ANNA_ARTICLE must be defined');
+  assert.strictEqual(ANNA_ARTICLE.id, 'annas_day_a1_001');
+  assert(ANNA_ARTICLE.title.includes('A1'), 'Title should indicate level A1');
+  assert(ANNA_ARTICLE.coverImage && ANNA_ARTICLE.coverImage.length > 0, 'Cover image must be specified');
+  assert.strictEqual(ANNA_ARTICLE.passages.length, 45, 'Anna story should have 45 passages');
+
+  const requiredLangs = ['ru', 'en', 'uk', 'de', 'fr', 'es', 'it', 'pl', 'pt', 'nl', 'sv', 'tr', 'zh', 'ja', 'ko', 'ar', 'he'];
+  for (const lang of requiredLangs) {
+    assert(ANNA_ARTICLE.titleTranslations[lang as any], `Missing title translation for ${lang}`);
+    assert(Array.isArray(ANNA_ARTICLE.translations[lang]), `Missing translation array for ${lang}`);
+    assert.strictEqual(ANNA_ARTICLE.translations[lang].length, 45, `Translation array for ${lang} must have 45 paragraphs`);
+  }
+
+  const inSample = SAMPLE_DOCUMENTS.some(d => d.id === 'annas_day_a1_001');
+  assert(inSample, 'ANNA_ARTICLE must be registered in SAMPLE_DOCUMENTS');
+  console.log('[PASS] "Один день Анны (Уровень A1)" verified with 45 passages across all 17 supported languages and registered in library.');
+
   console.log('=== All Diagnostic & API Tests Completed Successfully! ===');
 }
 

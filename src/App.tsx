@@ -107,7 +107,10 @@ export default function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return sanitizeDocuments(parsed);
+          const sanitized = sanitizeDocuments(parsed);
+          const existingIds = new Set(sanitized.map(d => d.id));
+          const missingSamples = SAMPLE_DOCUMENTS.filter(sample => !existingIds.has(sample.id));
+          return sanitizeDocuments([...missingSamples, ...sanitized]);
         }
       }
     } catch {}

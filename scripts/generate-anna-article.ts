@@ -1,0 +1,1130 @@
+import fs from 'fs';
+import path from 'path';
+
+// All 45 paragraphs in Russian original
+const ruParagraphs = [
+  // 1. Знакомство
+  "Знакомство. Меня зовут Анна. Мне двадцать пять лет. Я живу в маленьком городе. Это красивый город, и я его люблю.",
+  "Я живу в квартире. В квартире две комнаты, кухня и ванная. Квартира небольшая, но в ней уютно.",
+  "У меня есть семья. Моя мама и мой папа живут в другом городе. Мой брат Антон живёт рядом со мной. Он мой лучший друг.",
+
+  // 2. Утро
+  "Утро. Я встаю в семь часов. Мой будильник звонит громко. Я не люблю вставать рано, но это нужно.",
+  "Сначала я иду в ванную. Я умываюсь холодной водой. Потом я чищу зубы. Вода холодная, и я сразу просыпаюсь.",
+  "Потом я иду на кухню. Я открываю окно. На улице светит солнце. Утро хорошее, и у меня хорошее настроение.",
+
+  // 3. Завтрак
+  "Завтрак. Я завтракаю дома. Я всегда ем кашу. Каша тёплая и вкусная. Ещё я пью чай с лимоном.",
+  "Иногда я ем хлеб с маслом и сыром. Иногда я ем яйца. Я люблю фрукты, особенно яблоки и бананы.",
+  "Мой брат не любит завтракать. Он пьёт только кофе. Я говорю ему: «Антон, это плохо!» Но он не слушает.",
+
+  // 4. Дорога на работу
+  "Дорога на работу. Я работаю в магазине. Магазин находится в центре города. Я не езжу на машине, потому что у меня нет машины.",
+  "Я еду на автобусе. Автобус приходит в восемь часов. Дорога занимает двадцать минут. В автобусе я слушаю музыку.",
+  "Иногда я иду пешком. Это полчаса. Я люблю гулять утром. На улице много людей, и город просыпается.",
+
+  // 5. Работа
+  "Работа. Я продавец. Я продаю книги и тетради. Мне нравится моя работа. Я люблю книги, и я люблю людей.",
+  "В магазине работают четыре человека. Нашу начальницу зовут Ольга. Она добрая и умная. Она всегда помогает нам.",
+  "Утром в магазине тихо. Днём приходит много людей. Они спрашивают: «Где детские книги?» или «Сколько это стоит?» Я отвечаю и улыбаюсь.",
+  "Мне нравятся дети. Они приходят с мамами и папами. Они смотрят на яркие картинки и смеются. Это очень приятно.",
+
+  // 6. Обед
+  "Обед. Мой обед начинается в час. Я иду в маленькое кафе рядом с магазином. Там всегда вкусно и недорого.",
+  "Я заказываю суп и салат. Иногда я беру рыбу или курицу. Я пью воду или сок. Официантку зовут Лена, и она моя подруга.",
+  "После обеда я иду в парк. Парк рядом с кафе. В парке много деревьев и цветов. Я сижу на скамейке и отдыхаю десять минут.",
+
+  // 7. Вторая часть дня
+  "Вторая часть дня. После обеда я снова работаю. Я работаю до шести часов. Днём я устаю, но я не жалуюсь.",
+  "Я иногда читаю книги в магазине. Это не запрещено, если нет людей. Сейчас я читаю интересный детектив. Я хочу узнать, кто преступник.",
+  "В шесть часов магазин закрывается. Я говорю всем «до свидания». Я иду домой, и мне хорошо. Рабочий день закончился.",
+
+  // 8. Вечер
+  "Вечер. Дома я сначала отдыхаю. Я сажусь на диван и пью чай. Я смотрю в окно. На улице темнеет, и в домах горит свет.",
+  "Потом я готовлю ужин. Я умею готовить простые блюда. Сегодня я делаю картошку и мясо. Ещё я режу овощи для салата.",
+  "Вечером мне часто звонит мама. Мы говорим о делах. Мама спрашивает: «Как у тебя дела? Ты хорошо ешь?» Я отвечаю: «Да, мама, всё хорошо».",
+  "После ужина я иногда смотрю фильм. Я люблю комедии и добрые истории. Иногда я читаю книгу. Иногда я говорю по телефону с подругами.",
+
+  // 9. Брат Антон
+  "Брат Антон. Антон часто приходит ко мне в гости. Он приносит торт или конфеты. Мы пьём чай и разговариваем. Он рассказывает смешные истории.",
+  "Антон работает программистом. Он весь день сидит за компьютером. Он говорит, что работа интересная, но у него болят глаза. Я говорю ему: «Иди гулять!»",
+  "Мы часто играем в настольные игры. Антон играет очень хорошо, и я почти всегда проигрываю. Но мне всё равно весело.",
+
+  // 10. Ночь
+  "Ночь. В десять часов я готовлюсь ко сну. Я принимаю душ и надеваю пижаму. Я выключаю телефон. Телефон перед сном вредный.",
+  "Я лежу в кровати и думаю о завтрашнем дне. Завтра суббота. Это мой выходной. Я очень люблю субботу.",
+  "В одиннадцать часов я засыпаю. В комнате тихо и темно. Я хорошо сплю, и мне снятся добрые сны.",
+
+  // 11. Выходной день
+  "Выходной день. В субботу я не ставлю будильник. Я просыпаюсь поздно, в девять или в десять часов. Это очень приятно.",
+  "Утром я долго завтракаю. Потом я убираю квартиру. Я мою пол, вытираю пыль и мою окна. Квартира становится чистой и красивой.",
+  "После уборки я иду в магазин за продуктами. Я покупаю хлеб, молоко, сыр, овощи и фрукты. Иногда я покупаю цветы. Цветы стоят на столе, и дома приятно пахнет.",
+  "Днём я гуляю с подругой Леной. Мы идём в парк или в центр города. Мы пьём кофе и говорим о жизни. Мы смеёмся и фотографируем всё вокруг.",
+  "Вечером мы с Антоном идём в кино. Мы покупаем попкорн и воду. Мы смотрим новый фильм. Потом мы идём домой и обсуждаем кино.",
+
+  // 12. Воскресенье
+  "Воскресенье. В воскресенье я звоню родителям. Иногда я еду к ним в гости на поезде. Дорога занимает три часа. Я люблю смотреть в окно поезда.",
+  "Мама встречает меня на вокзале. Она обнимает меня и говорит: «Как я рада тебя видеть!» Мы идём домой, и там нас ждёт папа.",
+  "Мама готовит мой любимый пирог. Он очень вкусный. Мы сидим все вместе за большим столом. Мы едим, разговариваем и смеёмся.",
+  "Вечером я еду домой. Я уставшая, но очень счастливая. Я думаю: «У меня хорошая жизнь, хорошая семья и хорошие друзья».",
+
+  // 13. Мои мечты
+  "Мои мечты. У меня есть мечта. Я хочу открыть свой маленький книжный магазин. В нём будет много книг, мягкие кресла и горячий чай.",
+  "Я хочу, чтобы люди приходили в мой магазин и читали. Я хочу, чтобы дети слушали сказки. Это моя мечта, и я работаю для неё каждый день.",
+  "Ещё я хочу выучить английский язык. Я учу новые слова каждый день. Это трудно, но интересно. Я читаю короткие тексты и слушаю песни.",
+  "Я думаю, что всё получится. Нужно только не бояться и не сдаваться. Каждый день я делаю маленький шаг. Так мечты становятся реальностью."
+];
+
+// English (en)
+const enParagraphs = [
+  "Introduction. My name is Anna. I am twenty-five years old. I live in a small town. It is a beautiful town, and I love it.",
+  "I live in an apartment. The apartment has two rooms, a kitchen, and a bathroom. The apartment is not large, but it is cozy.",
+  "I have a family. My mother and my father live in another city. My brother Anton lives next to me. He is my best friend.",
+
+  "Morning. I wake up at seven o'clock. My alarm clock rings loudly. I do not like waking up early, but it is necessary.",
+  "First, I go to the bathroom. I wash my face with cold water. Then I brush my teeth. The water is cold, and I wake up immediately.",
+  "Then I go to the kitchen. I open the window. The sun is shining outside. The morning is lovely, and I am in a good mood.",
+
+  "Breakfast. I have breakfast at home. I always eat porridge. The porridge is warm and delicious. I also drink tea with lemon.",
+  "Sometimes I eat bread with butter and cheese. Sometimes I eat eggs. I love fruit, especially apples and bananas.",
+  "My brother does not like eating breakfast. He only drinks coffee. I tell him: 'Anton, that is bad!' But he does not listen.",
+
+  "On the way to work. I work in a shop. The shop is located in the town center. I do not drive a car because I do not have a car.",
+  "I take the bus. The bus arrives at eight o'clock. The trip takes twenty minutes. On the bus, I listen to music.",
+  "Sometimes I walk. It takes half an hour. I like walking in the morning. There are many people on the street, and the town is waking up.",
+
+  "Work. I am a shop assistant. I sell books and notebooks. I like my job. I love books, and I love people.",
+  "Four people work in the shop. Our manager's name is Olga. She is kind and smart. She always helps us.",
+  "In the morning, the shop is quiet. In the afternoon, many people come. They ask: 'Where are the children's books?' or 'How much does this cost?' I answer and smile.",
+  "I like children. They come with their mothers and fathers. They look at the bright pictures and laugh. It is very pleasant.",
+
+  "Lunch. My lunch starts at one o'clock. I go to a small cafe near the shop. It is always tasty and affordable there.",
+  "I order soup and salad. Sometimes I have fish or chicken. I drink water or juice. The waitress's name is Lena, and she is my friend.",
+  "After lunch, I go to the park. The park is next to the cafe. There are many trees and flowers in the park. I sit on a bench and rest for ten minutes.",
+
+  "The second part of the day. After lunch, I work again. I work until six o'clock. In the afternoon I get tired, but I do not complain.",
+  "Sometimes I read books in the shop. It is not forbidden if there are no customers. Right now I am reading an interesting detective story. I want to know who the culprit is.",
+  "At six o'clock the shop closes. I say 'goodbye' to everyone. I walk home, and I feel good. The working day is over.",
+
+  "Evening. At home, I first take a rest. I sit on the sofa and drink tea. I look out the window. It is getting dark outside, and lights are on in the houses.",
+  "Then I cook dinner. I know how to cook simple dishes. Today I am making potatoes and meat. I also cut vegetables for a salad.",
+  "In the evening, my mother often calls me. We talk about our day. Mom asks: 'How are you? Are you eating well?' I answer: 'Yes, Mom, everything is fine.'",
+  "After dinner, I sometimes watch a movie. I like comedies and heartwarming stories. Sometimes I read a book. Sometimes I talk on the phone with friends.",
+
+  "Brother Anton. Anton often comes to visit me. He brings cake or candies. We drink tea and chat. He tells funny stories.",
+  "Anton works as a software engineer. He sits at the computer all day. He says the work is interesting, but his eyes hurt. I tell him: 'Go take a walk!'",
+  "We often play board games. Anton plays very well, and I almost always lose. But I still have fun.",
+
+  "Night. At ten o'clock, I get ready for bed. I take a shower and put on my pajamas. I turn off my phone. Using a phone before sleep is unhealthy.",
+  "I lie in bed and think about tomorrow. Tomorrow is Saturday. It is my day off. I love Saturdays very much.",
+  "At eleven o'clock, I fall asleep. The room is quiet and dark. I sleep well, and I have sweet dreams.",
+
+  "Day off. On Saturday, I do not set an alarm. I wake up late, at nine or ten o'clock. It is very pleasant.",
+  "In the morning, I have a leisurely breakfast. Then I clean the apartment. I mop the floor, dust, and wash the windows. The apartment becomes clean and lovely.",
+  "After cleaning, I go to the grocery store. I buy bread, milk, cheese, vegetables, and fruit. Sometimes I buy flowers. The flowers stand on the table, and the home smells wonderful.",
+  "In the afternoon, I go for a walk with my friend Lena. We go to the park or downtown. We drink coffee and talk about life. We laugh and take photos of everything around us.",
+  "In the evening, Anton and I go to the cinema. We buy popcorn and water. We watch a new movie. Afterwards, we walk home and discuss the movie.",
+
+  "Sunday. On Sunday, I call my parents. Sometimes I visit them by train. The journey takes three hours. I like looking out the train window.",
+  "My mother meets me at the station. She hugs me and says: 'I am so glad to see you!' We walk home, where my father is waiting for us.",
+  "Mom bakes my favorite pie. It is very delicious. We all sit together at the big table. We eat, chat, and laugh.",
+  "In the evening, I travel back home. I am tired, but very happy. I think: 'I have a good life, a good family, and wonderful friends.'",
+
+  "My dreams. I have a dream. I want to open my own little bookstore. It will have lots of books, comfortable armchairs, and hot tea.",
+  "I want people to come to my shop and read. I want children to listen to fairy tales. This is my dream, and I work toward it every day.",
+  "I also want to learn English. I learn new words every day. It is challenging, but interesting. I read short stories and listen to songs.",
+  "I believe everything will work out. You just have to not be afraid and never give up. Every day I take a small step forward. That is how dreams become reality."
+];
+
+// Ukrainian (uk)
+const ukParagraphs = [
+  "Знайомство. Мене звати Анна. Мені двадцять п'ять років. Я живу в маленькому місті. Це красиве місто, і я його люблю.",
+  "Я живу в квартирі. У квартирі дві кімнати, кухня та ванна. Квартира невелика, але в ній затишно.",
+  "У мене є сім'я. Моя мама і мій тато живуть в іншому місті. Мій брат Антон живе поруч зі мною. Він мій найкращий друг.",
+
+  "Ранок. Я встаю о сьомій годині. Мій будильник дзвонить голосно. Я не люблю вставати рано, але це потрібно.",
+  "Спочатку я йду у ванну. Я вмиваюся холодною водою. Потім я чищу зуби. Вода холодна, і я одразу прокидаюся.",
+  "Потім я йду на кухню. Я відкриваю вікно. На вулиці світить сонце. Ранок гарний, і в мене гарний настрій.",
+
+  "Сніданок. Я снідаю вдома. Я завжди їм кашу. Каша тепла і смачна. Ще я п'ю чай з лимоном.",
+  "Іноді я їм хліб з маслом і сиром. Іноді я їм яйця. Я люблю фрукти, особливо яблука та банани.",
+  "Мій брат не любить снідати. Він п'є тільки каву. Я кажу йому: «Антоне, це погано!» Але він не слухає.",
+
+  "Дорога на роботу. Я працюю в магазині. Магазин розташований у центрі міста. Я не їжджу на машині, тому що в мене немає машини.",
+  "Я їду на автобусі. Автобус приходить о восьмій годині. Дорога займає двадцять хвилин. В автобусі я слухаю музику.",
+  "Іноді я йду пішки. Це пів години. Я люблю гуляти вранці. На вулиці багато людей, і місто прокидається.",
+
+  "Робота. Я продавець. Я продаю книги і зошити. Мені подобається моя робота. Я люблю книги, і я люблю людей.",
+  "У магазині працюють чотири людини. Нашу начальницю звати Ольга. Вона добра і розумна. Вона завжди допомагає нам.",
+  "Вранці в магазині тихо. Вдень приходить багато людей. Вони запитують: «Де дитячі книги?» або «Скільки це коштує?» Я відповідаю і посміхаюся.",
+  "Мені подобаються діти. Вони приходять з мамами й татами. Вони дивляться на яскраві малюнки і сміються. Це дуже приємно.",
+
+  "Обід. Мій обід починається о першій годині. Я йду в маленьке кафе поруч із магазином. Там завжди смачно й недорого.",
+  "Я замовляю суп і салат. Іноді я беру рибу або курку. Я п'ю воду або сік. Офіціантку звати Лена, і вона моя подруга.",
+  "Після обіду я йду в парк. Парк поруч із кафе. У парку багато дерев і квітів. Я сиджу на лавці і відпочиваю десять хвилин.",
+
+  "Друга частина дня. Після обіду я знову працюю. Я працюю до шостої години. Вдень я втомлююся, але я не скаржуся.",
+  "Я іноді читаю книги в магазині. Це не заборонено, якщо немає покупців. Зараз я читаю цікавий детектив. Я хочу дізнатися, хто злочинець.",
+  "О шостій годині магазин зачиняється. Я кажу всім «до побачення». Я йду додому, і мені добре. Робочий день закінчився.",
+
+  "Вечір. Вдома я спочатку відпочиваю. Я сідаю на диван і п'ю чай. Я дивлюся у вікно. На вулиці темніє, і в будинках горить світло.",
+  "Потім я готую вечерю. Я вмію готувати прості страви. Сьогодні я роблю картоплю з м'ясом. Ще я ріжу овочі для салату.",
+  "Увечері мені часто дзвонить мама. Ми говоримо про справи. Мама запитує: «Як у тебе справи? Ти добре їси?» Я відповідаю: «Так, мамо, все добре».",
+  "Після вечері я іноді дивлюся фільм. Я люблю комедії та добрі історії. Іноді я читаю книгу. Іноді я розмовляю телефоном з подругами.",
+
+  "Брат Антон. Антон часто приходить до мене в гості. Він приносить торт або цукерки. Ми п'ємо чай і розмовляємо. Він розповідає смішні історії.",
+  "Антон працює програмістом. Він увесь день сидить за комп'ютером. Він каже, що робота цікава, але в нього болять очі. Я кажу йому: «Іди гуляти!»",
+  "Ми часто граємо в настільні ігри. Антон грає дуже добре, і я майже завжди програю. Але мені все одно весело.",
+
+  "Ніч. О десятій годині я готуюся до сну. Я приймаю душ і вдягаю піжаму. Я вимикаю телефон. Телефон перед сном шкідливий.",
+  "Я лежу в ліжку і думаю про завтрашній день. Завтра субота. Це мій вихідний. Я дуже люблю суботу.",
+  "Об одинадцятій годині я засинаю. У кімнаті тихо й темно. Я добре сплю, і мені сняться добрі сни.",
+
+  "Вихідний день. У суботу я не заводжу будильник. Я прокидаюся пізно, о дев'ятій або о десятій годині. Це дуже приємно.",
+  "Вранці я довго снідаю. Потім я прибираю квартиру. Я мию підлогу, витираю пил і мию вікна. Квартира стає чистою та красивою.",
+  "Після прибирання я йду в магазин за продуктами. Я купую хліб, молоко, сир, овочі та фрукти. Іноді я купую квіти. Квіти стоять на столі, і вдома приємно пахне.",
+  "Вдень я гуляю з подругою Леною. Ми йдемо в парк або в центр міста. Ми п'ємо каву і говоримо про життя. Ми сміємося і фотографуємо все навколо.",
+  "Увечері ми з Антоном йдемо в кіно. Ми купуємо попкорн і воду. Ми дивимося новий фільм. Потім ми йдемо додому й обговорюємо кіно.",
+
+  "Неділя. У неділю я дзвоню батькам. Іноді я їду до них у гості поїздом. Дорога займає три години. Я люблю дивитися у вікно поїзда.",
+  "Мама зустрічає мене на вокзалі. Вона обіймає мене і каже: «Як я рада тебе бачити!» Ми йдемо додому, і там на нас чекає тато.",
+  "Мама готує мій улюблений пиріг. Він дуже смачний. Ми сидимо всі разом за великим столом. Ми їмо, розмовляємо і сміємося.",
+  "Увечері я їду додому. Я втомлена, але дуже щаслива. Я думаю: «У мене гарне життя, чудова сім'я і хороші друзі».",
+
+  "Мої мрії. У мене є мрія. Я хочу відкрити свій маленький книжковий магазин. У ньому буде багато книг, м'які крісла і гарячий чай.",
+  "Я хочу, щоб люди приходили в мій магазин і читали. Я хочу, щоб діти слухали казки. Це моя мрія, і я працюю для неї щодня.",
+  "Ще я хочу вивчити англійську мову. Я вчу нові слова щодня. Це важко, але цікаво. Я читаю короткі тексти і слухаю пісні.",
+  "Я думаю, що все вийде. Потрібно тільки не боятися і не здаватися. Щодня я роблю маленький крок. Так мрії стають реальністю."
+];
+
+// German (de)
+const deParagraphs = [
+  "Kennenlernen. Ich heiße Anna. Ich bin fünfundzwanzig Jahre alt. Ich lebe in einer kleinen Stadt. Es ist eine schöne Stadt, und ich liebe sie.",
+  "Ich wohne in einer Wohnung. Die Wohnung hat zwei Zimmer, eine Küche und ein Badezimmer. Die Wohnung ist klein, aber gemütlich.",
+  "Ich habe eine Familie. Meine Mutter und mein Vater leben in einer anderen Stadt. Mein Bruder Anton wohnt in meiner Nähe. Er ist mein bester Freund.",
+
+  "Morgen. Ich stehe um sieben Uhr auf. Mein Wecker klingelt laut. Ich stehe nicht gern früh auf, aber es muss sein.",
+  "Zuerst gehe ich ins Badezimmer. Ich wasche mein Gesicht mit kaltem Wasser. Dann putze ich mir die Zähne. Das Wasser ist kalt, und ich wache sofort auf.",
+  "Dann gehe ich in die Küche. Ich öffne das Fenster. Draußen scheint die Sonne. Der Morgen ist schön, und ich habe gute Laune.",
+
+  "Frühstück. Ich frühstücke zu Hause. Ich esse immer Brei. Der Brei ist warm und lecker. Dazu trinke ich Tee mit Zitrone.",
+  "Manchmal esse ich Brot mit Butter und Käse. Manchmal esse ich Eier. Ich liebe Obst, besonders Äpfel und Bananen.",
+  "Mein Bruder frühstückt nicht gern. Er trinkt nur Kaffee. Ich sage zu ihm: 'Anton, das ist ungesund!' Aber er hört nicht zu.",
+
+  "Der Weg zur Arbeit. Ich arbeite in einem Geschäft. Das Geschäft liegt im Stadtzentrum. Ich fahre nicht mit dem Auto, weil ich kein Auto habe.",
+  "Ich fahre mit dem Bus. Der Bus kommt um acht Uhr. Die Fahrt dauert zwanzig Minuten. Im Bus höre ich Musik.",
+  "Manchmal gehe ich zu Fuß. Das dauert eine halbe Stunde. Ich gehe morgens gern spazieren. Auf der Straße sind viele Menschen, und die Stadt erwacht.",
+
+  "Arbeit. Ich bin Verkäuferin. Ich verkaufe Bücher und Hefte. Meine Arbeit gefällt mir. Ich liebe Bücher, und ich mag Menschen.",
+  "Im Geschäft arbeiten vier Personen. Unsere Chefin heißt Olga. Sie ist freundlich und klug. Sie hilft uns immer.",
+  "Morgens ist es im Geschäft ruhig. Am Nachmittag kommen viele Leute. Sie fragen: 'Wo sind die Kinderbücher?' oder 'Wie viel kostet das?' Ich antworte und lächle.",
+  "Ich mag Kinder. Sie kommen mit ihren Müttern und Vätern. Sie schauen sich die bunten Bilder an und lachen. Das ist sehr schön.",
+
+  "Mittagessen. Meine Mittagspause beginnt um ein Uhr. Ich gehe in ein kleines Café neben dem Geschäft. Dort ist es immer lecker und günstig.",
+  "Ich bestelle Suppe und Salat. Manchmal nehme ich Fisch oder Hähnchen. Ich trinke Wasser oder Saft. Die Kellnerin heißt Lena, und sie ist meine Freundin.",
+  "Nach dem Mittagessen gehe ich in den Park. Der Park liegt direkt neben dem Café. Im Park gibt es viele Bäume und Blumen. Ich sitze auf einer Bank und ruhe mich zehn Minuten aus.",
+
+  "Der zweite Teil des Tages. Nach dem Mittagessen arbeite ich weiter. Ich arbeite bis sechs Uhr. Am Nachmittag werde ich müde, aber ich beklage mich nicht.",
+  "Manchmal lese ich im Geschäft Bücher. Das ist erlaubt, wenn keine Kunden da sind. Zurzeit lese ich einen spannenden Krimi. Ich möchte wissen, wer der Täter ist.",
+  "Um sechs Uhr schließt das Geschäft. Ich sage allen 'Auf Wiedersehen'. Ich gehe nach Hause, und mir geht es gut. Der Arbeitstag ist vorbei.",
+
+  "Abend. Zu Hause ruhe ich mich zuerst aus. Ich setze mich aufs Sofa und trinke Tee. Ich schaue aus dem Fenster. Draußen wird es dunkel, und in den Häusern brennt Licht.",
+  "Dann koche ich das Abendessen. Ich kann einfache Gerichte kochen. Heute mache ich Kartoffeln und Fleisch. Außerdem schneide ich Gemüse für einen Salat.",
+  "Abends ruft mich oft meine Mutter an. Wir sprechen über den Tag. Mama fragt: 'Wie geht es dir? Isst du gut?' Ich antworte: 'Ja, Mama, alles ist bestens.'",
+  "Nach dem Abendessen schaue ich manchmal einen Film. Ich mag Komödien und herzerwärmende Geschichten. Manchmal lese ich ein Buch. Manchmal telefoniere ich mit Freundinnen.",
+
+  "Bruder Anton. Anton kommt mich oft besuchen. Er bringt Kuchen oder Süßigkeiten mit. Wir trinken Tee und unterhalten uns. Er erzählt lustige Geschichten.",
+  "Anton arbeitet als Programmierer. Er sitzt den ganzen Tag am Computer. Er sagt, die Arbeit sei interessant, aber seine Augen schmerzen. Ich sage zu ihm: 'Geh spazieren!'",
+  "Wir spielen oft Brettspiele. Anton spielt sehr gut, und ich verliere fast immer. Aber es macht mir trotzdem Spaß.",
+
+  "Nacht. Um zehn Uhr mache ich mich bettfertig. Ich dusche und ziehe meinen Schlafanzug an. Ich schalte das Telefon aus. Das Telefon vor dem Schlafen ist ungesund.",
+  "Ich liege im Bett und denke an den morgigen Tag. Morgen ist Samstag. Das ist mein freier Tag. Ich liebe den Samstag sehr.",
+  "Um elf Uhr schlafe ich ein. Im Zimmer ist es still und dunkel. Ich schlafe gut und habe schöne Träume.",
+
+  "Freier Tag. Am Samstag stelle ich keinen Wecker. Ich wache spät auf, um neun oder zehn Uhr. Das ist sehr angenehm.",
+  "Morgens frühstücke ich lange. Dann putze ich die Wohnung. Ich wische den Boden, staube ab und putze die Fenster. Die Wohnung wird sauber und schön.",
+  "Nach dem Putzen gehe ich einkaufen. Ich kaufe Brot, Milch, Käse, Gemüse und Obst. Manchmal kaufe ich Blumen. Die Blumen stehen auf dem Tisch, und zu Hause duftet es herrlich.",
+  "Am Nachmittag gehe ich mit meiner Freundin Lena spazieren. Wir gehen in den Park oder ins Stadtzentrum. Wir trinken Kaffee und reden über das Leben. Wir lachen und fotografieren alles um uns herum.",
+  "Am Abend gehen Anton und ich ins Kino. Wir kaufen Popcorn und Wasser. Wir schauen einen neuen Film. Danach gehen wir nach Hause und besprechen den Film.",
+
+  "Sonntag. Am Sonntag rufe ich meine Eltern an. Manchmal fahre ich mit dem Zug zu ihnen zu Besuch. Die Fahrt dauert drei Stunden. Ich schaue gern aus dem Zugfenster.",
+  "Meine Mutter holt mich am Bahnhof ab. Sie umarmt mich und sagt: 'Wie schön, dich zu sehen!' Wir gehen nach Hause, wo mein Vater auf uns wartet.",
+  "Mama backt meinen Lieblingskuchen. Er schmeckt hervorragend. Wir sitzen alle zusammen an dem großen Tisch. Wir essen, unterhalten uns und lachen.",
+  "Am Abend fahre ich nach Hause. Ich bin müde, aber sehr glücklich. Ich denke: 'Ich habe ein gutes Leben, eine tolle Familie und wunderbare Freunde.'",
+
+  "Meine Träume. Ich habe einen Traum. Ich möchte meinen eigenen kleinen Buchladen eröffnen. Dort wird es viele Bücher, bequeme Sessel und heißen Tee geben.",
+  "Ich möchte, dass die Menschen in meinen Laden kommen und lesen. Ich möchte, dass Kinder Märchen lauschen. Das ist mein Traum, und ich arbeite jeden Tag dafür.",
+  "Außerdem möchte ich Englisch lernen. Ich lerne jeden Tag neue Wörter. Es ist schwer, aber interessant. Ich lese kurze Texte und höre Lieder.",
+  "Ich glaube, dass alles klappen wird. Man darf nur keine Angst haben und nicht aufgeben. Jeden Tag mache ich einen kleinen Schritt. So werden Träume Wirklichkeit."
+];
+
+// French (fr)
+const frParagraphs = [
+  "Présentation. Je m'appelle Anna. J'ai vingt-cinq ans. J'habite dans une petite ville. C'est une belle ville, et je l'aime beaucoup.",
+  "J'habite dans un appartement. L'appartement comprend deux pièces, une cuisine et une salle de bain. L'appartement est petit, mais il est confortable.",
+  "J'ai une famille. Ma mère et mon père habitent dans une autre ville. Mon frère Anton habite près de chez moi. Il est mon meilleur ami.",
+
+  "Le matin. Je me lève à sept heures. Mon réveil sonne fort. Je n'aime pas me lever tôt, mais c'est nécessaire.",
+  "D'abord, je vais dans la salle de bain. Je me lave le visage à l'eau froide. Ensuite, je me brosse les dents. L'eau est froide, et je me réveille tout de suite.",
+  "Ensuite, je vais dans la cuisine. J'ouvre la fenêtre. Le soleil brille dehors. Le matin est agréable, et je suis de bonne humeur.",
+
+  "Le petit-déjeuner. Je prends mon petit-déjeuner à la maison. Je mange toujours du porridge. Le porridge est chaud et délicieux. Je bois aussi du thé avec du citron.",
+  "Parfois, je mange du pain avec du beurre et du fromage. Parfois, je mange des œufs. J'adore les fruits, surtout les pommes et les bananes.",
+  "Mon frère n'aime pas prendre de petit-déjeuner. Il ne boit que du café. Je lui dis : « Anton, ce n'est pas bien ! » Mais il n'écoute pas.",
+
+  "Le trajet vers le travail. Je travaille dans un magasin. Le magasin se trouve au centre-ville. Je ne me déplace pas en voiture, car je n'ai pas de voiture.",
+  "Je prends le bus. Le bus arrive à huit heures. Le trajet dure vingt minutes. Dans le bus, j'écoute de la musique.",
+  "Parfois, je vais à pied. Cela prend une demi-heure. J'aime marcher le matin. Il y a beaucoup de monde dans la rue, et la ville s'éveille.",
+
+  "Le travail. Je suis vendeuse. Je vends des livres et des cahiers. J'aime mon travail. J'aime les livres et j'aime les gens.",
+  "Quatre personnes travaillent dans le magasin. Notre directrice s'appelle Olga. Elle est gentille et intelligente. Elle nous aide toujours.",
+  "Le matin, le magasin est calme. L'après-midi, beaucoup de gens viennent. Ils demandent : « Où sont les livres pour enfants ? » ou « Combien cela coûte-t-il ? » Je réponds et je souris.",
+  "J'aime les enfants. Ils viennent avec leurs mamans et leurs papas. Ils regardent les images colorées et rient. C'est très agréable.",
+
+  "Le déjeuner. Mon déjeuner commence à une heure. Je vais dans un petit café près du magasin. C'est toujours bon et pas cher.",
+  "Je commande une soupe et une salade. Parfois, je prends du poisson ou du poulet. Je bois de l'eau ou du jus. La serveuse s'appelle Léna, et elle est mon amie.",
+  "Après le déjeuner, je vais au parc. Le parc est à côté du café. Dans le parc, il y a beaucoup d'arbres et de fleurs. Je m'assieds sur un banc et je me repose dix minutes.",
+
+  "La deuxième partie de la journée. Après le déjeuner, je travaille de nouveau. Je travaille jusqu'à six heures. L'après-midi, je suis fatiguée, mais je ne me plains pas.",
+  "Parfois, je lis des livres dans le magasin. Ce n'est pas interdit s'il n'y a pas de clients. En ce moment, je lis un roman policier passionnant. Je veux savoir qui est le coupable.",
+  "À six heures, le magasin ferme. Je dis « au revoir » à tout le monde. Je rentre chez moi et je me sens bien. La journée de travail est terminée.",
+
+  "Le soir. À la maison, je me repose d'abord. Je m'assieds sur le canapé et je bois du thé. Je regarde par la fenêtre. La nuit tombe dehors, et les maisons s'allument.",
+  "Ensuite, je prépare le dîner. Je sais cuisiner des plats simples. Aujourd'hui, je prépare des pommes de terre et de la viande. Je coupe aussi des légumes pour une salade.",
+  "Le soir, ma mère m'appelle souvent. Nous parlons de notre journée. Maman demande : « Comment vas-tu ? Tu manges bien ? » Je réponds : « Oui, maman, tout va bien. »",
+  "Après le dîner, je regarde parfois un film. J'aime les comédies et les belles histoires. Parfois, je lis un livre. Parfois, je parle au téléphone avec des amies.",
+
+  "Mon frère Anton. Anton vient souvent me rendre visite. Il apporte un gâteau ou des bonbons. Nous buvons du thé et nous discutons. Il raconte des histoires drôles.",
+  "Anton travaille comme développeur informatique. Il passe toute la journée devant l'ordinateur. Il dit que le travail est intéressant, mais qu'il a mal aux yeux. Je lui dis : « Va te promener ! »",
+  "Nous jouons souvent à des jeux de société. Anton joue très bien, et je perds presque toujours. Mais je m'amuse quand même.",
+
+  "La nuit. À dix heures, je me prépare à dormir. Je prends une douche et je mets mon pyjama. J'éteins mon téléphone. Le téléphone avant de dormir n'est pas bon pour la santé.",
+  "Je suis couchée dans mon lit et je pense à la journée de demain. Demain, c'est samedi. C'est mon jour de congé. J'aime beaucoup le samedi.",
+  "À onze heures, je m'endors. La chambre est calme et sombre. Je dors bien et je fais de beaux rêves.",
+
+  "Le jour de congé. Le samedi, je ne mets pas de réveil. Je me réveille tard, à neuf ou dix heures. C'est très agréable.",
+  "Le matin, je prends un long petit-déjeuner. Ensuite, je nettoie l'appartement. Je lave le sol, j'essuie la poussière et je lave les fenêtres. L'appartement devient propre et beau.",
+  "Après le ménage, je vais faire des courses au magasin. J'achète du pain, du lait, du fromage, des légumes et des fruits. Parfois, j'achète des fleurs. Les fleurs sont sur la table, et la maison sent bon.",
+  "L'après-midi, je me promène avec mon amie Léna. Nous allons au parc ou au centre-ville. Nous buvons un café et parlons de la vie. Nous rions et photographions tout autour de nous.",
+  "Le soir, Anton et moi allons au cinéma. Nous achetons du pop-corn et de l'eau. Nous regardons un nouveau film. Ensuite, nous rentrons à pied et discutons du film.",
+
+  "Le dimanche. Le dimanche, j'appelle mes parents. Parfois, je vais les voir en train. Le voyage dure trois heures. J'aime regarder par la fenêtre du train.",
+  "Ma mère m'attend à la gare. Elle me serre dans ses bras et me dit : « Comme je suis heureuse de te voir ! » Nous rentrons à la maison, où mon père nous attend.",
+  "Maman prépare ma tarte préférée. Elle est délicieuse. Nous sommes tous assis ensemble autour de la grande table. Nous mangeons, discutons et rions.",
+  "Le soir, je rentre chez moi. Je suis fatiguée, mais très heureuse. Je pense : « J'ai une belle vie, une merveilleuse famille et de bons amis. »",
+
+  "Mes rêves. J'ai un rêve. Je veux ouvrir ma propre petite librairie. Il y aura beaucoup de livres, des fauteuils moelleux et du thé chaud.",
+  "Je veux que les gens viennent dans mon magasin et lisent. Je veux que les enfants écoutent des contes de fées. C'est mon rêve, et je travaille pour lui chaque jour.",
+  "Je veux aussi apprendre l'anglais. J'apprends de nouveaux mots tous les jours. C'est difficile, mais intéressant. Je lis de courts textes et j'écoute des chansons.",
+  "Je pense que tout va réussir. Il faut simplement ne pas avoir peur et ne pas abandonner. Chaque jour, je fais un petit pas. C'est ainsi que les rêves deviennent réalité."
+];
+
+// Spanish (es)
+const esParagraphs = [
+  "Presentación. Me llamo Anna. Tengo veinticinco años. Vivo en una ciudad pequeña. Es una ciudad hermosa y me encanta.",
+  "Vivo en un apartamento. El apartamento tiene dos habitaciones, cocina y baño. El apartamento es pequeño, pero muy acogedor.",
+  "Tengo una familia. Mi madre y mi padre viven en otra ciudad. Mi hermano Anton vive cerca de mí. Es mi mejor amigo.",
+
+  "La mañana. Me levanto a las siete en punto. Mi despertador suena fuerte. No me gusta levantarme temprano, pero es necesario.",
+  "Primero voy al baño. Me lavo la cara con agua fría. Luego me cepillo los dientes. El agua está fría y me despierto enseguida.",
+  "Luego voy a la cocina. Abro la ventana. Afuera brilla el sol. La mañana es hermosa y estoy de buen humor.",
+
+  "El desayuno. Desayuno en casa. Siempre como avena. La avena está caliente y deliciosa. También tomo té con limón.",
+  "A veces como pan con mantequilla y queso. A veces como huevos. Me encantan las frutas, especialmente las manzanas y los plátanos.",
+  "A mi hermano no le gusta desayunar. Solo toma café. Yo le digo: «¡Anton, eso está mal!». Pero no me escucha.",
+
+  "Camino al trabajo. Trabajo en una tienda. La tienda está en el centro de la ciudad. No voy en coche porque no tengo coche.",
+  "Voy en autobús. El autobús llega a las ocho en punto. El trayecto dura veinte minutos. En el autobús escucho música.",
+  "A veces voy a pie. Es media hora. Me gusta pasear por la mañana. Hay mucha gente en la calle y la ciudad se despierta.",
+
+  "El trabajo. Soy dependienta. Vendo libros y libretas. Me gusta mi trabajo. Me encantan los libros y me gusta la gente.",
+  "En la tienda trabajan cuatro personas. Nuestra jefa se llama Olga. Es amable e inteligente. Siempre nos ayuda.",
+  "Por la mañana la tienda está tranquila. Por la tarde viene mucha gente. Preguntan: «¿Dónde están los libros infantiles?» o «¿Cuánto cuesta esto?». Yo respondo y sonrío.",
+  "Me gustan los niños. Vienen con sus madres y padres. Miran los dibujos coloridos y se ríen. Es muy agradable.",
+
+  "El almuerzo. Mi almuerzo empieza a la una. Voy a un pequeño café cerca de la tienda. Allí siempre es rico y económico.",
+  "Pido sopa y ensalada. A veces pido pescado o pollo. Bebo agua o zumo. La camarera se llama Lena y es mi amiga.",
+  "Después de comer voy al parque. El parque está al lado del café. En el parque hay muchos árboles y flores. Me siento en un banco y descanso diez minutos.",
+
+  "La segunda parte del día. Después de comer vuelvo a trabajar. Trabajo hasta las seis en punto. Por la tarde me canso, pero no me quejo.",
+  "A veces leo libros en la tienda. No está prohibido si no hay clientes. Ahora estoy leyendo una novela de detectives muy interesante. Quiero saber quién es el criminal.",
+  "A las seis en punto la tienda cierra. Les digo «hasta luego» a todos. Voy a casa y me siento bien. La jornada laboral ha terminado.",
+
+  "La tarde-noche. En casa primero descanso. Me siento en el sofá y tomo té. Miro por la ventana. Afuera oscurece y las luces de las casas se encienden.",
+  "Luego preparo la cena. Sé cocinar platos sencillos. Hoy preparo patatas y carne. También corto verduras para una ensalada.",
+  "Por la tarde a menudo me llama mi madre. Hablamos de nuestras cosas. Mamá pregunta: «¿Cómo estás? ¿Comes bien?». Yo respondo: «Sí, mamá, todo está bien».",
+  "Después de cenar a veces veo una película. Me gustan las comedias y las historias amables. A veces leo un libro. A veces hablo por teléfono con amigas.",
+
+  "Mi hermano Anton. Anton viene a menudo a visitarme. Trae pastel o bombones. Tomamos té y conversamos. Cuenta historias divertidas.",
+  "Anton trabaja como programador. Se pasa todo el día delante del ordenador. Dice que el trabajo es interesante, pero le duelen los ojos. Yo le digo: «¡Sal a pasear!»",
+  "A menudo jugamos a juegos de mesa. Anton juega muy bien y yo casi siempre pierdo. Pero aun así me divierto.",
+
+  "La noche. A las diez me preparo para dormir. Me doy una ducha y me pongo el pijama. Apago el teléfono. El teléfono antes de dormir no es bueno.",
+  "Estoy acostada en la cama y pienso en el día de mañana. Mañana es sábado. Es mi día libre. Me encanta el sábado.",
+  "A las once me duermo. En la habitación hay silencio y oscuridad. Duermo bien y tengo sueños bonitos.",
+
+  "El día libre. El sábado no pongo el despertador. Me despierto tarde, a las nueve o a las diez. Es muy agradable.",
+  "Por la mañana desayuno con calma. Luego limpio el apartamento. Friego el suelo, limpio el polvo y lavo las ventanas. El apartamento queda limpio y bonito.",
+  "Después de limpiar voy al supermercado a hacer compras. Compro pan, leche, queso, verduras y frutas. A veces compro flores. Las flores están en la mesa y la casa huele de maravilla.",
+  "Por la tarde paseo con mi amiga Lena. Vamos al parque o al centro de la ciudad. Tomamos café y hablamos de la vida. Nos reímos y hacemos fotos de todo lo que vemos.",
+  "Por la noche Anton y yo vamos al cine. Compramos palomitas y agua. Vemos una película nueva. Luego volvemos a casa caminando y comentamos la película.",
+
+  "El domingo. El domingo llamo a mis padres. A veces voy a visitarlos en tren. El viaje dura tres horas. Me gusta mirar por la ventana del tren.",
+  "Mi madre me espera en la estación. Me abraza y me dice: «¡Qué alegría verte!». Vamos a casa y allí nos espera papá.",
+  "Mamá prepara mi tarta favorita. Está deliciosa. Nos sentamos todos juntos en la mesa grande. Comemos, hablamos y nos reímos.",
+  "Por la noche regreso a casa. Estoy cansada, pero muy feliz. Pienso: «Tengo una buena vida, una gran familia y buenos amigos».",
+
+  "Mis sueños. Tengo un sueño. Quiero abrir mi propia librería pequeña. Habrá muchos libros, sillones cómodos y té caliente.",
+  "Quiero que la gente venga a mi tienda a leer. Quiero que los niños escuchen cuentos. Este es mi sueño y trabajo por él cada día.",
+  "También quiero aprender inglés. Aprendo palabras nuevas todos los días. Es difícil, pero muy interesante. Leo textos cortos y escucho canciones.",
+  "Creo que todo saldrá bien. Solo hay que no tener miedo y no rendirse. Cada día doy un pequeño paso. Así los sueños se hacen realidad."
+];
+
+// Italian (it)
+const itParagraphs = [
+  "Presentazione. Mi chiamo Anna. Ho venticinque anni. Vivo in una piccola città. È una bella città e mi piace molto.",
+  "Vivo in un appartamento. L'appartamento ha due stanze, una cucina e un bagno. L'appartamento è piccolo, ma accogliente.",
+  "Ho una famiglia. Mia madre e mio padre vivono in un'altra città. Mio fratello Anton vive vicino a me. È il mio migliore amico.",
+
+  "La mattina. Mi sveglio alle sette in punto. La mia sveglia suona forte. Non mi piace alzarmi presto, ma è necessario.",
+  "Prima vado in bagno. Mi lavo la faccia con acqua fredda. Poi mi lavo i denti. L'acqua è fredda e mi sveglio subito.",
+  "Poi vado in cucina. Apro la finestra. Fuori splende il sole. La mattina è bella e sono di buon umore.",
+
+  "La colazione. Faccio colazione a casa. Mangio sempre il porridge. Il porridge è caldo e delizioso. Bevo anche tè con limone.",
+  "A volte mangio pane con burro e formaggio. A volte mangio uova. Amo la frutta, soprattutto mele e banane.",
+  "A mio fratello non piace fare colazione. Beve solo caffè. Gli dico: «Anton, fa male!» Ma lui non ascolta.",
+
+  "Il tragitto verso il lavoro. Lavoro in un negozio. Il negozio si trova in centro città. Non vado in macchina perché non ho la macchina.",
+  "Prendo l'autobus. L'autobus arriva alle otto in punto. Il tragitto dura venti minuti. Sull'autobus ascolto la musica.",
+  "A volte vado a piedi. Ci vuole mezz'ora. Mi piace camminare la mattina. C'è molta gente per strada e la città si sveglia.",
+
+  "Il lavoro. Sono una commessa. Vendo libri e quaderni. Mi piace il mio lavoro. Amo i libri e amo le persone.",
+  "Nel negozio lavorano quattro persone. La nostra responsabile si chiama Olga. È gentile e intelligente. Ci aiuta sempre.",
+  "La mattina nel negozio c'è silenzio. Nel pomeriggio arrivano molte persone. Chiedono: «Dove sono i libri per bambini?» o «Quanto costa questo?» Io rispondo e sorrido.",
+  "Mi piacciono i bambini. Vengono con le loro mamme e i loro papà. Guardano le immagini colorate e ridono. È molto piacevole.",
+
+  "Il pranzo. Il mio pranzo inizia all'una. Vado in un piccolo caffè vicino al negozio. Lì è sempre buono ed economico.",
+  "Ordino zuppa e insalata. A volte prendo pesce o pollo. Bevo acqua o succo. La cameriera si chiama Lena ed è mia amica.",
+  "Dopo pranzo vado al parco. Il parco è vicino al caffè. Nel parco ci sono molti alberi e fiori. Mi siedo su una panchina e mi riposo dieci minuti.",
+
+  "La seconda parte della giornata. Dopo pranzo lavoro di nuovo. Lavoro fino alle sei. Nel pomeriggio sono stanca, ma non mi lamento.",
+  "A volte leggo libri nel negozio. Non è vietato se non ci sono clienti. In questo momento sto leggendo un giallo appassionante. Voglio scoprire chi è il colpevole.",
+  "Alle sei il negozio chiude. Dico a tutti «arrivederci». Torno a casa e sto bene. La giornata lavorativa è finita.",
+
+  "La sera. A casa prima mi riposo. Mi siedo sul divano e bevo un tè. Guardo fuori dalla finestra. Fuori fa buio e nelle case si accendono le luci.",
+  "Poi preparo la cena. So cucinare piatti semplici. Oggi preparo patate e carne. Taglio anche le verdure per l'insalata.",
+  "La sera mia madre mi chiama spesso. Parliamo della giornata. La mamma chiede: «Come stai? Mangi bene?» Io rispondo: «Sì, mamma, va tutto bene».",
+  "Dopo cena a volte guardo un film. Mi piacciono le commedie e le storie commoventi. A volte leggo un libro. A volte parlo al telefono con le amiche.",
+
+  "Mio fratello Anton. Anton viene spesso a trovarmi. Porta una torta o dei cioccolatini. Beviamo un tè e parliamo. Racconta storie divertenti.",
+  "Anton lavora come programmatore. Sta tutto il giorno seduto al computer. Dice che il lavoro è interessante, ma gli fanno male gli occhi. Gli dico: «Va' a fare una passeggiata!»",
+  "Giochiamo spesso a giochi da tavolo. Anton gioca molto bene e io perdo quasi sempre. Ma mi diverto lo stesso.",
+
+  "La notte. Alle dieci mi preparo per andare a dormire. Faccio la doccia e mi metto il pigiama. Spengo il telefono. Il telefono prima di dormire fa male.",
+  "Sono a letto e penso a domani. Domani è sabato. È il mio giorno libero. Amo molto il sabato.",
+  "Alle undici mi addormento. Nella stanza c'è silenzio e buio. Dormo bene e faccio bei sogni.",
+
+  "Il giorno libero. Il sabato non metto la sveglia. Mi sveglio tardi, alle nove o alle dieci. È molto piacevole.",
+  "La mattina faccio colazione con calma. Poi pulisco l'appartamento. Lavo il pavimento, spolvero e lavo i vetri. L'appartamento diventa pulito e bello.",
+  "Dopo le pulizie vado a fare la spesa. Compro pane, latte, formaggio, verdura e frutta. A volte compro dei fiori. I fiori sono sul tavolo e la casa profuma.",
+  "Nel pomeriggio passeggio con la mia amica Lena. Andiamo al parco o in centro. Beviamo un caffè e parliamo della vita. Ridiamo e fotografiamo tutto ciò che ci circonda.",
+  "La sera io e Anton andiamo al cinema. Compriamo popcorn e acqua. Guardiamo un nuovo film. Poi torniamo a casa a piedi e commentiamo il film.",
+
+  "La domenica. La domenica chiamo i miei genitori. A volte vado a trovarli in treno. Il viaggio dura tre ore. Mi piace guardare fuori dal finestrino del treno.",
+  "Mia madre mi aspetta alla stazione. Mi abbraccia e dice: «Che gioia vederti!» Andiamo a casa, dove papà ci aspetta.",
+  "La mamma prepara la mia torta preferita. È buonissima. Ci sediamo tutti insieme attorno al grande tavolo. Mangiamo, parliamo e ridiamo.",
+  "La sera torno a casa. Sono stanca, ma felicissima. Penso: «Ho una bella vita, una splendida famiglia e ottimi amici».",
+
+  "I miei sogni. Ho un sogno. Voglio aprire la mia piccola libreria. Ci saranno molti libri, poltrone morbide e tè caldo.",
+  "Voglio che le persone vengano nel mio negozio a leggere. Voglio che i bambini ascoltino le fiabe. Questo è il mio sogno e lavoro per realizzarlo ogni giorno.",
+  "Voglio anche imparare l'inglese. Imparo parole nuove ogni giorno. È difficile, ma interessante. Leggo testi brevi e ascolto canzoni.",
+  "Credo che andrà tutto bene. Bisogna solo non avere paura e non arrendersi. Ogni giorno faccio un piccolo passo. È così che i sogni diventano realtà."
+];
+
+// Polish (pl)
+const plParagraphs = [
+  "Poznajmy się. Nazywam się Anna. Mam dwadzieścia pięć lat. Mieszkam w małym mieście. To piękne miasto i bardzo je lubię.",
+  "Mieszkam w mieszkaniu. W mieszkaniu są dwa pokoje, kuchnia i łazienka. Mieszkanie jest niewielkie, ale przytulne.",
+  "Mam rodzinę. Moja mama i mój tata mieszkają w innym mieście. Mój brat Anton mieszka blisko mnie. Jest moim najlepszym przyjacielem.",
+
+  "Poranek. Wstaję o siódmej godzinie. Mój budzik dzwoni głośno. Nie lubię wstawać wcześnie, ale to konieczne.",
+  "Najpierw idę do łazienki. Myję twarz zimną wodą. Potem myję zęby. Woda jest zimna i od razu się budzę.",
+  "Potem idę do kuchni. Otwieram okno. Na dworze świeci słońce. Poranek jest piękny i mam dobry humor.",
+
+  "Śniadanie. Jem śniadanie w domu. Zawsze jem owsiankę. Owsianka jest ciepła i smaczna. Piję też herbatę z cytryną.",
+  "Czasami jem chleb z masłem i serem. Czasami jem jajka. Uwielbiam owoce, szczególnie jabłka i banany.",
+  "Mój brat nie lubi jeść śniadania. Pije tylko kawę. Mówię mu: «Antonie, to niedobrze!» Ale on mnie nie słucha.",
+
+  "Droga do pracy. Pracuję w sklepie. Sklep znajduje się w centrum miasta. Nie jeżdżę samochodem, bo nie mam samochodu.",
+  "Jadę autobusem. Autobus przyjeżdża o ósmej godzinie. Droga zajmuje dwadzieścia minut. W autobusie słucham muzyki.",
+  "Czasami idę pieszo. To pół godziny. Lubię spacerować rano. Na ulicy jest wielu ludzi i miasto się budzi.",
+
+  "Praca. Jestem ekspedientką. Sprzedaję książki i zeszyty. Lubię moją pracę. Kocham książki i lubię ludzi.",
+  "W sklepie pracują cztery osoby. Nasza kierowniczka ma na imię Olga. Jest miła i mądra. Zawsze nam pomaga.",
+  "Rano w sklepie jest cicho. Po południu przychodzi wielu ludzi. Pytają: «Gdzie są książki dla dzieci?» albo «Ile to kosztuje?» Odpowiadam i uśmiecham się.",
+  "Lubię dzieci. Przychodzą z mamami i tatami. Oglądają kolorowe obrazki i śmieją się. To bardzo miłe.",
+
+  "Obiad. Mój obiad zaczyna się o pierwszej. Idę do małej kawiarni obok sklepu. Zawsze jest tam smacznie i niedrogo.",
+  "Zamawiam zupę i sałatkę. Czasami biorę rybę lub kurczaka. Piję wodę albo sok. Kelnerka ma na imię Lena i jest moją przyjaciółką.",
+  "Po obiedzie idę do parku. Park jest tuż obok kawiarni. W parku jest dużo drzew i kwiatów. Siedzę na ławce i odpoczywam dziesięć minut.",
+
+  "Druga część dnia. Po obiedzie znowu pracuję. Pracuję do szóstej godziny. Po południu jestem zmęczona, ale nie narzekam.",
+  "Czasami czytam książki w sklepie. To nie jest zabronione, jeśli nie ma klientów. Teraz czytam ciekawy kryminał. Chcę wiedzieć, kto jest przestępcą.",
+  "O szóstej sklep się zamyka. Mówię wszystkim «do widzenia». Idę do domu i czuję się dobrze. Dzień pracy się skończył.",
+
+  "Wieczór. W domu najpierw odpoczywam. Siadam na kanapie i piję herbatę. Patrzę przez okno. Na dworze robi się ciemno, a w domach świecą się światła.",
+  "Potem gotuję kolację. Umiem gotować proste potrawy. Dzisiaj robię ziemniaki z mięsem. Kroję też warzywa na sałatkę.",
+  "Wieczorem często dzwoni do mnie mama. Rozmawiamy o minionym dniu. Mama pyta: «Jak się masz? Czy dobrze jesz?» Odpowiadam: «Tak, mamo, wszystko w porządku».",
+  "Po kolacji czasami oglądam film. Lubię komedie i ciepłe historie. Czasami czytam książkę. Czasami rozmawiam przez telefon z przyjaciółkami.",
+
+  "Brat Anton. Anton często przychodzi do mnie w odwiedziny. Przynosi ciasto lub cukierki. Pijemy herbatę i rozmawiamy. Opowiada śmieszne historie.",
+  "Anton pracuje jako programista. Cały dzień siedzi przed komputerem. Mówi, że praca jest ciekawa, ale bolą go oczy. Mówię mu: «Idź na spacer!»",
+  "Często gramy w gry planszowe. Anton gra bardzo dobrze i prawie zawsze przegrywam. Ale i tak świetnie się bawię.",
+
+  "Noc. O dziesiątej przygotowuję się do snu. Biorę prysznic i wkładam piżamę. Wyłączam telefon. Telefon przed snem jest niezdrowy.",
+  "Leżę w łóżku i myślę o jutrzejszym dniu. Jutro sobota. To mój dzień wolny. Bardzo lubię soboty.",
+  "O jedenastej zasypiam. W pokoju jest cicho i ciemno. Dobrze śpię i mam piękne sny.",
+
+  "Dzień wolny. W sobotę nie nastawiam budzika. Budzę się późno, o dziewiątej lub dziesiątej. To bardzo przyjemne.",
+  "Rano długo jem śniadanie. Potem sprzątam mieszkanie. Myję podłogę, wycieram kurze i myję okna. Mieszkanie staje się czyste i ładne.",
+  "Po sprzątaniu idę do sklepu po zakupy. Kupuję chleb, mleko, ser, warzywa i owoce. Czasami kupuję kwiaty. Kwiaty stoją na stole i w domu pięknie pachnie.",
+  "Po południu spaceruję z przyjaciółką Leną. Idziemy do parku albo do centrum miasta. Pijemy kawę i rozmawiamy o życiu. Śmiejemy się i robimy zdjęcia wszystkiemu wokół.",
+  "Wieczorem idziemy z Antonem do kina. Kupujemy popcorn i wodę. Oglądamy nowy film. Potem wracamy do domu pieszo i dyskutujemy o filmie.",
+
+  "Niedziela. W niedzielę dzwonię do rodziców. Czasami jadę do nich w odwiedziny pociągiem. Podróż trwa trzy godziny. Lubię patrzeć przez okno pociągu.",
+  "Mama czeka na mnie na dworcu. Przytula mnie i mówi: «Jak się cieszę, że cię widzę!» Idziemy do domu, gdzie czeka na nas tata.",
+  "Mama piecze moje ulubione ciasto. Jest przepyszne. Wszyscy siedzimy razem przy dużym stole. Jemy, rozmawiamy i śmiejemy się.",
+  "Wieczorem wracam do domu. Jestem zmęczona, ale bardzo szczęśliwa. Myślę sobie: «Mam dobre życie, wspaniałą rodzinę i dobrych przyjaciół».",
+
+  "Moje marzenia. Mam marzenie. Chcę otworzyć własną małą księgarnię. Będzie w niej dużo książek, miękkie fotele i gorąca herbata.",
+  "Chcę, żeby ludzie przychodzili do mojego sklepu i czytali. Chcę, żeby dzieci słuchały bajek. To moje marzenie i każdego dnia na nie pracuję.",
+  "Chcę też nauczyć się języka angielskiego. Uczę się nowych słówek codziennie. To trudne, ale ciekawe. Czytam krótkie teksty i słucham piosenek.",
+  "Wierzę, że wszystko się uda. Trzeba tylko się nie bać i nigdy nie poddawać. Każdego dnia robię mały krok naprzód. Tak marzenia stają się rzeczywistością."
+];
+
+// Portuguese (pt)
+const ptParagraphs = [
+  "Apresentação. Chamo-me Anna. Tenho vinte e cinco anos. Moro numa cidade pequena. É uma cidade bonita e eu adoro-a.",
+  "Moro num apartamento. O apartamento tem dois quartos, uma cozinha e uma casa de banho. O apartamento é pequeno, mas acolhedor.",
+  "Tenho uma família. A minha mãe e o meu pai moram noutra cidade. O meu irmão Anton mora perto de mim. Ele é o meu melhor amigo.",
+
+  "Manhã. Acordo às sete horas. O meu despertador toca alto. Não gosto de acordar cedo, mas é necessário.",
+  "Primeiro vou à casa de banho. Lavo o rosto com água fria. Depois escovo os dentes. A água está fria e acordo logo.",
+  "Depois vou para a cozinha. Abro a janela. O sol brilha lá fora. A manhã é boa e estou bem-disposta.",
+
+  "Pequeno-almoço. Tomo o pequeno-almoço em casa. Como sempre papas de aveia. As papas estão quentes e saborosas. Também bebo chá com limão.",
+  "Às vezes como pão com manteiga e queijo. Às vezes como ovos. Adoro fruta, especialmente maçãs e bananas.",
+  "O meu irmão não gosta de tomar o pequeno-almoço. Ele só bebe café. Eu digo-lhe: «Anton, isso faz mal!» Mas ele não ouve.",
+
+  "A caminho do trabalho. Trabalho numa loja. A loja fica no centro da cidade. Não ando de carro porque não tenho carro.",
+  "Vou de autocarro. O autocarro chega às oito horas. A viagem demora vinte minutos. No autocarro ouço música.",
+  "Às vezes vou a pé. É meia hora. Gosto de passear de manhã. Há muita gente na rua e a cidade está a acordar.",
+
+  "Trabalho. Sou vendedora. Vendo livros e cadernos. Gosto do meu trabalho. Adoro livros e adoro pessoas.",
+  "Na loja trabalham quatro pessoas. A nossa gerente chama-se Olga. Ela é simpática e inteligente. Ajuda-nos sempre.",
+  "De manhã a loja é calma. À tarde vêm muitas pessoas. Perguntam: «Onde estão os livros infantis?» ou «Quanto custa isto?» Eu respondo e sorrio.",
+  "Gosto de crianças. Vêm com as mães e os pais. Olham para as imagens coloridas e riem. É muito agradável.",
+
+  "Almoço. O meu almoço começa à uma hora. Vou a um pequeno café perto da loja. Lá a comida é sempre saborosa e barata.",
+  "Peço sopa e salada. Às vezes peço peixe ou frango. Bebo água ou sumo. A empregada de mesa chama-se Lena e é minha amiga.",
+  "Depois do almoço vou ao parque. O parque fica ao lado do café. No parque há muitas árvores e flores. Sento-me num banco e descanso dez minutos.",
+
+  "A segunda parte do dia. Depois do almoço trabalho novamente. Trabalho até às seis horas. À tarde fico cansada, mas não me queixo.",
+  "Às vezes leio livros na loja. Não é proibido quando não há clientes. Agora estou a ler um livro policial interessante. Quero saber quem é o culpado.",
+  "Às seis horas a loja fecha. Digo «adeus» a todos. Vou para casa e sinto-me bem. O dia de trabalho terminou.",
+
+  "Fim de tarde e noite. Em casa primeiro descanso. Sento-me no sofá e bebo chá. Olho pela janela. Lá fora escurece e as luzes acendem-se nas casas.",
+  "Depois preparo o jantar. Sei cozinhar pratos simples. Hoje estou a fazer batatas e carne. Também corto legumes para a salada.",
+  "À noite a minha mãe telefona-me com frequência. Falamos sobre o dia. A mãe pergunta: «Como estás? Estás a comer bem?» Eu respondo: «Sim, mãe, está tudo bem».",
+  "Depois do jantar, às vezes vejo um filme. Gosto de comédias e histórias ternurentas. Às vezes leio um livro. Às vezes falo ao telefone com amigas.",
+
+  "O meu irmão Anton. O Anton vem visitar-me com frequência. Traz bolo ou doces. Bebemos chá e conversamos. Ele conta histórias engraçadas.",
+  "O Anton trabalha como programador. Passa o dia todo ao computador. Diz que o trabalho é interessante, mas os olhos doem-lhe. Eu digo-lhe: «Vai passear!»",
+  "Jogamos frequentemente jogos de tabuleiro. O Anton joga muito bem e eu perco quase sempre. Mas divirto-me na mesma.",
+
+  "Noite. Às dez horas preparo-me para dormir. Tomo um duche e visto o pijama. Desligo o telemóvel. O telemóvel antes de dormir faz mal.",
+  "Fico deitada na cama a pensar no dia de amanhã. Amanhã é sábado. É o meu dia de folga. Adoro o sábado.",
+  "Às onze horas adormeço. O quarto está silencioso e escuro. Durmo bem e tenho sonhos bons.",
+
+  "Dia de folga. Ao sábado não ponho despertador. Acordo tarde, às nove ou dez horas. É muito agradável.",
+  "De manhã tomo um pequeno-almoço demorado. Depois limpo o apartamento. Lavo o chão, limpo o pó e lavo as janelas. O apartamento fica limpo e bonito.",
+  "Depois da limpeza vou às compras. Compro pão, leite, queijo, legumes e fruta. Às vezes compro flores. As flores ficam na mesa e a casa cheira bem.",
+  "À tarde passeio com a minha amiga Lena. Vamos ao parque ou ao centro da cidade. Bebemos café e falamos da vida. Rimos e tiramos fotografias a tudo à volta.",
+  "À noite, eu e o Anton vamos ao cinema. Compramos pipocas e água. Vemos um filme novo. Depois regressamos a pé e conversamos sobre o filme.",
+
+  "Domingo. Ao domingo telefono aos meus pais. Às vezes vou visitá-los de comboio. A viagem demora três horas. Gosto de olhar pela janela do comboio.",
+  "A minha mãe espera-me na estação. Abraça-me e diz: «Que alegria ver-te!» Vamos para casa, onde o meu pai está à nossa espera.",
+  "A mãe faz a minha tarte favorita. É deliciosa. Sentamo-nos todos juntos à mesa grande. Comemos, conversamos e rimos.",
+  "À noite volto para casa. Estou cansada, mas muito feliz. Penso: «Tenho uma boa vida, uma família maravilhosa e bons amigos».",
+
+  "Os meus sonhos. Tenho um sonho. Quero abrir a minha própria pequena livraria. Terá muitos livros, poltronas confortáveis e chá quente.",
+  "Quero que as pessoas venham à minha loja ler. Quero que as crianças oiçam contos de fadas. Este é o meu sonho e trabalho por ele todos os dias.",
+  "Também quero aprender inglês. Aprendo palavras novas todos os dias. É difícil, mas interessante. Leio pequenos textos e oiço canções.",
+  "Acredito que tudo vai correr bem. Só é preciso não ter medo e não desistir. Todos os dias dou um pequeno passo. É assim que os sonhos se tornam realidade."
+];
+
+// Dutch (nl)
+const nlParagraphs = [
+  "Kennismaking. Mijn naam is Anna. Ik ben vijfentwintig jaar oud. Ik woon in een kleine stad. Het is een mooie stad en ik hou ervan.",
+  "Ik woon in een appartement. Het appartement heeft twee kamers, een keuken en een badkamer. Het appartement is klein, maar gezellig.",
+  "Ik heb een familie. Mijn moeder en mijn vader wonen in een andere stad. Mijn broer Anton woont dicht bij mij. Hij is mijn beste vriend.",
+
+  "Ochtend. Ik sta om zeven uur op. Mijn wekker gaat luid af. Ik hou er niet van om vroeg op te staan, maar het moet.",
+  "Eerst ga ik naar de badkamer. Ik was mijn gezicht met koud water. Daarna poets ik mijn tanden. Het water is koud en ik ben meteen wakker.",
+  "Daarna ga ik naar de keuken. Ik open het raam. Buiten schijnt de zon. De ochtend is fijn en ik heb een goed humeur.",
+
+  "Ontbijt. Ik ontbijt thuis. Ik eet altijd havermout. De havermout is warm en lekker. Ik drink ook thee met citroen.",
+  "Soms eet ik brood met boter en kaas. Soms eet ik eieren. Ik hou van fruit, vooral appels en bananen.",
+  "Mijn broer ontbijt niet graag. Hij drinkt alleen koffie. Ik zeg tegen hem: 'Anton, dat is niet goed!' Maar hij luistert niet.",
+
+  "Onderweg naar het werk. Ik werk in een winkel. De winkel ligt in het centrum van de stad. Ik ga niet met de auto, want ik heb geen auto.",
+  "Ik neem de bus. De bus komt om acht uur. De rit duurt twintig minuten. In de bus luister ik naar muziek.",
+  "Soms ga ik lopen. Dat duurt een half uur. Ik wandel graag 's ochtends. Er zijn veel mensen op straat en de stad wordt wakker.",
+
+  "Werk. Ik ben verkoopster. Ik verkoop boeken en schriften. Ik vind mijn werk leuk. Ik hou van boeken en ik hou van mensen.",
+  "In de winkel werken vier mensen. Onze leidinggevende heet Olga. Ze is vriendelijk en slim. Ze helpt ons altijd.",
+  "In de ochtend is het rustig in de winkel. 's Middags komen er veel mensen. Ze vragen: 'Waar zijn de kinderboeken?' of 'Hoeveel kost dit?' Ik antwoord en glimlach.",
+  "Ik hou van kinderen. Ze komen met hun moeders en vaders. Ze kijken naar de vrolijke plaatjes en lachen. Dat is heel fijn.",
+
+  "Lunch. Mijn lunch begint om één uur. Ik ga naar een klein café naast de winkel. Het is er altijd lekker en betaalbaar.",
+  "Ik bestel soep en salade. Soms neem ik vis of kip. Ik drink water of sap. De serveerster heet Lena en ze is mijn vriendin.",
+  "Na de lunch ga ik naar het park. Het park ligt naast het café. In het park staan veel bomen en bloemen. Ik zit op een bankje en rust tien minuten uit.",
+
+  "Tweede deel van de dag. Na de lunch werk ik weer. Ik werk tot zes uur. 's Middags word ik moe, maar ik klaag niet.",
+  "Soms lees ik boeken in de winkel. Het is niet verboden als er geen klanten zijn. Nu lees ik een spannende detective. Ik wil weten wie de dader is.",
+  "Om zes uur sluit de winkel. Ik zeg 'tot ziens' tegen iedereen. Ik ga naar huis en ik voel me goed. De werkdag is voorbij.",
+
+  "Avond. Thuis rust ik eerst uit. Ik ga op de bank zitten en drink thee. Ik kijk uit het raam. Buiten wordt het donker en in de huizen brandt licht.",
+  "Daarna maak ik het avondeten. Ik kan eenvoudige gerechten koken. Vandaag maak ik aardappelen en vlees. Ook snijd ik groenten voor een salade.",
+  "In de avond belt mijn moeder me vaak. We praten over onze dag. Mama vraagt: 'Hoe gaat het met je? Eet je goed?' Ik antwoord: 'Ja mama, alles is goed.'",
+  "Na het eten kijk ik soms een film. Ik hou van komedies en hartverwarmende verhalen. Soms lees ik een boek. Soms bel ik met vriendinnen.",
+
+  "Broer Anton. Anton komt vaak bij me op bezoek. Hij brengt taart of snoep mee. We drinken thee en kletsen. Hij vertelt grappige verhalen.",
+  "Anton werkt als programmeur. Hij zit de hele dag achter de computer. Hij zegt dat het werk interessant is, maar zijn ogen doen pijn. Ik zeg tegen hem: 'Ga wandelen!'",
+  "We spelen vaak bordspellen. Anton speelt heel goed en ik verlies bijna altijd. Maar ik vind het toch leuk.",
+
+  "Nacht. Om tien uur maak ik me klaar om te slapen. Ik neem een douche en trek mijn pyjama aan. Ik zet mijn telefoon uit. Een telefoon voor het slapen is niet gezond.",
+  "Ik lig in bed en denk aan morgen. Morgen is het zaterdag. Dat is mijn vrije dag. Ik hou erg van zaterdag.",
+  "Om elf uur val ik in slaap. In de kamer is het stil en donker. Ik slaap goed en heb mooie dromen.",
+
+  "Vrije dag. Op zaterdag zet ik geen wekker. Ik word laat wakker, om negen of tien uur. Dat is erg prettig.",
+  "'s Ochtends ontbijt ik uitgebreid. Daarna maak ik het appartement schoon. Ik dweil de vloer, stof af en was de ramen. Het appartement wordt schoon en mooi.",
+  "Na het schoonmaken ga ik naar de supermarkt. Ik koop brood, melk, kaas, groenten en fruit. Soms koop ik bloemen. De bloemen staan op tafel en het huis ruikt heerlijk.",
+  "'s Middags wandel ik met mijn vriendin Lena. We gaan naar het park of het stadscentrum. We drinken koffie en praten over het leven. We lachen en fotograferen alles om ons heen.",
+  "'s Avonds gaan Anton en ik naar de bioscoop. We kopen popcorn en water. We kijken naar een nieuwe film. Daarna lopen we naar huis en praten na over de film.",
+
+  "Zondag. Op zondag bel ik mijn ouders. Soms ga ik met de trein bij hen op bezoek. De reis duurt drie uur. Ik kijk graag uit het treinraam.",
+  "Mijn moeder wacht op me op het station. Ze omhelst me en zegt: 'Wat fijn om je te zien!' We lopen naar huis, waar mijn vader op ons wacht.",
+  "Mama bakt mijn favoriete taart. Die is heerlijk. We zitten gezellig samen aan de grote tafel. We eten, praten en lachen.",
+  "'s Avonds reis ik terug naar huis. Ik ben moe, maar heel gelukkig. Ik denk: 'Ik heb een goed leven, een fijne familie en goede vrienden.'",
+
+  "Mijn dromen. Ik heb een droom. Ik wil mijn eigen kleine boekwinkel openen. Er zullen veel boeken zijn, zachte fauteuils en warme thee.",
+  "Ik wil dat mensen naar mijn winkel komen en lezen. Ik wil dat kinderen naar sprookjes luisteren. Dit is mijn droom en ik werk er elke dag voor.",
+  "Ook wil ik Engels leren. Ik leer elke dag nieuwe woorden. Het is moeilijk, maar interessant. Ik lees korte teksten en luister naar liedjes.",
+  "Ik geloof dat alles zal lukken. Je moet gewoon niet bang zijn en niet opgeven. Elke dag zet ik een kleine stap vooruit. Zo worden dromen werkelijkheid."
+];
+
+// Swedish (sv)
+const svParagraphs = [
+  "Presentation. Jag heter Anna. Jag är tjugofem år gammal. Jag bor i en liten stad. Det är en vacker stad och jag älskar den.",
+  "Jag bor i en lägenhet. Lägenheten har två rum, kök och badrum. Lägenheten är liten, men mysig.",
+  "Jag har en familj. Min mamma och min pappa bor i en annan stad. Min bror Anton bor nära mig. Han är min bästa vän.",
+
+  "Morgon. Jag går upp klockan sju. Min väckarklocka ringer högt. Jag tycker inte om att gå upp tidigt, men det måste göras.",
+  "Först går jag till badrummet. Jag tvättar ansiktet med kallt vatten. Sedan borstar jag tänderna. Vattnet är kallt och jag vaknar direkt.",
+  "Sedan går jag till köket. Jag öppnar fönstret. Solen skiner ute. Morgonen är härlig och jag är på gott humör.",
+
+  "Frukost. Jag äter frukost hemma. Jag äter alltid gröt. Gröten är varm och god. Jag dricker också te med citron.",
+  "Ibland äter jag bröd med smör och ost. Ibland äter jag ägg. Jag älskar frukt, särskilt äpplen och bananer.",
+  "Min bror gillar inte att äta frukost. Han dricker bara kaffe. Jag säger till honom: 'Anton, det där är inte bra!' Men han lyssnar inte.",
+
+  "Vägen till jobbet. Jag jobbar i en butik. Butiken ligger i stadens centrum. Jag kör inte bil eftersom jag inte har någon bil.",
+  "Jag åker buss. Bussen kommer klockan åtta. Resan tar tjugo minuter. På bussen lyssnar jag på musik.",
+  "Ibland går jag till fots. Det tar en halvtimme. Jag tycker om att promenera på morgonen. Det är mycket folk på gatan och staden vaknar.",
+
+  "Arbete. Jag är butiksbiträde. Jag säljer böcker och anteckningsblock. Jag trivs med mitt jobb. Jag älskar böcker och jag gillar människor.",
+  "I butiken arbetar fyra personer. Vår chef heter Olga. Hon är snäll och klok. Hon hjälper oss alltid.",
+  "På morgonen är det lugnt i butiken. På eftermiddagen kommer det många människor. De frågar: 'Var finns barnböckerna?' eller 'Vad kostar den här?' Jag svarar och ler.",
+  "Jag tycker om barn. De kommer med sina mammor och pappor. De tittar på de färgglada bilderna och skrattar. Det är väldigt trevligt.",
+
+  "Lunch. Min lunch börjar klockan ett. Jag går till ett litet kafé bredvid butiken. Där är det alltid gott och prisvärt.",
+  "Jag beställer soppa och sallad. Ibland tar jag fisk eller kyckling. Jag dricker vatten eller juice. Servitrisen heter Lena och hon är min vän.",
+  "Efter lunchen går jag till parken. Parken ligger intill kaféet. I parken finns många träd och blommor. Jag sitter på en bänk och vilar i tio minuter.",
+
+  "Dagens andra del. Efter lunchen arbetar jag igen. Jag jobbar till klockan sex. På eftermiddagen blir jag trött, men jag klagar inte.",
+  "Ibland läser jag böcker i butiken. Det är tillåtet när det inte finns några kunder. Just nu läser jag en spännande deckare. Jag vill veta vem brottslingen är.",
+  "Klockan sex stänger butiken. Jag säger 'hejdå' till alla. Jag går hem och känner mig nöjd. Arbetsdagen är slut.",
+
+  "Kväll. Hemma vilar jag först. Jag sätter mig i soffan och dricker te. Jag tittar ut genom fönstret. Det skymmer ute och lamporna tänds i husen.",
+  "Sedan lagar jag middag. Jag kan laga enkla rätter. Idag gör jag potatis och kött. Jag skär också grönsaker till en sallad.",
+  "På kvällen ringer min mamma ofta. Vi pratar om dagen. Mamma frågar: 'Hur mår du? Äter du ordentligt?' Jag svarar: 'Ja mamma, allt är bra.'",
+  "Efter middagen tittar jag ibland på film. Jag gillar komedier och varma berättelser. Ibland läser jag en bok. Ibland pratar jag i telefon med vänner.",
+
+  "Bror Anton. Anton hälsar ofta på mig. Han har med sig tårta eller godis. Vi dricker te och pratar. Han berättar roliga historier.",
+  "Anton arbetar som programmerare. Han sitter vid datorn hela dagen. Han säger att jobbet är intressant, men att ögonen svider. Jag säger till honom: 'Gå ut och gå!'",
+  "Vi spelar ofta brädspel. Anton är väldigt duktig och jag förlorar nästan alltid. Men jag har roligt ändå.",
+
+  "Natt. Klockan tio gör jag mig i ordning för att sova. Jag tar en dusch och tar på mig pyjamas. Jag stänger av mobilen. Att titta på mobilen före sömnen är inte hälsosamt.",
+  "Jag ligger i sängen och tänker på morgondagen. Imorgon är det lördag. Det är min lediga dag. Jag tycker mycket om lördagar.",
+  "Klockan elva somnar jag. I rummet är det tyst och mörkt. Jag sover gott och drömmer fina drömmar.",
+
+  "Ledig dag. På lördagen ställer jag ingen väckarklocka. Jag vaknar sent, vid nio- eller tiotiden. Det är väldigt skönt.",
+  "På morgonen äter jag frukost i lugn och ro. Sedan städar jag lägenheten. Jag moppar golvet, dammtorkar och putsar fönstren. Lägenheten blir ren och fin.",
+  "Efter städningen går jag till affären och handlar mat. Jag köper bröd, mjölk, ost, grönsaker och frukt. Ibland köper jag blommor. Blommorna står på bordet och hemmet doftar gott.",
+  "På eftermiddagen promenerar jag med min vän Lena. Vi går till parken eller centrum. Vi dricker kaffe och pratar om livet. Vi skrattar och fotograferar allt omkring oss.",
+  "På kvällen går Anton och jag på bio. Vi köper popcorn och vatten. Vi ser en ny film. Sedan promenerar vi hem och diskuterar filmen.",
+
+  "Söndag. På söndagen ringer jag mina föräldrar. Ibland åker jag tåg och hälsar på dem. Resan tar tre timmar. Jag tycker om att titta ut genom tågfönstret.",
+  "Mamma möter mig på stationen. Hon kramar om mig och säger: 'Vad roligt att se dig!' Vi går hem där pappa väntar på oss.",
+  "Mamma bakar min favoritpaj. Den är jättegod. Vi sitter alla tillsammans vid det stora bordet. Vi äter, pratar och skrattar.",
+  "På kvällen åker jag hem. Jag är trött, men väldigt lycklig. Jag tänker: 'Jag har ett bra liv, en fin familj och underbara vänner.'",
+
+  "Mina drömmar. Jag har en dröm. Jag vill öppna min egen lilla bokhandel. Där ska det finnas massor av böcker, mjuka fåtöljer och varmt te.",
+  "Jag vill att människor ska komma till min butik och läsa. Jag vill att barn ska lyssna på sagor. Det är min dröm och jag arbetar för den varje dag.",
+  "Jag vill också lära mig engelska. Jag lär mig nya ord varje dag. Det är svårt, men spännande. Jag läser korta texter och lyssnar på låtar.",
+  "Jag tror att allt kommer att gå bra. Man måste bara våga och inte ge upp. Varje dag tar jag ett litet steg framåt. Det är så drömmar blir verklighet."
+];
+
+// Turkish (tr)
+const trParagraphs = [
+  "Tanışma. Benim adım Anna. Yirmi beş yaşındayım. Küçük bir şehirde yaşıyorum. Çok güzel bir şehir ve onu seviyorum.",
+  "Bir dairede yaşıyorum. Dairede iki oda, bir mutfak ve bir banyo var. Daire küçük ama çok samimi ve sıcak.",
+  "Bir ailem var. Annem ve babam başka bir şehirde yaşıyorlar. Erkek kardeşim Anton benimle aynı mahallede yaşıyor. O benim en iyi arkadaşım.",
+
+  "Sabah. Saat yedide uyanıyorum. Çalar saatim yüksek sesle çalıyor. Erken kalkmayı sevmiyorum ama bu gerekli.",
+  "Önce banyoya gidiyorum. Yüzümü soğuk suyla yıkıyorum. Sonra dişlerimi fırçalıyorum. Su soğuk ve hemen uykum açılıyor.",
+  "Sonra mutfağa gidiyorum. Pencereyi açıyorum. Dışarıda güneş parlıyor. Sabah çok güzel ve neşem yerinde.",
+
+  "Kahvaltı. Evde kahvaltı yapıyorum. Her zaman yulaf lapası yerim. Lapa sıcak ve lezzetli. Yanında limonlu çay içerim.",
+  "Bazen tereyağlı ve peynirli ekmek yerim. Bazen yumurta yerim. Meyveleri, özellikle elma ve muzu çok severim.",
+  "Erkek kardeşim kahvaltı yapmayı sevmez. Sadece kahve içer. Ona: 'Anton, bu zararlı!' derim. Ama beni dinlemez.",
+
+  "İşe gidiş yolu. Bir dükkanda çalışıyorum. Dükkan şehir merkezinde yer alıyor. Arabayla gitmiyorum çünkü arabam yok.",
+  "Otobüsle gidiyorum. Otobüs saat sekizde geliyor. Yol yirmi dakika sürüyor. Otobüste müzik dinliyorum.",
+  "Bazen yürüyerek gidiyorum. Bu yarım saat sürüyor. Sabahları yürümeyi çok severim. Sokakta çok insan var ve şehir uyanıyor.",
+
+  "İş. Ben bir satış elemanıyım. Kitap ve defter satıyorum. İşimi seviyorum. Kitapları seviyorum ve insanları seviyorum.",
+  "Dükkanda dört kişi çalışıyoruz. Müdürümüzün adı Olga. Çok nazik ve akıllı bir kadın. Bize her zaman yardım eder.",
+  "Sabahları dükkan sakin olur. Öğleden sonra çok insan gelir. 'Çocuk kitapları nerede?' veya 'Bu ne kadar?' diye sorarlar. Cevap verir ve gülümserim.",
+  "Çocukları çok seviyorum. Anneleri ve babalarıyla gelirler. Renkli resimlere bakıp gülerler. Bu çok güzel bir duygu.",
+
+  "Öğle yemeği. Öğle aram saat birde başlıyor. Dükkanın yanındaki küçük kafeye gidiyorum. Orası her zaman lezzetli ve uygun fiyatlıdır.",
+  "Çorba ve salata sipariş ediyorum. Bazen balık veya tavuk alırım. Su veya meyve suyu içerim. Garsonun adı Lena ve o benim arkadaşım.",
+  "Yemekten sonra parka gidiyorum. Park kafenin hemen yanında. Parkta çok ağaç ve çiçek var. Bir bankta oturup on dakika dinleniyorum.",
+
+  "Günün ikinci kısmı. Öğle yemeğinden sonra tekrar çalışıyorum. Saat altıya kadar çalışırım. Öğleden sonra yorulurum ama şikayet etmem.",
+  "Bazen dükkanda kitap okurum. Müşteri yoksa bu yasak değil. Şu anda sürükleyici bir polisiye roman okuyorum. Katilin kim olduğunu öğrenmek istiyorum.",
+  "Saat altıda dükkan kapanır. Herkese 'hoşça kalın' derim. Eve doğru yürürüm ve kendimi iyi hissederim. İş günü bitti.",
+
+  "Akşam. Evde önce dinlenirim. Kanepeye oturup çay içerim. Pencereden dışarı bakarım. Hava kararır ve evlerin ışıkları yanar.",
+  "Sonra akşam yemeği hazırlarım. Basit yemekler yapmayı bilirim. Bugün patates ve et pişiriyorum. Ayrıca salata için sebze doğruyorum.",
+  "Akşamları annem sık sık arar. Günümüz hakkında konuşuruz. Annem: 'Nasılsın? İyi besleniyor musun?' diye sorar. 'Evet annecim, her şey yolunda' derim.",
+  "Akşam yemeğinden sonra bazen film izlerim. Komedileri ve sıcak hikayeleri severim. Bazen kitap okurum. Bazen kız arkadaşlarımla telefonda konuşurum.",
+
+  "Kardeşim Anton. Anton sık sık bana misafirliğe gelir. Pasta veya çikolata getirir. Çay içip sohbet ederiz. Komik hikayeler anlatır.",
+  "Anton yazılımcı olarak çalışıyor. Bütün gün bilgisayar başında oturur. İşinin ilginç olduğunu söyler ama gözleri ağrır. Ona: 'Hadi biraz dışarı çıkıp yürü!' derim.",
+  "Birlikte sık sık kutu oyunları oynarız. Anton çok iyi oynar ve ben neredeyse hep kaybederim. Ama yine de çok eğlenirim.",
+
+  "Gece. Saat onda uyumaya hazırlanırım. Duş alır ve pijamalarımı giyerim. Telefonumu kapatırım. Uykudan önce telefonla oynamak zararlıdır.",
+  "Yatakta uzanıp yarını düşünürüm. Yarın cumartesi. Benim izin günüm. Cumartesileri çok severim.",
+  "Saat on birde uykuya dalarım. Odada sessizlik ve karanlık vardır. Mışıl mışıl uyur ve güzel rüyalar görürüm.",
+
+  "İzin günü. Cumartesi günü çalar saat kurmam. Geç uyanırım, saat dokuzda veya onda. Bu çok keyifli.",
+  "Sabah uzun uzun kahvaltı yaparım. Sonra evi temizlerim. Yerleri siler, toz alır ve camları yıkarım. Ev pırıl pırıl ve tertemiz olur.",
+  "Temizlikten sonra markete alışverişe giderim. Ekmek, süt, peynir, sebze ve meyve alırım. Bazen çiçek alırım. Çiçekler masanın üstünde durur ve evin içi mis gibi kokar.",
+  "Öğleden sonra arkadaşım Lena ile buluşup gezeriz. Parka veya şehir merkezine gideriz. Kahve içer ve hayattan bahsederiz. Güler ve etrafımızdaki her şeyin fotoğrafını çekeriz.",
+  "Akşam Anton ile sinemaya gideriz. Patlamış mısır ve su alırız. Yeni bir film izleriz. Sonra eve doğru yürür ve filmi tartışırız.",
+
+  "Pazar. Pazar günü ailemi ararım. Bazen trenle onların yanına giderim. Yolculuk üç saat sürer. Tren penceresinden dışarı bakmayı çok severim.",
+  "Annem beni garda karşılar. Bana sarılır ve: 'Seni gördüğüme ne kadar sevindim!' der. Eve gideriz, babam bizi orada bekler.",
+  "Annem en sevdiğim keki pişirir. Çok lezzetlidir. Hep birlikte büyük masanın etrafında otururuz. Yemek yer, sohbet eder ve güleriz.",
+  "Akşam eve dönerim. Yorgun ama çok mutluyumdur. 'Güzel bir hayatım, harika bir ailem ve iyi dostlarım var' diye düşünürüm.",
+
+  "Hayallerim. Bir hayalim var. Kendi küçük kitapçımı açmak istiyorum. İçinde çok sayıda kitap, yumuşacık koltuklar ve sıcacık çay olacak.",
+  "İnsanların dükkanıma gelip kitap okumasını istiyorum. Çocukların masallar dinlemesini istiyorum. Bu benim hayalim ve her gün bunun için çalışıyorum.",
+  "Ayrıca İngilizce öğrenmek istiyorum. Her gün yeni kelimeler öğreniyorum. Zor ama çok eğlenceli. Kısa metinler okuyor ve şarkılar dinliyorum.",
+  "Her şeyin güzel olacağına inanıyorum. Sadece korkmamak ve asla pes etmemek gerek. Her gün küçük bir adım atıyorum. Hayaller böyle gerçeğe dönüşür."
+];
+
+// Chinese (zh - Simplified)
+const zhParagraphs = [
+  "自我介绍。我叫安娜。我二十五岁。我住在一个小城市里。这是一座美丽的城市，我很喜欢它。",
+  "我住在一套公寓里。公寓有两个房间、一个厨房和一个卫生间。房子不大，但很温馨舒适。",
+  "我有一个温暖的家庭。我爸爸妈妈住在另一个城市。我的哥哥安东住在我附近。他是我最好的朋友。",
+
+  "清晨。我早上七点起床。我的闹钟响得很响。我不喜欢早起，但这很有必要。",
+  "首先我走进卫生间。我用冷水洗脸。然后我刷牙。水很清凉，我一下就清醒了。",
+  "然后我走进厨房。我推开窗户。外面阳光明媚。早晨很美好，我的心情也很好。",
+
+  "早餐。我在家里吃早餐。我总是吃热燕麦粥。燕麦粥温暖可口。我还喝柠檬茶。",
+  "有时我吃涂黄油和奶酪的面包。有时我吃鸡蛋。我非常喜欢水果，尤其是苹果和香蕉。",
+  "我哥哥不喜欢吃早餐。他只喝咖啡。我对他说：“安东，这样对身体不好！”但他就是不听。",
+
+  "上班路上。我在一家商店工作。商店位于市中心。我不开车上班，因为我没有车。",
+  "我坐公共汽车。公交车八点准时到达。路上需要二十分钟。在车上我听听音乐。",
+  "有时我步行去。大约需要半小时。我喜欢在清晨散步。街上有很多人，整座城市正在苏醒。",
+
+  "工作。我是一名售货员。我卖书和笔记本。我很喜欢我的工作。我热爱书籍，也热爱人们。",
+  "店里一共有四个人工作。我们的经理名叫奥尔加。她善良又聪明，总是耐心地帮助我们。",
+  "早晨店里很安静。到了下午，会有很多人来。他们询问：“童书在哪里？”或者“这个多少钱？”我微笑着耐心回答。",
+  "我很喜欢小孩子们。他们和爸爸妈妈一起来。他们看着五彩斑斓的插图开心地笑。这让人感到非常温暖。",
+
+  "午餐。我的午餐时间从一点开始。我去书店旁边的一家小咖啡馆。那里的饭菜总是既美味又便宜。",
+  "我点一份汤和一份沙拉。有时我吃鱼肉或鸡肉。我喝白水或果汁。服务员叫莉娜，她是我的好朋友。",
+  "午饭后我漫步去公园。公园就在咖啡馆旁边。公园里有很多绿树和鲜花。我坐在长椅上静静休息十分钟。",
+
+  "下午时光。午餐后我继续工作。我工作到下午六点。下午难免会感到疲倦，但我从不抱怨。",
+  "店里没有顾客时，我有时会翻翻书。这并不是被禁止的。现在我正在读一本精彩的侦探小说，迫切想知道凶手到底是谁。",
+  "六点钟书店关门了。我对大家说“明天见”。我轻松地步行回家，心里感到无比踏实。充实的工作日结束了。",
+
+  "傍晚。回到家我先休息一下。我坐在舒适的沙发上喝热茶。我望向窗外，天色渐渐暗下来，千家万户亮起了温暖的灯火。",
+  "接着我准备晚餐。我会做很多简单的家常菜。今天我做了土豆和肉。我还切了新鲜蔬菜做沙拉。",
+  "晚上妈妈常常给我打电话。我们畅聊一天的生活。妈妈关切地问：“最近怎么样？有好好吃饭吗？”我笑着回答：“放心吧妈妈，我一切都好。”",
+  "晚饭后我有时看一部电影。我喜欢轻松的喜剧和温暖的故事。有时我读读书，有时和闺蜜们通电话聊天。",
+
+  "哥哥安东。安东经常来我家串门。他总是带蛋糕或糖果。我们喝着茶谈天说地，他总是讲很多有趣的笑话。",
+  "安东是一名软件程序员。他整天坐在电脑前。他说工作很有意思，但眼睛常常酸痛。我总是提醒他：“快出去走走散散步吧！”",
+  "我们经常一起玩桌游。安东玩得特别厉害，我几乎每次都输。但这依然带给我们无限的欢乐。",
+
+  "夜晚。十点钟我准备睡觉。我洗了个热水澡，换上舒服的睡衣。我关掉手机，睡前玩手机对身体不好。",
+  "我静静躺在床上，憧憬着明天。明天是星期六，是我的休息日。我最喜欢星期六了。",
+  "十一点钟我安然入睡。房间里静悄悄的，夜色沉沉。我睡得很香，还做了一个甜美的美梦。",
+
+  "周末假期。星期六我不用定闹钟。我自然醒来，通常是九点或十点。这种感觉格外惬意。",
+  "早晨我悠闲地享用早餐。然后我彻底打扫公寓。我拖地、擦灰、擦拭窗户，房间变得一尘不染又明亮。",
+  "打扫完后我去超市采购食物。我买面包、牛奶、奶酪、蔬菜和水果。有时我买一束鲜花插在餐桌上，满室清香。",
+  "下午我和好友莉娜出去散步。我们去公园漫步或逛逛市中心。我们喝咖啡聊人生，欢笑着拍下沿途美丽的风景。",
+  "晚上我和安东一起去电影院。我们买了香脆的爆米花和饮品，看最新上映的电影。散场后我们步行回家热烈讨论剧情。",
+
+  "周日时光。周日我会给父母通电话。有时我坐火车回老家探望他们。车程大约三个小时，我喜欢凝望火车窗外的风景。",
+  "妈妈在火车站温暖地迎接我。她紧紧拥抱我说：“见到你真高兴！”我们回到家，爸爸已经在家里等候我们了。",
+  "妈妈烤了我最爱吃的馅饼，味道香甜可口。我们一家人围坐在大餐桌旁，吃着美食，开怀畅谈，笑声不断。",
+  "傍晚我乘车返回自己的小窝。虽然有些疲惫，但内心无比幸福。我心想：“我的生活很美好，有温暖的家人和知心的朋友。”",
+
+  "我的梦想。我心中一直有一个梦想。我想开一家属于自己的温馨小书店，里面有琳琅满目的图书、柔软舒适的沙发和热气腾腾的茶水。",
+  "我希望人们能走进我的书店安静阅读。我希望孩子们能围坐在这里聆听美妙的童话。这是我的梦想，我每天都在为之努力奋斗。",
+  "我还想学好英语。我每天都坚持学习新单词。虽然有些难，但充满了趣味。我读短篇小故事，听优美的英文歌。",
+  "我相信只要勇敢坚持，一切都会实现。只要不害怕、不轻言放弃，每天迈出一小步，梦想终会照进现实。"
+];
+
+// Japanese (ja)
+const jaParagraphs = [
+  "自己紹介。私の名前はアンナです。二十五歳です。私は小さな街に住んでいます。とても美しい街で、私はこの街が大好きです。",
+  "私はアパートに住んでいます。部屋は二部屋あり、キッチンとお風呂場があります。広くはありませんが、とても居心地が良いです。",
+  "私には家族がいます。両親は別の街に住んでいます。兄のアントンは私の家の近くに住んでいます。彼は私の一番の親友です。",
+
+  "朝。私は朝七時に起きます。目覚まし時計が大きな音で鳴ります。早起きは得意ではありませんが、起きなければなりません。",
+  "まず洗面所へ行きます。冷たい水で顔を洗います。それから歯を磨きます。冷たい水のおかげで、すぐに目が覚めます。",
+  "それから台所へ行きます。窓を開けます。外には太陽が輝いています。清々しい朝で、とても良い気分です。",
+
+  "朝食。私は家で朝ごはんを食べます。いつもオートミールのお粥を食べます。温かくてとても美味しいです。レモンティーも飲みます。",
+  "時々バターとチーズをのせたパンを食べます。卵を食べることもあります。果物が大好きで、特にりんごとバナナが好きです。",
+  "兄は朝ごはんを食べるのが好きではありません。コーヒーしか飲みません。私は「アントン、それは体に良くないよ！」と言いますが、彼は聞きません。",
+
+  "通勤の道のり。私はお店で働いています。お店は街の中心街にあります。車を持っていないので、車には乗りません。",
+  "バスに乗って通います。バスは八時に来ます。道のりは二十分かかります。バスの中では音楽を聴いています。",
+  "時々歩いて行くこともあります。三十分ほどかかります。朝の散歩が好きです。通りにはたくさんの人がいて、街が目覚めていきます。",
+
+  "仕事。私は書店の店員です。本やノートを販売しています。自分の仕事が気に入っています。本が大好きですし、人と接することも好きです。",
+  "お店では四人が働いています。店長の名前はオリガです。優しくて聡明な女性です。いつも私たちを助けてくれます。",
+  "朝の店内はとても静かです。午後になるとたくさんの人がやって来ます。「子供向けの本はどこですか？」や「これはいくらですか？」と尋ねられます。私は笑顔で答えます。",
+  "子供たちが大好きです。お父さんやお母さんと一緒にやって来て、鮮やかな挿絵を見て楽しそうに笑います。とても微笑ましい光景です。",
+
+  "昼食。お昼休みは一時から始まります。お店のすぐ隣にある小さなカフェに行きます。いつも美味しくてお手頃です。",
+  "スープとサラダを注文します。時々魚やチキンも頼みます。水やジュースを飲みます。ウェイトレスの名前はレーナで、彼女は私の友達です。",
+  "昼食後は公園へ行きます。公園はカフェのすぐ隣にあります。公園にはたくさんの木や花があります。ベンチに座って十分間ほど休憩します。",
+
+  "午後の仕事。昼食後、また仕事を再開します。夕方六時まで働きます。午後は少し疲れますが、文句は言いません。",
+  "お客様がいない時は、店内の本を読むこともあります。禁止はされていません。今は面白い推理小説を読んでいて、犯人が誰なのか早く知りたいです。",
+  "六時になるとお店は閉まります。皆に「お疲れ様でした」と言って帰ります。家へ向かって歩く時、とても良い気分です。一日の仕事が終わりました。",
+
+  "夜。家に着いたら、まず一息つきます。ソファに座って温かい紅茶を飲みます。窓の外を眺めます。外は暗くなり、家々に明かりが灯ります。",
+  "それから夕食の準備をします。簡単な家庭料理なら作れます。今夜はジャガイモとお肉を作ります。サラダ用の野菜も刻みます。",
+  "夜には母からよく電話がかかってきます。今日あった出来事を話します。母は「元気にしている？ご飯はちゃんと食べている？」と聞いてきます。私は「うん、お母さん、元気だよ」と答えます。",
+  "夕食後は映画を見ることもあります。コメディや心温まる物語が好きです。読書をしたり、友達と電話でおしゃべりしたりすることもあります。",
+
+  "兄のアントン。アントンはよく私の部屋に遊びに来ます。ケーキやお菓子を持ってきてくれます。お茶を飲みながら楽しくおしゃべりをします。彼は面白い話をしてくれます。",
+  "アントンはプログラマーとして働いています。一日中パソコンの前に座っています。仕事は面白いけれど目が痛くなると言います。私は「少し散歩でもしなよ！」と言います。",
+  "私たちはよくボードゲームをして遊びます。アントンはとても上手で、私はほとんど負けてしまいます。それでもすごく楽しいです。",
+
+  "深夜。十時になると寝る準備をします。シャワーを浴びてパジャマを着ます。スマホの電源を切ります。寝る前にスマホを見るのは体に毒です。",
+  "ベッドに横になり、明日のことを考えます。明日は土曜日です。私の休日です。土曜日が本当に大好きです。",
+  "十一時になると眠りにつきます。部屋の中は静かで暗いです。ぐっすり眠り、温かい夢を見ます。",
+
+  "休日。土曜日は目覚まし時計をかけません。九時か十時頃にゆっくり起きます。とても幸せな時間です。",
+  "朝は時間をかけてゆっくり朝食をとります。それから部屋の掃除をします。床を拭き、埃を払い、窓を磨きます。部屋が清潔で美しくなります。",
+  "掃除の後はスーパーへ買い物に行きます。パン、牛乳、チーズ、野菜、果物を買います。時々お花も買います。テーブルにお花を飾ると、部屋が良い香りで満たされます。",
+  "午後は友達のレーナとお散歩をします。公園や街の中心部へ行きます。カフェでコーヒーを飲みながら人生について語り合います。笑い合い、色々な写真を撮ります。",
+  "夜はアントンと一緒に映画館へ行きます。ポップコーンとお水を買って、新作映画を見ます。映画が終わったら歩いて帰りながら感想を語り合います。",
+
+  "日曜日。日曜日は実家の両親に電話をします。電車に乗って実家へ遊びに行くこともあります。電車の旅は三時間かかります。車窓を眺めるのが大好きです。",
+  "駅では母が出迎えてくれます。「会えて本当に嬉しいわ！」と私を抱きしめてくれます。家へ歩いて行くと、父が待っていてくれます。",
+  "母は私の大好物のパイを焼いてくれます。信じられないほど美味しいです。大きなテーブルを囲んでみんなで座り、食事をして語り合い、たくさん笑います。",
+  "夜になると自宅へ戻ります。体は少し疲れていますが、心はとても幸せです。「良い人生、素敵な家族、大好きな友達に恵まれて幸せだな」と思います。",
+
+  "私の夢。私には夢があります。自分の小さな本屋さんを開くことです。そこにはたくさんの本と、座り心地の良いソファと、温かいお茶があります。",
+  "みんながふらりと立ち寄って読書を楽しんでほしいです。子供たちが集まって昔話に耳を傾けてほしいです。それが私の夢で、そのために毎日頑張っています。",
+  "それから、英語も話せるようになりたいです。毎日新しい単語を覚えています。難しいですがとても面白いです。短い物語を読んだり、洋楽を聴いたりしています。",
+  "きっとすべて上手くいくと信じています。恐れずに諦めないことが大切です。毎日小さな一歩を踏み出すことで、夢はいつか必ず現実になります。"
+];
+
+// Korean (ko)
+const koParagraphs = [
+  "자기소개. 제 이름은 안나입니다. 스물다섯 살이에요. 저는 작은 도시에 살고 있어요. 아름다운 도시이고, 저는 이곳을 정말 사랑해요.",
+  "저는 아파트에 살아요. 방 두 개와 부엌, 욕실이 있는 집이에요. 크지는 않지만 아주 아늑하고 따뜻해요.",
+  "저에게는 소중한 가족이 있어요. 부모님은 다른 도시에 사세요. 오빠인 안톤은 제 집 근처에 살아요. 오빠는 제 가장 친한 친구예요.",
+
+  "아침. 저는 아침 일곱 시에 일어나요. 알람 시계가 요란하게 울려요. 일찍 일어나는 걸 좋아하지는 않지만, 일어나야 해요.",
+  "먼저 욕실로 가요. 차가운 물로 세수를 해요. 그런 다음 이를 닦아요. 물이 시원해서 금방 잠이 깨요.",
+  "그다음 부엌으로 가요. 창문을 활짝 열어요. 밖에는 눈부신 햇살이 비치고 있어요. 상쾌한 아침이라 기분도 좋아져요.",
+
+  "아침 식사. 저는 집에서 아침을 먹어요. 항상 따뜻한 오트밀 죽을 먹어요. 부드럽고 맛있어요. 레몬을 띄운 차도 한잔 마셔요.",
+  "가끔은 버터와 치즈를 바른 빵을 먹거나 달걀을 먹어요. 과일을 정말 좋아하는데, 특히 사과와 바나나를 좋아해요.",
+  "오빠는 아침을 잘 안 챙겨 먹어요. 커피만 마셔요. 제가 '안톤 오빠, 그러면 몸에 안 좋아!'라고 잔소리를 해도 잘 안 들어요.",
+
+  "출근길. 저는 가게에서 일해요. 가게는 도시 중심가에 있어요. 차가 없어서 운전은 하지 않아요.",
+  "버스를 타고 출근해요. 버스는 여덟 시에 와요. 가는 데는 20분이 걸려요. 버스 안에서는 신나는 음악을 들어요.",
+  "가끔은 걸어서 출근하기도 해요. 30분 정도 걸려요. 아침 산책을 좋아하거든요. 거리에는 사람들도 많고 도시가 활기를 되찾아요.",
+
+  "직장. 저는 서점 직원이에요. 책과 공책을 판매해요. 저는 제 일이 마음에 들어요. 책을 사랑하고, 사람들과 만나는 것도 좋아해요.",
+  "가게에는 네 명이 함께 일해요. 우리 매니저님 이름은 올가예요. 다정하고 똑똑한 분이라 항상 우리를 도와주세요.",
+  "아침 서점은 한적하고 조용해요. 오후가 되면 손님들이 많이 찾아와요. '어린이 책은 어디에 있나요?' 혹은 '이 책은 얼마인가요?'라고 물어보시면 저는 미소를 지으며 친절하게 안내해요.",
+  "아이들을 참 좋아해요. 엄마, 아빠 손을 잡고 와서 알록달록한 그림책을 보며 까르르 웃는 모습을 보면 마음이 정말 따뜻해져요.",
+
+  "점심시간. 제 점심시간은 한 시부터 시작돼요. 가게 옆에 있는 작은 카페로 가요. 언제나 맛있고 가격도 착해요.",
+  "따뜻한 수프와 신선한 샐러드를 주문해요. 가끔은 생선이나 닭고기를 먹기도 해요. 물이나 주스를 마셔요. 웨이트리스 레나는 제 절친한 친구예요.",
+  "점심을 먹은 뒤에는 공원으로 가요. 공원이 카페 바로 옆에 있거든요. 나무와 꽃이 가득한 공원 벤치에 앉아 10분 정도 평화롭게 휴식을 취해요.",
+
+  "오후 근무. 점심을 먹고 다시 일을 시작해요. 저녁 여섯 시까지 일해요. 오후가 되면 피곤하지만 투덜거리지 않아요.",
+  "손님이 없을 때면 서점에서 책을 읽기도 해요. 손님이 없을 땐 괜찮거든요. 요즘은 흥미진진한 추리소설을 읽고 있는데 범인이 누구인지 정말 궁금해요.",
+  "여섯 시가 되면 서점 문을 닫아요. 동료들에게 '내일 봐요'라고 인사를 건네요. 홀가분한 마음으로 집으로 향해요. 보람찬 하루 일과가 끝났어요.",
+
+  "저녁 시간. 집에 오면 먼저 푹 쉬어요. 편안한 소파에 앉아 따뜻한 차를 마셔요. 창밖을 바라보면 날이 어두워지고 집집마다 따스한 불빛이 켜져요.",
+  "그런 다음 저녁 식사를 준비해요. 간단한 요리는 뚝딱 만들 수 있어요. 오늘은 감자와 고기 요리를 하고, 상큼한 샐러드용 채소도 썰어요.",
+  "저녁에는 엄마한테 자주 전화가 와요. 도란도란 하루 일상을 이야기해요. 엄마가 '우리 딸 잘 지내니? 밥은 잘 챙겨 먹고?' 물어보시면 저는 '그럼요 엄마, 다 잘 지내요'라고 안심시켜 드려요.",
+  "저녁을 먹고 나면 가끔 영화를 봐요. 유쾌한 코미디나 따뜻한 감동 이야기를 좋아해요. 책을 읽거나 친구들과 수다를 떨기도 해요.",
+
+  "오빠 안톤. 안톤 오빠는 제 집에 자주 놀러 와요. 달콤한 케이크나 초콜릿을 사 오죠. 같이 차를 마시며 재미있는 이야기를 나눠요.",
+  "오빠는 프로그래머로 일해요. 하루 종일 컴퓨터 앞에 앉아 있죠. 일은 재미있는데 눈이 침침하다고 해요. 그럼 제가 '오빠, 제발 나가서 산책 좀 해!'라고 등 떠밀어요.",
+  "우리는 보드게임도 자주 해요. 오빠가 게임을 너무 잘해서 제가 거의 매번 지지만, 그래도 항상 웃음이 넘치고 즐거워요.",
+
+  "밤. 열 시가 되면 잘 준비를 해요. 따뜻한 물로 샤워를 하고 편한 잠옷을 입어요. 스마트폰은 꺼두죠. 자기 전에 스마트폰을 보는 건 건강에 해로우니까요.",
+  "침대에 누워 내일을 생각해요. 내일은 신나는 토요일, 바로 제 휴일이에요. 저는 토요일을 제일 사랑해요.",
+  "열한 시가 되면 스르륵 잠이 들어요. 방 안은 고요하고 아늑해요. 저는 꿀잠을 자며 좋은 꿈을 꿔요.",
+
+  "주말 휴일. 토요일에는 알람을 맞추지 않아요. 아침 아홉 시나 열 시쯤 늦잠을 자고 일어나요. 정말 행복한 순간이에요.",
+  "아침을 여유롭게 천천히 먹어요. 그러고 나서 대청소를 해요. 바닥을 닦고 먼지를 털고 유리창도 깨끗이 닦아요. 집이 반짝반짝 예뻐져요.",
+  "청소를 마친 후에는 장을 보러 마트에 가요. 빵, 우유, 치즈, 싱싱한 채소와 과일을 사요. 가끔 예쁜 꽃도 사 오죠. 식탁 위에 꽃을 꽂아두면 집 안 가득 향기가 퍼져요.",
+  "오후에는 친구 레나와 산책을 해요. 공원이나 시내 중심가로 나가요. 커피를 마시며 인생 이야기를 나누고, 환하게 웃으며 예쁜 풍경 사진도 찍어요.",
+  "저녁에는 안톤 오빠와 영화관에 가요. 팝콘과 음료를 사서 신작 영화를 관람하죠. 영화가 끝나면 함께 걸어오며 영화에 대해 이야기꽃을 피워요.",
+
+  "일요일. 일요일에는 부모님께 안부 전화를 드려요. 가끔은 기차를 타고 본가로 내려가요. 기차로 세 시간 정도 걸리는데, 기차 창밖 풍경을 보는 걸 참 좋아해요.",
+  "역에 도착하면 엄마가 마중 나와 계세요. 엄마는 저를 꼭 안아주며 '우리 딸, 와줘서 정말 기쁘구나!' 하고 반겨주세요. 집에 가면 아빠가 환하게 맞아주시죠.",
+  "엄마는 제가 제일 좋아하는 파이를 구워주세요. 세상에서 제일 맛있어요. 큰 식탁에 온 가족이 둘러앉아 맛있는 음식을 먹고 정답게 이야기하며 웃어요.",
+  "저녁이 되면 다시 집으로 돌아와요. 몸은 조금 피곤하지만 마음은 더없이 행복해요. 속으로 생각하죠. '난 참 좋은 삶을 살고 있구나. 다정한 가족과 좋은 친구들이 곁에 있으니까.'",
+
+  "나의 꿈. 저에게는 소중한 꿈이 하나 있어요. 나만의 아담하고 따뜻한 작은 서점을 여는 거예요. 책이 가득하고, 푹신한 안락의자와 따뜻한 차가 있는 공간이죠.",
+  "사람들이 찾아와 편안히 책을 읽고, 아이들이 모여 동화를 들을 수 있는 공간을 만들고 싶어요. 그게 제 꿈이고, 저는 매일 그 꿈을 향해 다가가고 있어요.",
+  "그리고 영어도 유창하게 배우고 싶어요. 매일 새로운 단어를 꾸준히 외우고 있어요. 어렵지만 정말 재미있어요. 짤막한 영어 글을 읽고 노래도 따라 불러요.",
+  "노력하면 무엇이든 이룰 수 있다고 믿어요. 두려워하지 않고 포기하지 않으면 돼요. 매일 작은 한 걸음을 내딛다 보면, 꿈은 마침내 눈앞의 현실이 될 테니까요."
+];
+
+// Arabic (ar)
+const arParagraphs = [
+  "التعارف. اسمي آنا. عمري خمسة وعشرون عاماً. أعيش في مدينة صغيرة. إنها مدينة جميلة وأنا أحبها كثيراً.",
+  "أعيش في شقة. تحتوي الشقة على غرفتين ومطبخ وحمام. الشقة ليست كبيرة ولكنها مريحة ودافئة.",
+  "لدي عائلة رائعة. أمي وأبي يعيشان في مدينة أخرى. أخي أنطون يعيش بالقرب مني. إنه أعز أصدقائي.",
+
+  "الصباح. أستيقظ في تمام الساعة السابعة. منبهي يرن بصوت عالٍ. لا أحب الاستيقاظ مبكراً، لكن هذا ضروري.",
+  "أولاً أذهب إلى الحمام. أغسل وجهي بالماء البارد. ثم أنظف أسناني. الماء بارد وينعشني على الفور.",
+  "ثم أذهب إلى المطبخ. أفتح النافذة. الشمس ساطعة في الخارج. الصباح جميل ومزاجي ممتاز.",
+
+  "الإفطار. أتناول إفطاري في المنزل. آكل دائماً عصيدة الشوفان الدافئة واللذيذة. كما أشرب الشاي مع الليمون.",
+  "أحياناً آكل الخبز مع الزبدة والجبن. وأحياناً آكل البيض. أعشق الفواكه، وخاصة التفاح والموز.",
+  "أخي لا يحب تناول وجبة الإفطار. يكتفي بشرب القهوة فقط. أقول له دائماً: «يا أنطون، هذا مضر بصحتك!» لكنه لا يستمع إليّ.",
+
+  "الطريق إلى العمل. أعمل في متجر. يقع المتجر في وسط المدينة. لا أتنقل بالسيارة لأنني لا أملك سيارة.",
+  "أركب الحافلة. تأتي الحافلة في الساعة الثامنة. تستغرق الرحلة عشرين دقيقة. أستمع إلى الموسيقى في الحافلة.",
+  "أحياناً أذهب مشياً على الأقدام. يستغرق ذلك نصف ساعة. أحب المشي في الصباح الباكر، فالشارع يعج بالناس والمدينة تستيقظ.",
+
+  "العمل. أنا بائعة كتب. أبيع الكتب والدفاتر. يعجبني عملي كثيراً. فأنا أعشق الكتب وأحب التعامل مع الناس.",
+  "يعمل في المتجر أربعة موظفين. مدريتنا اسمها أولغا. إنها لطيفة وذكية وتساعدنا دائماً.",
+  "في الصباح يكون المتجر هادئاً. وفي فترة ما بعد الظهر يأتي الكثير من الزبائن. يسألون: «أين كتب الأطفال؟» أو «كم سعر هذا؟» أجيب دائماً بابتسامة.",
+  "أحب الأطفال كثيراً. يأتون بصحبة أمهاتهم وآبائهم. يتأملون الصور الزاهية ويضحكون بمرح. هذا يبعث على السرور.",
+
+  "الغداء. تبدأ استراحة الغداء في الساعة الواحدة. أذهب إلى مقهى صغير بجوار المتجر. طعامهم دائماً لذيذ وبأسعار مناسبة.",
+  "أطلب حساءً وسلطة. وأحياناً أتناول السمك أو الدجاج. أشرب الماء أو العصير الطبيعي. النادلة اسمها لينا وهي صديقتي المقربة.",
+  "بعد الغداء أذهب إلى الحديقة العامة المجاورة للمقهى. الحديقة مليئة بالأشجار والزهور الجميلة. أجلس على مقعد وأستريح لمدة عشر دقائق.",
+
+  "الفترة الثانية من اليوم. بعد الغداء أعود إلى العمل. أعمل حتى الساعة السادسة مساءً. أشعر ببعض التعب بعد الظهر، لكنني لا أشتكي أبداً.",
+  "أحياناً أقرأ الكتب في المتجر حين لا يتواجد زبائن، فالأمر مسموح به. حالياً أقرأ رواية بوليسية مشوقة وأتلهف لمعرفة من هو المجرم.",
+  "في الساعة السادسة يغلق المتجر أبوابه. أودع الجميع قائلة «إلى اللقاء». أسير نحو بيتي براحة ورضا. لقد انتهى يوم العمل.",
+
+  "المساء. حين أصل إلى المنزل أرتاح أولاً. أجلس على الأريكة وأشرب كوباً من الشاي الساخن. أنظر من النافذة حيث يحل الظلام وتضاء أنوار البيوت.",
+  "ثم أشرع في إعداد العشاء. أجيد طهي الوجبات البسيطة. اليوم أطهو البطاطس واللحم، وأقطع الخضار الطازجة لعمل سلطة شهية.",
+  "في المساء غالباً ما تتصل بي أمي. نتحدث عن تفاصيل يومنا. تسألني أمي بحنان: «كيف حالكِ يا بنيتي؟ هل تأكلين جيداً؟» فأجيبها: «نعم يا أمي، كل شيء على ما يرام».",
+  "بعد العشاء أشاهد أحياناً فيلماً ممتعاً. أحب الأفلام الكوميدية والقصص الإنسانية الدافئة. أحياناً أقرأ كتاباً، وأحياناً أتحدث هاتفياً مع صديقاتي.",
+
+  "أخي أنطون. يزورني أخي أنطون بانتظام. يجلب معه دائماً قالباً من الحلوى أو الشوكولاتة. نشرب الشاي معاً ونتسامر، وهو يروي لي حكايات مضحكة للغاية.",
+  "يعمل أنطون مبرمج حاسوب. يقضي نهاره بالكامل أمام الشاشة. يقول إن عمله رائع ومثير، لكن عينيه تؤلمانه. فأحثه دائماً: «اخرج وتنزه في الهواء الطلق!»",
+  "نلعب ألعاب الألواح كثيراً. أنطون بارع جداً فيها وغالباً ما أخسر أمامه، لكنني أقضي وقتاً ممتعاً ومسلياً للغاية.",
+
+  "الليل. في الساعة العاشرة أستعد للنوم. آخذ حماماً دافئاً وأرتدي منامتي المريحة. أغلق هاتفي المحمول، فالنظر إلى الشاشة قبل النوم مضر بالصحة.",
+  "أستلقي في سريري وأفكر في يوم الغد. غداً السبت، وهو يوم إجازتي الأسبوعية. كم أحب يوم السبت كثيراً!",
+  "في الساعة الحادية عشرة أغط في النوم. تعم الغرفة سكينة وظلام مريح. أنام نوماً عميقاً وأرى أحلاماً جميلة وسعيدة.",
+
+  "يوم العطلة. في يوم السبت لا أضبط المنبه مطلقاً. أستيقظ في وقت متأخر، حوالي الساعة التاسعة أو العاشرة صباحاً. إنه شعور رائع بالحرية.",
+  "في الصباح أتناول إفطاري على مهل. ثم أبدأ في تنظيف الشقة وترتيبها. أمسح الأرضيات وأنظف الغبار وأغسل النوافذ حتى تشرق الشقة نظافة ونضارة.",
+  "بعد الانتهاء من الترتيب، أذهب للتسوق وشراء مستلزمات البيت. أشتري الخبز الطازج والحليب والجبن والخضروات والفواكه. وأحياناً أشتري باقة زهور تضفي على طاولتي بهجة وعطراً زكياً.",
+  "بعد الظهر أتنزه مع صديقتي لينا. نذهب إلى الحديقة أو وسط المدينة. نشرب القهوة ونتجاذب أطراف الحديث عن الحياة، نضحك ونلتقط صوراً تذكارية.",
+  "في المساء أذهب مع أخي أنطون إلى السينما. نشتري الفشار والماء ونشاهد فيلماً جديداً، ثم نعود مشياً ونحن نتناقش حول أحداث الفيلم.",
+
+  "يوم الأحد. يوم الأحد أتصل بوالديّ. وأحياناً أسافر بالقطار لزيارتهما. تستغرق الرحلة بالقطار ثلاث ساعات أستمتع خلالها بتأمل المناظر الطبيعية من النافذة.",
+  "تستقبلني أمي في المحطة بحرارة وشوق. تعانقني قائلة: «كم أنا سعيدة برؤيتكِ!» نتوجه معاً إلى البيت حيث يكون أبي في انتظارنا بلهفة.",
+  "تخبز أمي فطيرتي المفضلة اللذيذة. نجلس جميعاً حول المائدة الكبيرة، نأكل ونتسامر ونتبادل الضحكات القلبية.",
+  "في المساء أعود إلى مدينتي. أشعر ببعض التعب لكنني مفعمة بالسعادة والامتنان. أردد في نفسي: «حياتي طيبة، وعائلتي رائعة، وأصدقائي أوفياء».",
+
+  "أحلامي وتطلعاتي. لدي حلم جميل يراودني دوماً. أتمنى أن أفتتح متجري الصغير الخاص لبيع الكتب، يحتوي على أرفف كتب عامرة ومقاعد وثيرة وشاي ساخن.",
+  "أريد أن يأتي الناس ليتنعموا بالقراءة بهدوء، وأتمنى أن يجتمع الصغار ليستمعوا إلى الحكايات الساحرة. هذا هو حلمي وأنا أسعى لأجله كل يوم.",
+  "كما أرغب بشدة في إتقان اللغة الإنجليزية. أتعلم كلمات جديدة كل يوم باجتهاد. ورغم صعوبة الأمر، إلا أنه ممتع للغاية. أقرأ نصوصاً قصيرة وأستمع للأغاني.",
+  "أنا واثقة بأن كل أحلامي ستتحقق بفضل الإرادة والأمل. يكفي ألا نخاف وألا نستسلم أبداً. كل يوم أخطو خطوة صغيرة للأمام، وهكذا تصبح الأحلام واقعاً ملموساً."
+];
+
+// Hebrew (he)
+const heParagraphs = [
+  "היכרות. שמי אנה. אני בת עשרים וחמש. אני גרה בעיר קטנה. זו עיר יפהפייה ואני מאוד אוהבת אותה.",
+  "אני גרה בדירה. בדירה יש שני חדרים, מטבח וחדר רחצה. הדירה אינה גדולה, אבל היא חמימה ונעימה מאוד.",
+  "יש לי משפחה נהדרת. אמי ואבי גרים בעיר אחרת. אחי אנטון גר קרוב אליי. הוא החבר הכי טוב שלי.",
+
+  "הבוקר. אני קמה בשעה שבע. השעון המעורר שלי מצלצל בקול רם. אני לא אוהבת לקום מוקדם, אבל אין ברירה.",
+  "תחילה אני הולכת לחדר הרחצה. אני שוטפת את הפנים במים קרים. אחר כך אני מצחצחת שיניים. המים הקרים מעירים אותי מיד.",
+  "אחר כך אני ניגשת למטבח. אני פותחת את החלון. השמש זורחת בחוץ. הבוקר נהדר ומצב הרוח שלי מרומם.",
+
+  "ארוחת בוקר. אני אוכלת ארוחת בוקר בבית. אני תמיד אוכלת דייסת שיבולת שועל. הדייסה חמימה וטעימה. אני גם שותה תה עם לימון.",
+  "לפעמים אני אוכלת לחם עם חמאה וגבינה. לפעמים אני אוכלת ביצים. אני מאוד אוהבת פירות, במיוחד תפוחים ובננות.",
+  "אחי אינו אוהב לאכול ארוחת בוקר. הוא שותה רק קפה. אני אומרת לו: 'אנטון, זה לא בריא!' אבל הוא לא מקשיב לי.",
+
+  "הדרך לעבודה. אני עובדת בחנות. החנות נמצאת במרכז העיר. אינני נוסעת ברכב כי אין לי מכונית.",
+  "אני נוסעת באוטובוס. האוטובוס מגיע בשעה שמונה. הנסיעה אורכת עשרים דקות. באוטובוס אני נהנית להאזין למוזיקה.",
+  "לפעמים אני הולכת ברגל. זה לוקח חצי שעה. אני אוהבת לטייל בבוקר. יש המון אנשים ברחוב והעיר כולה מתעוררת לחיים.",
+
+  "העבודה. אני מוכרת ספרים. אני מוכרת ספרים ומחברות. אני אוהבת את העבודה שלי. אני אוהבת ספרים ואוהבת אנשים.",
+  "בחנות עובדים ארבעה אנשים. למנהלת שלנו קוראים אולגה. היא אדיבה וחכמה ותמיד עוזרת לנו בכל דבר.",
+  "בבוקר שקט בחנות. בשעות הצהריים מגיעים אנשים רבים. הם שואלים: 'איפה ספרי הילדים?' או 'כמה זה עולה?' אני עונה בחיוך רחב.",
+  "אני מאוד אוהבת ילדים. הם מגיעים עם האימהות והאבות שלהם. הם מביטים בתמונות הצבעוניות וצוחקים. זה מחמם את הלב.",
+
+  "ארוחת צהריים. הפסקת הצהריים שלי מתחילה בשעה אחת. אני הולכת לבית קפה קטן ליד החנות. האוכל שם תמיד טעים ובמחיר נוח.",
+  "אני מזמינה מרק וסלט. לפעמים אני לוקחת דג או עוף. אני שותה מים או מיץ טבעי. למלצרית קוראים לנה והיא חברה טובה שלי.",
+  "אחרי האוכל אני הולכת לפארק. הפארק צמוד לבית הקפה. בפארק יש שפע עצים ופרחים יפים. אני יושבת על ספסל ונחה עשר דקות.",
+
+  "החלק השני של היום. אחרי ארוחת הצהריים אני חוזרת לעבודה. אני עובדת עד השעה שש. אחר הצהריים אני מתעייפת מעט, אבל לעולם אינני מתלוננת.",
+  "לפעמים אני קוראת ספרים בחנות כשאין לקוחות. זה מותר. כרגע אני קוראת ספר מתח מרתק וסקרנית לדעת מי הפושע.",
+  "בשעה שש החנות נסגרת. אני נפרדת מכולם בברכת 'להתראות'. אני צועדת הביתה בהרגשה נפלאה. יום העבודה הגיע לסיומו.",
+
+  "הערב. בבית אני קודם כל נחה. אני מתרווחת על הספה ושותה תה. אני מביטה מהחלון. בחוץ יורד החושך ובבתים נדלקים האורות.",
+  "אחר כך אני מכינה ארוחת ערב. אני יודעת לבשל מאכלים פשוטים וטעימים. היום אני מכינה תפוחי אדמה ובשר וקוצצת ירקות טריים לסלט.",
+  "בערב אמי מתקשרת אליי לעיתים קרובות. אנחנו משוחחות על מה שעבר עלינו. אמא שואלת: 'איך את מרגישה? את אוכלת טוב?' ואני משיבה: 'כן אמא, הכול מצוין'.",
+  "אחרי ארוחת הערב אני צופה לפעמים בסרט. אני אוהבת קומדיות וסיפורים מחממי לב. לפעמים אני קוראת ספר או מפטפטת בטלפון עם חברות.",
+
+  "אחי אנטון. אנטון מגיע לבקר אותי לעיתים תכופות. הוא מביא עוגה טעימה או ממתקים. אנחנו שותים תה ומשוחחים, והוא מספר סיפורים מצחיקים.",
+  "אנטון עובד כמתכנת. הוא יושב כל היום מול המחשב. הוא אומר שהעבודה מעניינת אבל העיניים כואבות לו. אני תמיד מייעצת לו: 'צא להתאוורר בהליכה!'",
+  "אנחנו מרבים לשחק במשחקי קופסה. אנטון שחקן מצוין ואני כמעט תמיד מפסידה לו, אבל זה עדיין מהנה ומצחיק מאוד.",
+
+  "הלילה. בשעה עשר אני מתארגנת לשינה. אני מתקלחת ולובשת פיג'מה נוחה. אני מכבה את הטלפון, כי מסכים לפני השינה אינם בריאים.",
+  "אני שוכבת במיטה ומהרהרת ביום המחרת. מחר שבת, יום המנוחה השבועי שלי. אני כל כך אוהבת את יום שבת.",
+  "בשעה אחת עשרה אני נרדמת. בחדר שוררים שקט וחושך מלטף. אני ישנה שינה עמוקה וחולמת חלומות מתוקים.",
+
+  "יום המנוחה. בשבת אינני מכוונת שעון מעורר. אני מתעוררת מאוחר, סביב תשע או עשר. זו תחושה נהדרת ומפנקת.",
+  "בבוקר אני נהנית מארוחת בוקר ארוכה ונינוחה. לאחר מכן אני מנקה את הדירה. אני שוטפת את הרצפה, מנקה אבק ומבריקה חלונות. הדירה הופכת נקייה ומזמינה.",
+  "לאחר הניקיון אני הולכת למכולת לקנות מצרכים. אני קונה לחם טרי, חלב, גבינה, ירקות ופירות. לפעמים אני קונה זר פרחים צבעוני שמונח על השולחן ומפיץ ריח נהדר.",
+  "אחר הצהריים אני מטיילת עם חברתי לנה. אנחנו הולכות לפארק או למרכז העיר, שותות קפה ומשוחחות על החיים. אנחנו צוחקות ומצלמות כל פינה יפה.",
+  "בערב אנטון ואני הולכים לקולנוע. אנחנו קונים פופקורן ושתייה וצופים בסרט חדש. לאחר מכן אנחנו צועדים יחד הביתה ומשוחחים על הסרט בהתלהבות.",
+
+  "יום ראשון. ביום ראשון אני מתקשרת להוריי. לפעמים אני נוסעת ברכבת לבקר אותם. הנסיעה אורכת שלוש שעות ואני נהנית להביט בנופים דרך החלון.",
+  "אמי מקבלת את פניי בתחנת הרכבת בהתרגשות. היא מחבקת אותי בחום ואומרת: 'כמה שאני שמחה לראותך!' אנחנו פוסעות הביתה, שם אבא ממתין לנו בכיליון עיניים.",
+  "אמא אופה את הפאי האהוב עליי שהוא טעים להפליא. כולנו מסובים יחד סביב השולחן הגדול, אוכלים, משוחחים וצוחקים מכל הלב.",
+  "בערב אני נוסעת חזרה לביתי. אני עייפה אך מאושרת עד עמקי נשמתי. אני חושבת לעצמי: 'יש לי חיים טובים, משפחה מופלאה וחברים נהדרים'.",
+
+  "החלומות שלי. יש לי חלום מיוחד שמלווה אותי. אני רוצה לפתוח חנות ספרים קטנה ואינטימית משלי, שיהיו בה שפע ספרים, כורסאות מרופדות ומפנקות ותה חם.",
+  "אני רוצה שאנשים יבואו לחנות שלי לקרוא בשלווה, ושהילדים יקשיבו לאגדות קסומות. זה החלום שלי ואני עובדת למענו בחריצות בכל יום.",
+  "בנוסף אני שואפת ללמוד אנגלית ברמה גבוהה. אני לומדת מילים חדשות בכל יום. זה מאתגר אך מרתק. אני קוראת טקסטים קצרים ומאזינה לשירים.",
+  "אני בטוחה שהכול יצליח. צריך רק לא לפחד ולעולם לא לוותר. בכל יום אני צועדת צעד קטן קדימה, וכך חלומות הופכים למציאות חיה."
+];
+
+// Combine into single object structure
+const allTranslations: Record<string, string[]> = {
+  ru: ruParagraphs,
+  en: enParagraphs,
+  uk: ukParagraphs,
+  de: deParagraphs,
+  fr: frParagraphs,
+  es: esParagraphs,
+  it: itParagraphs,
+  pl: plParagraphs,
+  pt: ptParagraphs,
+  nl: nlParagraphs,
+  sv: svParagraphs,
+  tr: trParagraphs,
+  zh: zhParagraphs,
+  ja: jaParagraphs,
+  ko: koParagraphs,
+  ar: arParagraphs,
+  he: heParagraphs
+};
+
+const titleTranslations: Record<string, string> = {
+  ru: "Один день Анны (Уровень A1)",
+  en: "Anna's Day (Level A1)",
+  de: "Annas Tag (Niveau A1)",
+  uk: "Один день Анни (Рівень A1)",
+  fr: "Une journée d'Anna (Niveau A1)",
+  es: "Un día de Anna (Nivel A1)",
+  it: "Una giornata di Anna (Livello A1)",
+  pl: "Jeden dzień Anny (Poziom A1)",
+  zh: "安娜的一天 (A1级别)",
+  ja: "アンナの一日 (レベルA1)",
+  ko: "안나의 하루 (A1 레벨)",
+  pt: "Um dia de Anna (Nível A1)",
+  ar: "يوم واحد من حياة آنّا (المستوى A1)",
+  tr: "Anna'nın Bir Günü (A1 Seviyesi)",
+  nl: "Een dag van Anna (Niveau A1)",
+  sv: "Annas dag (Nivå A1)",
+  he: "יום אחד בחייה של אנה (רמה A1)"
+};
+
+// Generate file content
+const fileContent = `import { ReadingDocument } from '../types';
+
+export const ANNA_ARTICLE: ReadingDocument = {
+  id: 'annas_day_a1_001',
+  title: 'Один день Анны (Уровень A1)',
+  author: 'LingoTwice Stories',
+  sourceLang: 'ru',
+  targetLang: 'en',
+  category: 'dialogue',
+  createdAt: 1715000000000,
+  lastReadAt: Date.now(),
+  readingProgress: 0,
+  wordCount: 780,
+  isSample: true,
+  coverImage: '/assets/images/annas_day_a1_1794127123008.jpg',
+  titleTranslations: ${JSON.stringify(titleTranslations, null, 2)},
+  passages: ${JSON.stringify(
+    ruParagraphs.map((text, idx) => ({
+      id: 'anna_p' + (idx + 1),
+      order: idx,
+      sourceText: text,
+      translations: Object.fromEntries(
+        Object.entries(allTranslations).map(([lang, arr]) => [lang, arr[idx] || text])
+      )
+    })),
+    null,
+    2
+  )},
+  translations: ${JSON.stringify(allTranslations, null, 2)}
+};
+`;
+
+const outputPath = path.resolve(process.cwd(), 'src/constants/annaArticle.ts');
+fs.writeFileSync(outputPath, fileContent, 'utf-8');
+console.log('Successfully created src/constants/annaArticle.ts with 45 passages and 17 language translations!');
