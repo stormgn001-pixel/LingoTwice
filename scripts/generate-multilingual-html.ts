@@ -145,8 +145,9 @@ ${hreflangs}
 ${JSON.stringify(jsonLd, null, 2)}
     </script>
 
-    <link rel="icon" type="image/png" href="${LOGO_URL}" />
-    <link rel="apple-touch-icon" href="${LOGO_URL}" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
