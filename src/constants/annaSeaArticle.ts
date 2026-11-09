@@ -7,6 +7,7 @@ export const ANNA_SEA_ARTICLE: ReadingDocument = {
   sourceLang: 'ru',
   targetLang: 'en',
   category: 'dialogue',
+  level: 'A1',
   createdAt: 1715010000000,
   lastReadAt: Date.now(),
   readingProgress: 0,

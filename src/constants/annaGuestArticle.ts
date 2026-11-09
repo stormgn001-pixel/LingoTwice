@@ -7,6 +7,7 @@ export const ANNA_GUEST_ARTICLE: ReadingDocument = {
   sourceLang: 'ru',
   targetLang: 'en',
   category: 'dialogue',
+  level: 'A1',
   createdAt: 1715020000000,
   lastReadAt: Date.now(),
   readingProgress: 0,

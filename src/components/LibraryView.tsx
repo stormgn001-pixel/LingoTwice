@@ -27,13 +27,22 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 }) => {
   const t = getTranslation(uiLang);
   const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterLevel, setFilterLevel] = useState<string>('all');
 
-  // Simplified filtering logic: only by category
+  // Filter by category and CEFR difficulty level
   const filteredDocs = useMemo(() => {
     return documents.filter((d) => {
-      return filterCategory === 'all' || d.category === filterCategory;
+      const matchesCat = filterCategory === 'all' || d.category === filterCategory;
+      const docLevel = d.level || (d.id.includes('anna') ? 'A1' : d.category === 'method' ? 'A2' : d.category === 'science' ? 'B1' : 'B2');
+      const matchesLevel =
+        filterLevel === 'all' ||
+        (filterLevel === 'A1' && docLevel === 'A1') ||
+        (filterLevel === 'A2' && docLevel === 'A2') ||
+        (filterLevel === 'B1' && docLevel === 'B1') ||
+        (filterLevel === 'B2+' && (docLevel === 'B2' || docLevel === 'C1'));
+      return matchesCat && matchesLevel;
     });
-  }, [documents, filterCategory]);
+  }, [documents, filterCategory, filterLevel]);
 
   // Helper to count documents matching a category
   const getCategoryCount = (cat: string) => {
@@ -44,6 +53,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
   const handleResetFilters = () => {
     setFilterCategory('all');
+    setFilterLevel('all');
   };
 
   return (
@@ -82,9 +92,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
       {/* Filter Control Section */}
       <div className="mt-5 space-y-3 bg-slate-50/80 dark:bg-slate-900/60 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-xs">
-        {/* Top Row: Categories & Language Toggle Button */}
+        {/* Row 1: Categories */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          {/* Category Tabs */}
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-medium">
             <span className="text-slate-400 dark:text-slate-500 mr-1 hidden sm:inline-flex items-center gap-1 font-semibold">
               <Filter className="h-3.5 w-3.5" />
@@ -100,6 +109,16 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               }`}
             >
               {t.all} ({getCategoryCount('all')})
+            </button>
+            <button
+              onClick={() => setFilterCategory('dialogue')}
+              className={`rounded-lg px-2.5 py-1 sm:px-3 sm:py-1.5 transition-all cursor-pointer ${
+                filterCategory === 'dialogue'
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs font-semibold'
+                  : 'text-slate-600 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:bg-slate-800'
+              }`}
+            >
+              {t.sampleCategoryDialogue} ({getCategoryCount('dialogue')})
             </button>
             <button
               onClick={() => setFilterCategory('literature')}
@@ -122,16 +141,6 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               {t.sampleCategoryScience} ({getCategoryCount('science')})
             </button>
             <button
-              onClick={() => setFilterCategory('dialogue')}
-              className={`rounded-lg px-2.5 py-1 sm:px-3 sm:py-1.5 transition-all cursor-pointer ${
-                filterCategory === 'dialogue'
-                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs font-semibold'
-                  : 'text-slate-600 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:bg-slate-800'
-              }`}
-            >
-              {t.sampleCategoryDialogue} ({getCategoryCount('dialogue')})
-            </button>
-            <button
               onClick={() => setFilterCategory('custom')}
               className={`rounded-lg px-2.5 py-1 sm:px-3 sm:py-1.5 transition-all cursor-pointer ${
                 filterCategory === 'custom'
@@ -143,7 +152,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             </button>
 
             {/* Active filter clear button */}
-            {filterCategory !== 'all' && (
+            {(filterCategory !== 'all' || filterLevel !== 'all') && (
               <button
                 onClick={handleResetFilters}
                 className="ml-auto flex items-center gap-1 text-[11px] text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 font-semibold cursor-pointer underline underline-offset-2"
@@ -153,6 +162,30 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               </button>
             )}
           </div>
+        </div>
+
+        {/* Row 2: CEFR Level Pills */}
+        <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+          <span className="text-slate-400 dark:text-slate-500 font-semibold mr-1">Уровень CEFR:</span>
+          {[
+            { id: 'all', label: 'Все' },
+            { id: 'A1', label: 'A1 Начинающий' },
+            { id: 'A2', label: 'A2 Базовый' },
+            { id: 'B1', label: 'B1 Средний' },
+            { id: 'B2+', label: 'B2–C1 Продвинутый' },
+          ].map((lvl) => (
+            <button
+              key={lvl.id}
+              onClick={() => setFilterLevel(lvl.id)}
+              className={`rounded-md px-2.5 py-1 transition-all cursor-pointer ${
+                filterLevel === lvl.id
+                  ? 'bg-amber-600 text-white shadow-2xs font-semibold'
+                  : 'text-slate-600 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:bg-slate-800'
+              }`}
+            >
+              {lvl.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -177,6 +210,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                 : doc.category === 'dialogue'
                 ? { text: t.sampleCategoryDialogue, style: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/50' }
                 : { text: t.sampleCategoryCustom, style: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700' };
+
+            const docLevel = doc.level || (doc.id.includes('anna') ? 'A1' : doc.category === 'method' ? 'A2' : doc.category === 'science' ? 'B1' : 'B2');
 
             return (
               <div
@@ -209,6 +244,21 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                         />
                       );
                     })()}
+
+                    {/* Level Badge in top left */}
+                    <div className="absolute top-2.5 left-2.5">
+                      <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-bold backdrop-blur-xs shadow-xs ${
+                        docLevel === 'A1'
+                          ? 'bg-emerald-600/95 text-white border-emerald-500'
+                          : docLevel === 'A2'
+                          ? 'bg-sky-600/95 text-white border-sky-500'
+                          : docLevel === 'B1'
+                          ? 'bg-amber-600/95 text-white border-amber-500'
+                          : 'bg-purple-600/95 text-white border-purple-500'
+                      }`}>
+                        {docLevel}
+                      </span>
+                    </div>
 
                     {/* Category pill on top right - hidden for 'method' category to keep image clean */}
                     {doc.category !== 'method' && (
@@ -255,10 +305,12 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                     )}
 
                     {/* Metadata line */}
-                    <div className="mt-3 flex items-center gap-2 text-xs text-slate-400">
+                    <div className="mt-3 flex items-center gap-2 text-xs text-slate-400 flex-wrap">
                       <span className="font-mono tabular-nums">{doc.wordCount} {t.wordsCount}</span>
                       <span aria-hidden="true">·</span>
                       <span className="font-mono tabular-nums">{doc.passages.length} {t.passagesCount}</span>
+                      <span aria-hidden="true">·</span>
+                      <span>⏱ ~{Math.max(1, Math.ceil(doc.wordCount / 140))} мин</span>
                     </div>
 
                     {/* Reading progress bar */}

@@ -7,6 +7,7 @@ export const SCHLIEMANN_ARTICLE: ReadingDocument = {
   sourceLang: 'ru',
   targetLang: 'en',
   category: 'method',
+  level: 'A2',
   createdAt: 1714000000000,
   lastReadAt: Date.now(),
   readingProgress: 0,

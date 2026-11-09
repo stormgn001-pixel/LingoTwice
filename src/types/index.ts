@@ -46,6 +46,7 @@ export interface ReadingDocument {
   sourceUrl?: string;
   titleTranslations?: Partial<Record<InterfaceLanguage | string, string>>;
   category: 'literature' | 'science' | 'news' | 'dialogue' | 'philosophy' | 'custom' | 'method';
+  level?: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
   createdAt: number;
   lastReadAt: number;
   readingProgress: number; // 0 to 100%

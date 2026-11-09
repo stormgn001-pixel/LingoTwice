@@ -25,7 +25,8 @@ import {
   ChevronDown,
   Search,
   X,
-  AlertCircle
+  AlertCircle,
+  Share2
 } from 'lucide-react';
 import {
   AlignedPassage,
@@ -41,6 +42,7 @@ import { getTranslation, getDocTitle } from '../i18n/translations';
 import { useSynchronizedScroll } from '../hooks/useSynchronizedScroll';
 import { speechService, SpeechState } from '../services/speech';
 import { apiService } from '../services/api';
+import { ShareQuoteModal } from './ShareQuoteModal';
 
 interface ReaderWorkspaceProps {
   document: ReadingDocument;
@@ -210,6 +212,7 @@ const TargetPassage = React.memo(({
   lineHeightClass, 
   targetTextColorClass,
   t,
+  onShareQuote,
 }: { 
   passage: AlignedPassage;
   isActive: boolean;
@@ -224,6 +227,7 @@ const TargetPassage = React.memo(({
   lineHeightClass: string;
   targetTextColorClass: string;
   t: any;
+  onShareQuote?: (passage: AlignedPassage) => void;
 }) => {
   return (
     <div
@@ -234,15 +238,26 @@ const TargetPassage = React.memo(({
           : 'hover:bg-slate-500/5'
       }`}
     >
-      <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute right-2 top-2 flex items-center gap-1 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         {!isTranslating && passage.targetText && (
-          <button
-            onClick={() => playAudio(passage.targetText)}
-            title={t.listenTarget}
-            className="rounded p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
-          >
-            <Volume2 className="h-3.5 w-3.5" />
-          </button>
+          <>
+            {onShareQuote && (
+              <button
+                onClick={() => onShareQuote(passage)}
+                title="Поделиться цитатой"
+                className="rounded p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <Share2 className="h-3.5 w-3.5" />
+              </button>
+            )}
+            <button
+              onClick={() => playAudio(passage.targetText)}
+              title={t.listenTarget}
+              className="rounded p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
+            >
+              <Volume2 className="h-3.5 w-3.5" />
+            </button>
+          </>
         )}
       </div>
 
@@ -327,6 +342,9 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
 
   // Delete confirmation modal state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Share quote modal state
+  const [shareQuotePassage, setShareQuotePassage] = useState<{ sourceText: string; targetText: string } | null>(null);
 
   // Document switcher dropdown
   const [showDocSwitcher, setShowDocSwitcher] = useState(false);
@@ -702,6 +720,7 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
                 lineHeightClass={lineHeightClass}
                 targetTextColorClass={targetTextColorClass}
                 t={t}
+                onShareQuote={(p) => setShareQuotePassage({ sourceText: passage.sourceText, targetText: p.targetText || '' })}
               />
             );
           })}
@@ -1045,6 +1064,17 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
           </div>
         </div>
       )}
+
+      <ShareQuoteModal
+        isOpen={Boolean(shareQuotePassage)}
+        onClose={() => setShareQuotePassage(null)}
+        sourceText={shareQuotePassage?.sourceText || ''}
+        targetText={shareQuotePassage?.targetText || ''}
+        sourceLangName={sourceLangMeta.name}
+        targetLangName={targetLangMeta.name}
+        bookTitle={getDocTitle(document, uiLang)}
+        uiLang={uiLang}
+      />
     </div>
   );
 };

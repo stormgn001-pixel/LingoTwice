@@ -18,6 +18,7 @@ export const SAMPLE_DOCUMENTS: ReadingDocument[] = [
     sourceLang: 'ru',
     targetLang: 'en',
     category: 'science',
+    level: 'B1',
     createdAt: Date.now(),
     lastReadAt: Date.now(),
     readingProgress: 0,

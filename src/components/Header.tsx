@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { BookOpen, Sparkles, Languages } from 'lucide-react';
+import { BookOpen, Sparkles, Languages, HelpCircle } from 'lucide-react';
 import { InterfaceLanguage, SubscriptionStatus } from '../types';
 import { getTranslation } from '../i18n/translations';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface HeaderProps {
   currentView: 'read' | 'library' | 'vocabulary' | 'review' | 'progress' | 'about' | 'contact' | 'privacy' | 'terms';
@@ -10,6 +11,7 @@ interface HeaderProps {
   subscription: SubscriptionStatus;
   onOpenSettings: () => void;
   onOpenSubscription: () => void;
+  onOpenOnboarding?: () => void;
   dueCardsCount: number;
   isDistractionFree?: boolean;
   theme?: 'light' | 'dark' | 'sepia';
@@ -34,6 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
   subscription,
   onOpenSettings,
   onOpenSubscription,
+  onOpenOnboarding,
   dueCardsCount,
   isDistractionFree,
   theme = 'light',
@@ -220,8 +223,27 @@ export const Header: React.FC<HeaderProps> = ({
         </nav>
       </div>
 
-      {/* Zone 3: Actions (PRO & Settings) */}
+      {/* Zone 3: Actions (PWA, Help, PRO & Settings) */}
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <PWAInstallButton uiLang={uiLang} theme={theme} />
+
+        {onOpenOnboarding && (
+          <button
+            onClick={onOpenOnboarding}
+            title={uiLang === 'ru' ? 'Как работает метод параллельного чтения' : 'How it works'}
+            className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+              theme === 'dark'
+                ? 'border-slate-800 bg-slate-900 text-slate-300 hover:border-amber-500/50 hover:text-white'
+                : theme === 'sepia'
+                ? 'border-[#dfd5c0] bg-[#f4efe2] text-[#2b2118] hover:border-amber-600'
+                : 'border-slate-200 bg-white text-slate-600 hover:border-amber-300 hover:text-slate-900'
+            }`}
+          >
+            <HelpCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+            <span className="hidden sm:inline">{uiLang === 'ru' ? 'Методика' : 'Guide'}</span>
+          </button>
+        )}
+
         <button
           onClick={onOpenSubscription}
           className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${

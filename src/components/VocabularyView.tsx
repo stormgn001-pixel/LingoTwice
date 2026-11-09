@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Volume2, Trash2, ArrowRight, BookOpen, Layers } from 'lucide-react';
+import { Search, Volume2, Trash2, ArrowRight, BookOpen, Download, Copy, Check, FileSpreadsheet, ChevronDown } from 'lucide-react';
 import { InterfaceLanguage, VocabularyEntry } from '../types';
 import { getTranslation } from '../i18n/translations';
 import { speechService } from '../services/speech';
@@ -20,6 +20,8 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
   const t = getTranslation(uiLang);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBoxFilter, setSelectedBoxFilter] = useState<number | 'all'>('all');
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [copiedNotice, setCopiedNotice] = useState(false);
 
   const filteredWords = vocabulary.filter((item) => {
     const matchesSearch =
@@ -35,6 +37,57 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
 
   const handlePlay = (word: string, lang: string) => {
     speechService.speak(word, lang);
+  };
+
+  const exportToAnkiCSV = () => {
+    if (vocabulary.length === 0) return;
+    const rows = vocabulary.map((entry) => {
+      const front = entry.word.replace(/"/g, '""');
+      const back = entry.translation.replace(/"/g, '""');
+      const context = (entry.contextSentence || '').replace(/"/g, '""');
+      const grammar = [
+        entry.grammar?.partOfSpeech ? `[${entry.grammar.partOfSpeech}]` : '',
+        entry.grammar?.gender ? `Род: ${entry.grammar.gender}` : '',
+        entry.grammar?.cefrLevel ? `Уровень: ${entry.grammar.cefrLevel}` : '',
+        entry.grammar?.plural ? `Pl: ${entry.grammar.plural}` : '',
+      ].filter(Boolean).join(' ');
+
+      return `"${front}","${back}","${context}","${grammar}"`;
+    });
+
+    const csvContent = '\uFEFF' + 'Слово,Перевод,Контекст,Грамматика\n' + rows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `lingotwice-anki-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setShowExportMenu(false);
+  };
+
+  const copyToQuizlet = async () => {
+    if (vocabulary.length === 0) return;
+    const text = vocabulary.map((e) => `${e.word}\t${e.translation}${e.contextSentence ? ` (Контекст: ${e.contextSentence})` : ''}`).join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedNotice(true);
+      setTimeout(() => setCopiedNotice(false), 3000);
+      setShowExportMenu(false);
+    } catch {}
+  };
+
+  const exportToJson = () => {
+    if (vocabulary.length === 0) return;
+    const jsonStr = JSON.stringify(vocabulary, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `lingotwice-vocab-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setShowExportMenu(false);
   };
 
   return (
@@ -53,16 +106,73 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
           </p>
         </div>
 
-        {dueCount > 0 && (
-          <button
-            onClick={onStartReview}
-            className="flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-amber-700 shadow-sm shrink-0"
-          >
-            <span>Повторить слова ({dueCount})</span>
-            <ArrowRight className="h-4 w-4" />
-          </button>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Export Menu Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              disabled={vocabulary.length === 0}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer"
+            >
+              <Download className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+              <span>Экспорт слов</span>
+              <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+            </button>
+
+            {showExportMenu && (
+              <div className="absolute right-0 mt-1 w-56 rounded-xl border border-slate-200 bg-white py-1.5 shadow-lg dark:border-slate-800 dark:bg-slate-900 z-20">
+                <button
+                  onClick={exportToAnkiCSV}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-slate-700 hover:bg-amber-50 hover:text-amber-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+                  <div>
+                    <div className="font-semibold">Экспорт в Anki (.csv)</div>
+                    <div className="text-[10px] text-slate-400">С контекстом и грамматикой</div>
+                  </div>
+                </button>
+                <button
+                  onClick={copyToQuizlet}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-slate-700 hover:bg-amber-50 hover:text-amber-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                >
+                  <Copy className="h-4 w-4 text-sky-600" />
+                  <div>
+                    <div className="font-semibold">Копировать для Quizlet</div>
+                    <div className="text-[10px] text-slate-400">Вставка текста с табуляцией</div>
+                  </div>
+                </button>
+                <button
+                  onClick={exportToJson}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-slate-700 hover:bg-amber-50 hover:text-amber-900 dark:text-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+                >
+                  <Download className="h-4 w-4 text-amber-600" />
+                  <div>
+                    <div className="font-semibold">Резервная копия (.json)</div>
+                    <div className="text-[10px] text-slate-400">Полный дамп карточек</div>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {dueCount > 0 && (
+            <button
+              onClick={onStartReview}
+              className="flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-amber-700 shadow-sm shrink-0 cursor-pointer"
+            >
+              <span>Повторить слова ({dueCount})</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
+
+      {copiedNotice && (
+        <div className="mt-4 flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs font-medium text-emerald-800 dark:bg-emerald-950/60 dark:border-emerald-800 dark:text-emerald-300">
+          <Check className="h-4 w-4 text-emerald-600" />
+          <span>Слова скопированы в буфер обмена! Теперь откройте Quizlet → Создать модуль → Импорт и нажмите Ctrl+V.</span>
+        </div>
+      )}
 
       {/* Search & Leitner Box Filter */}
       <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">

@@ -11,6 +11,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { SubscriptionModal } from './components/SubscriptionModal';
 import { LegalModal } from './components/LegalModal';
 import { InfoPageView } from './components/InfoPageView';
+import { OnboardingModal } from './components/OnboardingModal';
 import { SAMPLE_DOCUMENTS } from './constants/sampleLibrary';
 import {
   ReadingDocument,
@@ -157,6 +158,12 @@ export default function App() {
         }
       }
     } catch {}
+    if (typeof navigator !== 'undefined' && navigator.language) {
+      const browserCode = navigator.language.split('-')[0].toLowerCase() as InterfaceLanguage;
+      if (SEO_LANGUAGES_LIST.includes(browserCode as any)) {
+        return browserCode;
+      }
+    }
     return 'ru';
   };
 
@@ -284,6 +291,13 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
   const [legalPage, setLegalPage] = useState<'privacy' | 'terms' | 'faq' | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
+    try {
+      return !localStorage.getItem('lingotwice_onboarded_v1');
+    } catch {
+      return false;
+    }
+  });
 
   // Cookie consent state
   const [showCookieConsent, setShowCookieConsent] = useState(() => {
@@ -679,6 +693,7 @@ export default function App() {
         subscription={subscription}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenSubscription={() => setIsSubscriptionOpen(true)}
+        onOpenOnboarding={() => setShowOnboarding(true)}
         dueCardsCount={dueCards.length}
         isDistractionFree={isDistractionFree}
         theme={preferences.theme}
@@ -873,6 +888,16 @@ export default function App() {
           uiLang={preferences.uiLang}
         />
       )}
+
+      {/* 3-Step Interactive Onboarding Modal */}
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        uiLang={preferences.uiLang}
+        onSelectLanguage={(lang) => {
+          setPreferences((prev) => ({ ...prev, uiLang: lang }));
+        }}
+      />
 
       {/* Cookie Consent Notice (GDPR/ePrivacy compliant) */}
       {showCookieConsent && (
