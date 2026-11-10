@@ -79,7 +79,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-sky-700 dark:text-sky-400">
               <span>{locale.step2.targetLabel}</span>
               <span className="rounded-md bg-sky-600 px-1.5 py-0.5 text-[9px] font-bold text-white uppercase">
-                Параллельно
+                {locale.parallelBadge || 'Параллельно'}
               </span>
             </div>
             <p className="mt-1.5 font-serif text-sm sm:text-base leading-relaxed text-slate-900 dark:text-slate-100 font-medium">
@@ -160,7 +160,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
                   idx === step ? 'w-8 bg-amber-600' : 'w-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600'
                 }`}
-                title={`Шаг ${idx + 1}`}
+                title={`${locale.stepWord || 'Шаг'} ${idx + 1}`}
               />
             ))}
           </div>
