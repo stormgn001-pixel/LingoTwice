@@ -139,9 +139,32 @@
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2319563738462034"
          crossorigin="anonymous"></script>
     <meta name="theme-color" content="#020617" id="theme-color-meta" />
+    <style>
+      html, body {
+        background-color: #020617;
+        color: #f8fafc;
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+      html.theme-light, html.theme-light body {
+        background-color: #f8fafc;
+        color: #0f172a;
+      }
+      html.theme-sepia, html.theme-sepia body {
+        background-color: #f4efe2;
+        color: #2b2118;
+      }
+      /* Prevent pre-rendered content from causing visual flashes/glitches for interactive users */
+      html.js-ready .seo-prerender {
+        display: none !important;
+      }
+    </style>
     <script>
       (function() {
         try {
+          document.documentElement.classList.add('js-ready');
           localStorage.setItem('lingotwice_adsense_pub_id', 'ca-pub-2319563738462034');
           var prefs = JSON.parse(localStorage.getItem('linguatwin_preferences_v1'));
           var theme = (prefs && prefs.theme) || 'dark';
@@ -163,8 +186,9 @@
       })();
     </script>
   </head>
-  <body class="bg-slate-50 text-slate-900 antialiased selection:bg-amber-100 selection:text-amber-900 dark:bg-slate-950 dark:text-slate-100">
+  <body class="bg-slate-950 text-slate-100 antialiased selection:bg-amber-100 selection:text-amber-900 dark:bg-slate-950 dark:text-slate-100">
     <div id="root">
+      <div class="seo-prerender">
       <!-- SEO Pre-rendered Content Fallback for Search Crawlers -->
       <header style="max-width:960px;margin:0 auto;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(148,163,184,0.15);">
         <a href="/sv/" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;">
@@ -243,6 +267,7 @@
           </footer>
         </article>
       </main>
+      </div>
     </div>
 
     <noscript>

@@ -12,6 +12,8 @@ import { SubscriptionModal } from './components/SubscriptionModal';
 import { LegalModal } from './components/LegalModal';
 import { InfoPageView } from './components/InfoPageView';
 import { OnboardingModal } from './components/OnboardingModal';
+import { PullToRefreshIndicator } from './components/PullToRefreshIndicator';
+import { usePullToRefresh } from './hooks/usePullToRefresh';
 import { SAMPLE_DOCUMENTS } from './constants/sampleLibrary';
 import {
   ReadingDocument,
@@ -189,7 +191,7 @@ export default function App() {
 
     const targetPath = `/${preferences.uiLang}/`;
     if (currentPath !== targetPath && (currentPath === '/' || /^\/[a-z]{2}(\/|$)/i.test(currentPath))) {
-      window.history.pushState(null, '', targetPath);
+      window.history.replaceState(null, '', targetPath);
     }
 
     const seo = SEO_DATA_MAP[preferences.uiLang as keyof typeof SEO_DATA_MAP];
@@ -311,6 +313,22 @@ export default function App() {
   // Contextual Vocabulary lookup card state
   const [activeLookup, setActiveLookup] = useState<WordLookupResponse | null>(null);
   const [isLookupLoading, setIsLookupLoading] = useState(false);
+
+  // Pull-to-refresh handler
+  const handlePullRefresh = async () => {
+    // Keep indicator smoothly animating for feedback before reload
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    window.location.reload();
+  };
+
+  const isAnyModalOpen = isImporterOpen || isSettingsOpen || isSubscriptionOpen || legalPage !== null || showOnboarding;
+
+  const { pullDistance, isPulling, isRefreshing, canRelease } = usePullToRefresh({
+    onRefresh: handlePullRefresh,
+    pullThreshold: 65,
+    resistance: 0.4,
+    disabled: isAnyModalOpen,
+  });
 
   // Persist documents & preferences & stats to LocalStorage
   useEffect(() => {
@@ -677,7 +695,7 @@ export default function App() {
 
   return (
     <div
-      className={`fixed inset-0 h-full w-full max-h-[100dvh] flex flex-col overflow-hidden select-text transition-colors duration-200 ${
+      className={`fixed inset-0 h-full w-full max-h-[100dvh] flex flex-col overflow-hidden select-text ${
         preferences.theme === 'dark'
           ? 'bg-slate-950 text-slate-100 dark'
           : preferences.theme === 'sepia'
@@ -685,6 +703,16 @@ export default function App() {
           : 'bg-slate-50 text-slate-900 theme-light'
       }`}
     >
+      {/* Pull to refresh visual indicator */}
+      <PullToRefreshIndicator
+        pullDistance={pullDistance}
+        isPulling={isPulling}
+        isRefreshing={isRefreshing}
+        canRelease={canRelease}
+        theme={preferences.theme}
+        uiLang={preferences.uiLang}
+      />
+
       {/* Top Bar Header */}
       <Header
         currentView={currentView}

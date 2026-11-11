@@ -161,9 +161,32 @@ ${JSON.stringify(jsonLd, null, 2)}
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_PUB_ID}"
          crossorigin="anonymous"></script>
     <meta name="theme-color" content="#020617" id="theme-color-meta" />
+    <style>
+      html, body {
+        background-color: #020617;
+        color: #f8fafc;
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+      html.theme-light, html.theme-light body {
+        background-color: #f8fafc;
+        color: #0f172a;
+      }
+      html.theme-sepia, html.theme-sepia body {
+        background-color: #f4efe2;
+        color: #2b2118;
+      }
+      /* Prevent pre-rendered content from causing visual flashes/glitches for interactive users */
+      html.js-ready .seo-prerender {
+        display: none !important;
+      }
+    </style>
     <script>
       (function() {
         try {
+          document.documentElement.classList.add('js-ready');
           localStorage.setItem('lingotwice_adsense_pub_id', '${ADSENSE_PUB_ID}');
           var prefs = JSON.parse(localStorage.getItem('linguatwin_preferences_v1'));
           var theme = (prefs && prefs.theme) || 'dark';
@@ -185,8 +208,9 @@ ${JSON.stringify(jsonLd, null, 2)}
       })();
     </script>
   </head>
-  <body class="bg-slate-50 text-slate-900 antialiased selection:bg-amber-100 selection:text-amber-900 dark:bg-slate-950 dark:text-slate-100">
+  <body class="bg-slate-950 text-slate-100 antialiased selection:bg-amber-100 selection:text-amber-900 dark:bg-slate-950 dark:text-slate-100">
     <div id="root">
+      <div class="seo-prerender">
       <!-- SEO Pre-rendered Content Fallback for Search Crawlers -->
       <header style="max-width:960px;margin:0 auto;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(148,163,184,0.15);">
         <a href="/${lang}/" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;">
@@ -265,6 +289,7 @@ ${JSON.stringify(jsonLd, null, 2)}
           </footer>
         </article>
       </main>
+      </div>
     </div>
 
     <noscript>
@@ -377,8 +402,8 @@ ${hreflangs}
 ${JSON.stringify(jsonLd, null, 2)}
     </script>
 
-    <link rel="icon" type="image/png" href="${LOGO_URL}" />
-    <link rel="apple-touch-icon" href="${LOGO_URL}" />
+    <link rel="icon" type="image/png" href="/icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -392,9 +417,32 @@ ${JSON.stringify(jsonLd, null, 2)}
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_PUB_ID}"
          crossorigin="anonymous"></script>
     <meta name="theme-color" content="#020617" id="theme-color-meta" />
+    <style>
+      html, body {
+        background-color: #020617;
+        color: #f8fafc;
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+      html.theme-light, html.theme-light body {
+        background-color: #f8fafc;
+        color: #0f172a;
+      }
+      html.theme-sepia, html.theme-sepia body {
+        background-color: #f4efe2;
+        color: #2b2118;
+      }
+      /* Prevent pre-rendered content from causing visual flashes/glitches for interactive users */
+      html.js-ready .seo-prerender {
+        display: none !important;
+      }
+    </style>
     <script>
       (function() {
         try {
+          document.documentElement.classList.add('js-ready');
           localStorage.setItem('lingotwice_adsense_pub_id', '${ADSENSE_PUB_ID}');
           var prefs = JSON.parse(localStorage.getItem('linguatwin_preferences_v1'));
           var theme = (prefs && prefs.theme) || 'dark';
@@ -416,8 +464,9 @@ ${JSON.stringify(jsonLd, null, 2)}
       })();
     </script>
   </head>
-  <body class="bg-slate-50 text-slate-900 antialiased selection:bg-amber-100 selection:text-amber-900 dark:bg-slate-950 dark:text-slate-100">
+  <body class="bg-slate-950 text-slate-100 antialiased selection:bg-amber-100 selection:text-amber-900 dark:bg-slate-950 dark:text-slate-100">
     <div id="root">
+      <div class="seo-prerender">
       <!-- Semantic SEO pre-rendered markup for crawlers -->
       <header style="max-width:960px;margin:0 auto;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(148,163,184,0.15);">
         <a href="/" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;">
@@ -488,6 +537,7 @@ ${JSON.stringify(jsonLd, null, 2)}
           </footer>
         </article>
       </main>
+      </div>
     </div>
 
     <noscript>
