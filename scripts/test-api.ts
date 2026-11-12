@@ -208,6 +208,72 @@ async function runTests() {
   assert(inSampleDoctor, 'ANNA_DOCTOR_ARTICLE must be registered in SAMPLE_DOCUMENTS');
   console.log('[PASS] "Анна идёт к врачу (Уровень A1)" verified with 44 passages across all 17 supported languages and registered in library.');
 
+  // Test 10: Verify Anna Moves to Berlin A2 library story and all 17 translations
+  console.log('Test 10: Checking "Анна переезжает в Берлин" library story and 17 language translations...');
+  const { ANNA_BERLIN_ARTICLE } = await import('../src/constants/annaBerlinArticle');
+
+  assert(ANNA_BERLIN_ARTICLE, 'ANNA_BERLIN_ARTICLE must be defined');
+  assert.strictEqual(ANNA_BERLIN_ARTICLE.id, 'anna_berlin_a2_001');
+  assert(ANNA_BERLIN_ARTICLE.title.includes('A2'), 'Title should indicate level A2');
+  assert.strictEqual(ANNA_BERLIN_ARTICLE.level, 'A2', 'Level must be A2');
+  assert(ANNA_BERLIN_ARTICLE.coverImage && ANNA_BERLIN_ARTICLE.coverImage.length > 0, 'Cover image must be specified');
+  assert.strictEqual(ANNA_BERLIN_ARTICLE.passages.length, 24, 'Anna Berlin story should have 24 passages');
+
+  for (const lang of requiredLangs) {
+    assert(ANNA_BERLIN_ARTICLE.titleTranslations?.[lang as any], `Missing title translation for ${lang}`);
+    for (const p of ANNA_BERLIN_ARTICLE.passages) {
+      assert(p.translations?.[lang], `Missing translation for paragraph ${p.id} in ${lang}`);
+    }
+  }
+
+  const inSampleBerlin = SAMPLE_DOCUMENTS.some(d => d.id === 'anna_berlin_a2_001');
+  assert(inSampleBerlin, 'ANNA_BERLIN_ARTICLE must be registered in SAMPLE_DOCUMENTS');
+  console.log('[PASS] "Анна переезжает в Берлин (Уровень A2)" verified with 24 passages across all 17 supported languages, A2 cover, and registered in library.');
+
+  // Test 11: Verify Anna Goes Hiking A2 library story and all 17 translations
+  console.log('Test 11: Checking "Анна идёт в поход" library story and 17 language translations...');
+  const { ANNA_HIKE_ARTICLE } = await import('../src/constants/annaHikeArticle');
+
+  assert(ANNA_HIKE_ARTICLE, 'ANNA_HIKE_ARTICLE must be defined');
+  assert.strictEqual(ANNA_HIKE_ARTICLE.id, 'anna_hike_a2_001');
+  assert(ANNA_HIKE_ARTICLE.title.includes('A2'), 'Title should indicate level A2');
+  assert.strictEqual(ANNA_HIKE_ARTICLE.level, 'A2', 'Level must be A2');
+  assert(ANNA_HIKE_ARTICLE.coverImage && ANNA_HIKE_ARTICLE.coverImage.length > 0, 'Cover image must be specified');
+  assert.strictEqual(ANNA_HIKE_ARTICLE.passages.length, 21, 'Anna Hike story should have 21 passages');
+
+  for (const lang of requiredLangs) {
+    assert(ANNA_HIKE_ARTICLE.titleTranslations?.[lang as any], `Missing title translation for ${lang}`);
+    for (const p of ANNA_HIKE_ARTICLE.passages) {
+      assert(p.translations?.[lang], `Missing translation for paragraph ${p.id} in ${lang}`);
+    }
+  }
+
+  const inSampleHike = SAMPLE_DOCUMENTS.some(d => d.id === 'anna_hike_a2_001');
+  assert(inSampleHike, 'ANNA_HIKE_ARTICLE must be registered in SAMPLE_DOCUMENTS');
+  console.log('[PASS] "Анна идёт в поход (Уровень A2)" verified with 21 passages across all 17 supported languages, A2 cover, and registered in library.');
+
+  // Test 12: Verify Anna Learns to Cook A2 library story and all 17 translations
+  console.log('Test 12: Checking "Анна учится готовить" library story and 17 language translations...');
+  const { ANNA_COOKING_ARTICLE } = await import('../src/constants/annaCookingArticle');
+
+  assert(ANNA_COOKING_ARTICLE, 'ANNA_COOKING_ARTICLE must be defined');
+  assert.strictEqual(ANNA_COOKING_ARTICLE.id, 'anna_cooking_a2_001');
+  assert(ANNA_COOKING_ARTICLE.title.includes('A2'), 'Title should indicate level A2');
+  assert.strictEqual(ANNA_COOKING_ARTICLE.level, 'A2', 'Level must be A2');
+  assert(ANNA_COOKING_ARTICLE.coverImage && ANNA_COOKING_ARTICLE.coverImage.length > 0, 'Cover image must be specified');
+  assert.strictEqual(ANNA_COOKING_ARTICLE.passages.length, 20, 'Anna Cooking story should have 20 passages');
+
+  for (const lang of requiredLangs) {
+    assert(ANNA_COOKING_ARTICLE.titleTranslations?.[lang as any], `Missing title translation for ${lang}`);
+    for (const p of ANNA_COOKING_ARTICLE.passages) {
+      assert(p.translations?.[lang], `Missing translation for paragraph ${p.id} in ${lang}`);
+    }
+  }
+
+  const inSampleCooking = SAMPLE_DOCUMENTS.some(d => d.id === 'anna_cooking_a2_001');
+  assert(inSampleCooking, 'ANNA_COOKING_ARTICLE must be registered in SAMPLE_DOCUMENTS');
+  console.log('[PASS] "Анна учится готовить (Уровень A2)" verified with 20 passages across all 17 supported languages, A2 cover badge, and registered in library.');
+
   console.log('=== All Diagnostic & API Tests Completed Successfully! ===');
 }
 

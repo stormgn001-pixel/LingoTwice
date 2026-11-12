@@ -4,8 +4,14 @@ import { ANNA_ARTICLE } from './annaArticle';
 import { ANNA_SEA_ARTICLE } from './annaSeaArticle';
 import { ANNA_GUEST_ARTICLE } from './annaGuestArticle';
 import { ANNA_DOCTOR_ARTICLE } from './annaDoctorArticle';
+import { ANNA_BERLIN_ARTICLE } from './annaBerlinArticle';
+import { ANNA_HIKE_ARTICLE } from './annaHikeArticle';
+import { ANNA_COOKING_ARTICLE } from './annaCookingArticle';
 
 export const SAMPLE_DOCUMENTS: ReadingDocument[] = [
+  ANNA_COOKING_ARTICLE,
+  ANNA_HIKE_ARTICLE,
+  ANNA_BERLIN_ARTICLE,
   ANNA_ARTICLE,
   ANNA_SEA_ARTICLE,
   ANNA_GUEST_ARTICLE,
