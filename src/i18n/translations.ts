@@ -1,4 +1,5 @@
 import { InterfaceLanguage, ReadingDocument } from '../types';
+import { EXTRA_TRANSLATIONS } from './extraTranslations';
 
 export const UI_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string>> = {
   ru: {
@@ -2343,14 +2344,17 @@ const NAV_TRANSLATIONS: Record<InterfaceLanguage, { navRead: string; navLibrary:
 };
 
 export const getTranslation = (lang: InterfaceLanguage): Record<string, string> => {
-  const base = UI_TRANSLATIONS[lang] || UI_TRANSLATIONS.ru;
+  const base = UI_TRANSLATIONS[lang] || UI_TRANSLATIONS.en;
   const nav = NAV_TRANSLATIONS[lang] || NAV_TRANSLATIONS.en;
+  const extra = EXTRA_TRANSLATIONS[lang] || EXTRA_TRANSLATIONS.en;
   return {
-    ...UI_TRANSLATIONS.ru,
+    ...UI_TRANSLATIONS.en,
+    ...EXTRA_TRANSLATIONS.en,
     ...base,
+    ...extra,
     ...nav,
-    revealOriginal: base.revealOriginal || (lang === 'en' ? 'Reveal original' : lang === 'uk' ? 'Показати оригінал' : lang === 'de' ? 'Original anzeigen' : 'Показать оригинал'),
-    hideOriginal: base.hideOriginal || (lang === 'en' ? 'Hide original' : lang === 'uk' ? 'Сховати оригінал' : lang === 'de' ? 'Original verbergen' : 'Скрыть оригинал'),
+    revealOriginal: base.revealOriginal || (lang === 'ru' ? 'Показать оригинал' : lang === 'uk' ? 'Показати оригінал' : lang === 'de' ? 'Original anzeigen' : 'Reveal original'),
+    hideOriginal: base.hideOriginal || (lang === 'ru' ? 'Скрыть оригинал' : lang === 'uk' ? 'Сховати оригінал' : lang === 'de' ? 'Original verbergen' : 'Hide original'),
   };
 };
 

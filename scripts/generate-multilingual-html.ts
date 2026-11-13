@@ -187,7 +187,9 @@ ${JSON.stringify(jsonLd, null, 2)}
       (function() {
         try {
           document.documentElement.classList.add('js-ready');
-          localStorage.setItem('lingotwice_adsense_pub_id', '${ADSENSE_PUB_ID}');
+          if (!localStorage.getItem('lingotwice_adsense_pub_id')) {
+            localStorage.setItem('lingotwice_adsense_pub_id', '${ADSENSE_PUB_ID}');
+          }
           var prefs = JSON.parse(localStorage.getItem('linguatwin_preferences_v1'));
           var theme = (prefs && prefs.theme) || 'dark';
           var metaTheme = document.getElementById('theme-color-meta');
@@ -443,7 +445,9 @@ ${JSON.stringify(jsonLd, null, 2)}
       (function() {
         try {
           document.documentElement.classList.add('js-ready');
-          localStorage.setItem('lingotwice_adsense_pub_id', '${ADSENSE_PUB_ID}');
+          if (!localStorage.getItem('lingotwice_adsense_pub_id')) {
+            localStorage.setItem('lingotwice_adsense_pub_id', '${ADSENSE_PUB_ID}');
+          }
           var prefs = JSON.parse(localStorage.getItem('linguatwin_preferences_v1'));
           var theme = (prefs && prefs.theme) || 'dark';
           var metaTheme = document.getElementById('theme-color-meta');

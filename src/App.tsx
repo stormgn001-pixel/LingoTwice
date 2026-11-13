@@ -13,6 +13,7 @@ import { LegalModal } from './components/LegalModal';
 import { InfoPageView } from './components/InfoPageView';
 import { OnboardingModal } from './components/OnboardingModal';
 import { PullToRefreshIndicator } from './components/PullToRefreshIndicator';
+import { OfflineIndicator } from './components/OfflineIndicator';
 import { usePullToRefresh } from './hooks/usePullToRefresh';
 import { SAMPLE_DOCUMENTS } from './constants/sampleLibrary';
 import {
@@ -26,6 +27,7 @@ import {
 } from './types';
 import { apiService } from './services/api';
 import { getDueVocabulary } from './services/srs';
+import { getTranslation } from './i18n/translations';
 import { SEO_DATA_MAP, SEO_LANGUAGES_LIST } from './constants/seoData';
 
 const STORAGE_KEYS = {
@@ -107,12 +109,22 @@ export default function App() {
 
   // Core Data
   const [documents, setDocuments] = useState<ReadingDocument[]>(() => {
+    let deletedIds: string[] = [];
+    try {
+      const deletedStr = localStorage.getItem('linguatwin_deleted_ids_v1');
+      if (deletedStr) {
+        const parsedDeleted = JSON.parse(deletedStr);
+        if (Array.isArray(parsedDeleted)) deletedIds = parsedDeleted;
+      }
+    } catch {}
+    const deletedSet = new Set(deletedIds);
+
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.DOCUMENTS);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const sanitized = sanitizeDocuments(parsed);
+          const sanitized = sanitizeDocuments(parsed).filter((d) => !deletedSet.has(d.id));
           const sampleMap = new Map(SAMPLE_DOCUMENTS.map(s => [s.id, s]));
           const updated = sanitized.map(doc => {
             if (doc.isSample && sampleMap.has(doc.id)) {
@@ -126,12 +138,16 @@ export default function App() {
             return doc;
           });
           const existingIds = new Set(updated.map(d => d.id));
-          const missingSamples = SAMPLE_DOCUMENTS.filter(sample => !existingIds.has(sample.id));
-          return sanitizeDocuments([...missingSamples, ...updated]);
+          const missingSamples = SAMPLE_DOCUMENTS.filter(
+            sample => !existingIds.has(sample.id) && !deletedSet.has(sample.id)
+          );
+          const merged = sanitizeDocuments([...missingSamples, ...updated]);
+          if (merged.length > 0) return merged;
         }
       }
     } catch {}
-    return sanitizeDocuments(SAMPLE_DOCUMENTS);
+    const initialSamples = SAMPLE_DOCUMENTS.filter(s => !deletedSet.has(s.id));
+    return sanitizeDocuments(initialSamples.length > 0 ? initialSamples : SAMPLE_DOCUMENTS);
   });
   const [activeDocId, setActiveDocId] = useState<string>(() => {
     try {
@@ -244,27 +260,33 @@ export default function App() {
     const loadUserData = async () => {
       setLoading(true);
       if (user) {
-        const [docs, vocab, statsData, prefsData] = await Promise.all([
-          dbService.getDocuments(user.uid),
-          dbService.getVocabulary(user.uid),
-          dbService.getStats(user.uid),
-          dbService.getPreferences(user.uid)
-        ]);
-        
-        if (docs.length > 0) {
-          try {
-            const deletedIds: string[] = JSON.parse(localStorage.getItem('linguatwin_deleted_ids_v1') || '[]');
-            const activeSamples = SAMPLE_DOCUMENTS.filter(s => !deletedIds.includes(s.id));
-            const existingIds = new Set(docs.map(d => d.id));
-            const missingSamples = activeSamples.filter(s => !existingIds.has(s.id));
-            setDocuments(sanitizeDocuments([...docs, ...missingSamples]));
-          } catch {
-            setDocuments(sanitizeDocuments(docs));
+        try {
+          const [docs, vocab, statsData, prefsData] = await Promise.all([
+            dbService.getDocuments(user.uid),
+            dbService.getVocabulary(user.uid),
+            dbService.getStats(user.uid),
+            dbService.getPreferences(user.uid)
+          ]);
+
+          if (docs.length > 0) {
+            try {
+              const deletedIds: string[] = JSON.parse(localStorage.getItem('linguatwin_deleted_ids_v1') || '[]');
+              const activeSamples = SAMPLE_DOCUMENTS.filter(s => !deletedIds.includes(s.id));
+              const existingIds = new Set(docs.map(d => d.id));
+              const missingSamples = activeSamples.filter(s => !existingIds.has(s.id));
+              setDocuments(sanitizeDocuments([...docs, ...missingSamples]));
+            } catch {
+              setDocuments(sanitizeDocuments(docs));
+            }
           }
+          if (vocab.length > 0) {
+            setVocabulary(vocab);
+          }
+          if (statsData) setStats(statsData);
+          if (prefsData) setPreferences(prefsData);
+        } catch (err) {
+          console.error('Failed to load Firestore user data:', err);
         }
-        setVocabulary(vocab);
-        if (statsData) setStats(statsData);
-        if (prefsData) setPreferences(prefsData);
       }
       setLoading(false);
     };
@@ -274,18 +296,16 @@ export default function App() {
   // Persist preferences to Firestore when changed
   useEffect(() => {
     if (user && preferences !== DEFAULT_PREFERENCES) {
-      dbService.savePreferences(user.uid, preferences);
+      dbService.savePreferences(user.uid, preferences).catch((err) => console.error('Save prefs failed:', err));
     }
   }, [preferences, user]);
-
-
 
   const [subscription, setSubscription] = useState<SubscriptionStatus>({
     tier: 'free',
     isActive: true,
-    dailyTranslationsUsed: 4,
-    dailyTranslationsLimit: 20,
-    wordsTranslatedToday: 512,
+    dailyTranslationsUsed: 0,
+    dailyTranslationsLimit: 50,
+    wordsTranslatedToday: 0,
   });
 
   // Modal states
@@ -405,12 +425,14 @@ export default function App() {
   const activeDocument =
     documents.find((d) => d.id === activeDocId) || documents[0] || SAMPLE_DOCUMENTS[0];
 
+  const t = getTranslation(preferences.uiLang);
+
   // Handle word selection and vocabulary lookup
   const handleWordClick = async (word: string, contextSentence: string) => {
     setIsLookupLoading(true);
     setActiveLookup({
       word,
-      translation: 'Загрузка...',
+      translation: t.loadingText,
       contextualMeaning: '',
       examples: [],
     });
@@ -427,7 +449,7 @@ export default function App() {
       setActiveLookup({
         word,
         translation: word,
-        contextualMeaning: 'Значение в контексте предложения.',
+        contextualMeaning: t.contextualFallback,
         examples: [],
       });
     } finally {
@@ -442,7 +464,6 @@ export default function App() {
     );
 
     if (existingIndex >= 0) {
-      // Word already in vocabulary
       return;
     }
 
@@ -464,15 +485,18 @@ export default function App() {
       createdAt: Date.now(),
     };
 
+    const nextStats: UserStats = {
+      ...stats,
+      totalWordsLearned: stats.totalWordsLearned + 1,
+      todayWordsLearned: stats.todayWordsLearned + 1,
+    };
+
     setVocabulary((prev) => [newEntry, ...prev]);
+    setStats(nextStats);
     if (user) {
-      dbService.saveVocabularyEntry(user.uid, newEntry);
+      dbService.saveVocabularyEntry(user.uid, newEntry).catch((e) => console.error('Cloud save word failed:', e));
+      dbService.saveStats(user.uid, nextStats).catch((e) => console.error('Cloud save stats failed:', e));
     }
-    setStats((prev) => ({
-      ...prev,
-      totalWordsLearned: prev.totalWordsLearned + 1,
-      todayWordsLearned: prev.todayWordsLearned + 1,
-    }));
   };
 
   const isWordSaved = (word?: string) => {
@@ -485,19 +509,24 @@ export default function App() {
     docId: string,
     updates: { id: string; sourceText: string; targetText: string }[]
   ) => {
+    const updateMap = new Map(updates.map(u => [u.id, u]));
+    let modifiedDoc: ReadingDocument | null = null;
     setDocuments((prevDocs) =>
       prevDocs.map((doc) => {
         if (doc.id !== docId) return doc;
-        const updateMap = new Map(updates.map(u => [u.id, u]));
-        return {
+        modifiedDoc = {
           ...doc,
           passages: doc.passages.map((p) => {
             const up = updateMap.get(p.id);
             return up ? { ...p, sourceText: up.sourceText, targetText: up.targetText } : p;
           }),
         };
+        return modifiedDoc;
       })
     );
+    if (user && modifiedDoc) {
+      dbService.saveDocument(user.uid, modifiedDoc).catch((e) => console.error('Cloud save doc failed:', e));
+    }
   };
 
   // Update single passage text
@@ -515,23 +544,32 @@ export default function App() {
     progress: number,
     activePassageId?: string
   ) => {
+    const targetDoc = documents.find((d) => d.id === docId);
+    const updatedDoc: ReadingDocument | null = targetDoc
+      ? {
+          ...targetDoc,
+          readingProgress: Math.max(targetDoc.readingProgress, progress),
+          lastReadAt: Date.now(),
+          lastActivePassageId: activePassageId,
+        }
+      : null;
+
     setDocuments((prev) =>
-      prev.map((d) =>
-        d.id === docId
-          ? {
-              ...d,
-              readingProgress: Math.max(d.readingProgress, progress),
-              lastReadAt: Date.now(),
-              lastActivePassageId: activePassageId,
-            }
-          : d
-      )
+      prev.map((d) => (d.id === docId && updatedDoc ? updatedDoc : d))
     );
 
-    setStats((prev) => ({
-      ...prev,
-      totalPassagesRead: prev.totalPassagesRead + 1,
-    }));
+    const nextStats: UserStats = {
+      ...stats,
+      totalPassagesRead: stats.totalPassagesRead + 1,
+    };
+    setStats(nextStats);
+
+    if (user) {
+      if (updatedDoc) {
+        dbService.saveDocument(user.uid, updatedDoc).catch((e) => console.error('Cloud save progress failed:', e));
+      }
+      dbService.saveStats(user.uid, nextStats).catch((e) => console.error('Cloud save stats failed:', e));
+    }
   };
 
   // Delete document
@@ -549,34 +587,44 @@ export default function App() {
       const remaining = documents.filter((d) => d.id !== docId);
       if (remaining.length > 0) setActiveDocId(remaining[0].id);
     }
+    if (user) {
+      dbService.deleteDocument(user.uid, docId).catch((e) => console.error('Cloud delete doc failed:', e));
+    }
   };
 
   // Update document language pair (only permitted for built-in library articles)
   const handleChangeLanguages = (docId: string, sourceLang: string, targetLang: string) => {
     const doc = documents.find((d) => d.id === docId);
-    if (doc && !isBuiltInDoc(doc)) return;
+    if (!doc || !isBuiltInDoc(doc)) return;
+    const updatedDoc = { ...doc, sourceLang, targetLang };
     setDocuments((prev) =>
-      prev.map((d) => (d.id === docId ? { ...d, sourceLang, targetLang } : d))
+      prev.map((d) => (d.id === docId ? updatedDoc : d))
     );
+    if (user) {
+      dbService.saveDocument(user.uid, updatedDoc).catch((e) => console.error('Cloud save lang change failed:', e));
+    }
   };
 
   // Swap document languages AND their texts so both fields remain aligned
   const handleSwapDocumentLanguages = (docId: string) => {
+    const doc = documents.find((d) => d.id === docId);
+    if (!doc) return;
+    const updatedDoc: ReadingDocument = {
+      ...doc,
+      sourceLang: doc.targetLang,
+      targetLang: doc.sourceLang,
+      passages: doc.passages.map((p) => ({
+        ...p,
+        sourceText: p.targetText,
+        targetText: p.sourceText,
+      })),
+    };
     setDocuments((prev) =>
-      prev.map((d) => {
-        if (d.id !== docId) return d;
-        return {
-          ...d,
-          sourceLang: d.targetLang,
-          targetLang: d.sourceLang,
-          passages: d.passages.map((p) => ({
-            ...p,
-            sourceText: p.targetText,
-            targetText: p.sourceText,
-          })),
-        };
-      })
+      prev.map((d) => (d.id === docId ? updatedDoc : d))
     );
+    if (user) {
+      dbService.saveDocument(user.uid, updatedDoc).catch((e) => console.error('Cloud save swap failed:', e));
+    }
   };
 
   // Unified translation handler - safely updates language and fills translations
@@ -683,6 +731,9 @@ export default function App() {
     setVocabulary((prev) =>
       prev.map((item) => (item.id === updatedCard.id ? updatedCard : item))
     );
+    if (user) {
+      dbService.saveVocabularyEntry(user.uid, updatedCard).catch((e) => console.error('Cloud save review failed:', e));
+    }
   };
 
   // Cookie acceptance
@@ -713,6 +764,9 @@ export default function App() {
         uiLang={preferences.uiLang}
       />
 
+      {/* Offline Status Banner */}
+      <OfflineIndicator uiLang={preferences.uiLang} />
+
       {/* Top Bar Header */}
       <Header
         currentView={currentView}
@@ -742,22 +796,22 @@ export default function App() {
             onSwapLanguages={handleSwapDocumentLanguages}
             preferences={preferences}
             onUpdatePreferences={(newPrefs) => {
-              setPreferences((prev) => {
-                const next = { ...prev, ...newPrefs };
-                if (newPrefs.uiLang && newPrefs.uiLang !== prev.uiLang) {
-                  const newTargetLang = newPrefs.targetLang || (
-                    newPrefs.uiLang === 'ru'
-                      ? (prev.targetLang && prev.targetLang !== 'ru' ? prev.targetLang : 'en')
-                      : 'ru'
-                  );
-                  next.targetLang = newTargetLang;
-                  if (activeDocument && isBuiltInDoc(activeDocument)) {
-                    handleChangeLanguages(activeDocument.id, newPrefs.uiLang, newTargetLang);
-                    handleRetranslateDocument(activeDocument.id, newTargetLang);
-                  }
+              const next = { ...preferences, ...newPrefs };
+              if (newPrefs.uiLang && newPrefs.uiLang !== preferences.uiLang) {
+                const newTargetLang = newPrefs.targetLang || (
+                  newPrefs.uiLang === 'ru'
+                    ? (preferences.targetLang && preferences.targetLang !== 'ru' ? preferences.targetLang : 'en')
+                    : 'ru'
+                );
+                next.targetLang = newTargetLang;
+                setPreferences(next);
+                if (activeDocument && isBuiltInDoc(activeDocument)) {
+                  handleChangeLanguages(activeDocument.id, newPrefs.uiLang, newTargetLang);
+                  handleRetranslateDocument(activeDocument.id, newTargetLang);
                 }
-                return next;
-              });
+              } else {
+                setPreferences(next);
+              }
             }}
             onUpdatePassages={handleUpdatePassages}
             onUpdatePassage={handleUpdatePassage}
@@ -797,9 +851,12 @@ export default function App() {
           <div className="h-full overflow-y-auto reader-scrollbar">
             <VocabularyView
               vocabulary={vocabulary}
-              onDeleteWord={(id) =>
-                setVocabulary((prev) => prev.filter((item) => item.id !== id))
-              }
+              onDeleteWord={(id) => {
+                setVocabulary((prev) => prev.filter((item) => item.id !== id));
+                if (user) {
+                  dbService.deleteVocabularyEntry(user.uid, id).catch((e) => console.error('Cloud delete vocab failed:', e));
+                }
+              }}
               onStartReview={() => setCurrentView('review')}
               uiLang={preferences.uiLang}
             />
@@ -857,6 +914,9 @@ export default function App() {
             setActiveDocId(newDoc.id);
             setIsImporterOpen(false);
             setCurrentView('read');
+            if (user) {
+              dbService.saveDocument(user.uid, newDoc).catch((e) => console.error('Cloud save new doc failed:', e));
+            }
           }}
           uiLang={preferences.uiLang}
           defaultSourceLang={preferences.sourceLang}
@@ -875,17 +935,19 @@ export default function App() {
           onClose={() => setIsSettingsOpen(false)}
           preferences={preferences}
           onUpdatePreferences={(newPrefs) => {
-            setPreferences((prev) => {
-              const next = { ...prev, ...newPrefs };
-              if (newPrefs.uiLang && newPrefs.uiLang !== prev.uiLang) {
-                if (activeDocument && isBuiltInDoc(activeDocument) && newPrefs.uiLang !== activeDocument.sourceLang) {
-                  next.targetLang = newPrefs.uiLang;
-                  handleChangeLanguages(activeDocument.id, activeDocument.sourceLang, newPrefs.uiLang);
-                  handleRetranslateDocument(activeDocument.id, newPrefs.uiLang);
-                }
+            const next = { ...preferences, ...newPrefs };
+            if (newPrefs.uiLang && newPrefs.uiLang !== preferences.uiLang) {
+              if (activeDocument && isBuiltInDoc(activeDocument) && newPrefs.uiLang !== activeDocument.sourceLang) {
+                next.targetLang = newPrefs.uiLang;
+                setPreferences(next);
+                handleChangeLanguages(activeDocument.id, activeDocument.sourceLang, newPrefs.uiLang);
+                handleRetranslateDocument(activeDocument.id, newPrefs.uiLang);
+              } else {
+                setPreferences(next);
               }
-              return next;
-            });
+            } else {
+              setPreferences(next);
+            }
           }}
           allData={{ documents, vocabulary, stats }}
           onClearAllData={() => {
@@ -893,6 +955,9 @@ export default function App() {
             setActiveDocId(SAMPLE_DOCUMENTS[0].id);
             setVocabulary([]);
             setStats(DEFAULT_STATS);
+            try {
+              localStorage.removeItem('linguatwin_deleted_ids_v1');
+            } catch {}
           }}
           onOpenLegal={(page) => setLegalPage(page)}
         />
@@ -931,20 +996,20 @@ export default function App() {
       {showCookieConsent && (
         <div className="fixed bottom-0 inset-x-0 z-40 border-t border-slate-200 bg-white/95 p-3.5 shadow-lg backdrop-blur-md sm:flex sm:items-center sm:justify-between sm:px-6 dark:border-slate-800 dark:bg-slate-900/95">
           <p className="text-xs text-slate-600 dark:text-slate-300">
-            LingoTwice использует локальное хранилище браузера для сохранения ваших книг, словаря и прогресса интервального повторения.
+            {t.cookieMessage}
           </p>
           <div className="mt-2 flex items-center gap-2 sm:mt-0 shrink-0">
             <button
               onClick={() => setLegalPage('privacy')}
-              className="text-xs text-slate-500 underline hover:text-slate-800 dark:hover:text-slate-200 mr-2"
+              className="text-xs text-slate-500 underline hover:text-slate-800 dark:hover:text-slate-200 mr-2 cursor-pointer"
             >
-              Подробнее
+              {t.cookieLearnMore}
             </button>
             <button
               onClick={acceptCookies}
-              className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 transition-colors"
+              className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 transition-colors cursor-pointer"
             >
-              Принять
+              {t.cookieAccept}
             </button>
           </div>
         </div>

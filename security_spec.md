@@ -1,15 +1,8 @@
 # Security Specification for LingoTwice
 
 ## Data Invariants
-1. Vocabulary entries must belong to the authenticated user (userId in path must match request.auth.uid).
-2. Stats document must belong to the authenticated user.
-3. IDs must be valid alphanumeric/underscore/hyphen strings.
-
-## The "Dirty Dozen" Payloads
-(Assuming these are test cases to verify rule security, for the sake of this prompt, I will provide a structure for the test runner)
-
-### firestore.rules.test.ts (Draft)
-```typescript
-import { assertFails, assertSucceeds, initializeTestEnvironment } from "@firebase/rules-unit-testing";
-// ... (omitted test implementation for brevity in generation, but planned)
-```
+1. All user data (`/users/{userId}/vocabulary/{vocabularyId}`, `/users/{userId}/stats/data`, `/users/{userId}/documents/{documentId}`, `/users/{userId}/preferences/data`) is strictly owned by `request.auth.uid == userId` with verified email (`request.auth.token.email_verified == true`).
+2. All document IDs (`vocabularyId`, `documentId`) match `^[a-zA-Z0-9_\\-]+$` and are at most 128 characters.
+3. Every entity is validated by a dedicated blueprint helper (`isValidVocabularyEntry`, `isValidUserStats`, `isValidReadingDocument`, `isValidReadingPreferences`) enforcing required keys, allowed keys (`hasOnly`), field types, and bounded string/array lengths.
+4. Immutable fields (`id`, `createdAt`) cannot be modified on update, and updates explicitly whitelist mutable fields via `affectedKeys().hasOnly(...)`.
+5. No blanket reads or client-delegated list queries exist; default deny blocks all unmatched paths.

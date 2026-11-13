@@ -2,42 +2,118 @@
   "entities": {
     "VocabularyEntry": {
       "title": "VocabularyEntry",
-      "description": "User vocabulary entry for spaced repetition.",
+      "description": "User vocabulary entry for SM-2 spaced repetition.",
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
-        "word": { "type": "string" },
-        "translation": { "type": "string" },
-        "contextSentence": { "type": "string" },
-        "sourceLang": { "type": "string" },
-        "targetLang": { "type": "string" },
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "word": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "translation": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "contextSentence": { "type": "string", "maxLength": 2000 },
+        "contextTranslation": { "type": "string", "maxLength": 2000 },
+        "sourceLang": { "type": "string", "minLength": 2, "maxLength": 16 },
+        "targetLang": { "type": "string", "minLength": 2, "maxLength": 16 },
+        "notes": { "type": "string", "maxLength": 1000 },
         "box": { "type": "number" },
         "interval": { "type": "number" },
         "repetitionCount": { "type": "number" },
-        "nextReviewDate": { "type": "number" }
+        "easeFactor": { "type": "number" },
+        "nextReviewDate": { "type": "number" },
+        "lastReviewedDate": { "type": "number" },
+        "correctCount": { "type": "number" },
+        "incorrectCount": { "type": "number" },
+        "createdAt": { "type": "number" }
       },
-      "required": ["id", "word", "translation", "sourceLang", "targetLang", "box", "interval", "repetitionCount", "nextReviewDate"]
+      "required": [
+        "id",
+        "word",
+        "translation",
+        "sourceLang",
+        "targetLang",
+        "box",
+        "interval",
+        "repetitionCount",
+        "nextReviewDate",
+        "createdAt"
+      ]
     },
     "UserStats": {
       "title": "UserStats",
-      "description": "User reading progress and statistics.",
+      "description": "User reading progress and daily learning statistics.",
       "type": "object",
       "properties": {
         "streakDays": { "type": "number" },
+        "lastStreakDate": { "type": "string", "maxLength": 20 },
         "totalReadingMinutes": { "type": "number" },
-        "totalWordsLearned": { "type": "number" }
+        "totalWordsLearned": { "type": "number" },
+        "totalPassagesRead": { "type": "number" },
+        "dailyGoalMinutes": { "type": "number" },
+        "dailyGoalWords": { "type": "number" },
+        "todayReadingMinutes": { "type": "number" },
+        "todayWordsLearned": { "type": "number" }
       },
       "required": ["streakDays", "totalReadingMinutes", "totalWordsLearned"]
+    },
+    "ReadingDocument": {
+      "title": "ReadingDocument",
+      "description": "User parallel reading document metadata and progress.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "author": { "type": "string", "maxLength": 200 },
+        "sourceLang": { "type": "string", "minLength": 2, "maxLength": 16 },
+        "targetLang": { "type": "string", "minLength": 2, "maxLength": 16 },
+        "category": { "type": "string", "enum": ["literature", "science", "news", "dialogue", "philosophy", "custom", "method"] },
+        "level": { "type": "string", "enum": ["A1", "A2", "B1", "B2", "C1", "C2"] },
+        "coverImage": { "type": "string", "maxLength": 500000 },
+        "sourceUrl": { "type": "string", "maxLength": 2048 },
+        "createdAt": { "type": "number" },
+        "lastReadAt": { "type": "number" },
+        "readingProgress": { "type": "number" },
+        "lastActivePassageId": { "type": "string", "maxLength": 128 },
+        "wordCount": { "type": "number" },
+        "isSample": { "type": "boolean" },
+        "passages": { "type": "array" }
+      },
+      "required": ["id", "title", "sourceLang", "targetLang", "category", "createdAt", "lastReadAt", "readingProgress", "wordCount", "passages"]
+    },
+    "ReadingPreferences": {
+      "title": "ReadingPreferences",
+      "description": "User reader typography, theme, and language preferences.",
+      "type": "object",
+      "properties": {
+        "fontSize": { "type": "number" },
+        "lineHeight": { "type": "string", "enum": ["normal", "relaxed", "loose"] },
+        "theme": { "type": "string", "enum": ["light", "dark", "sepia"] },
+        "splitOrientation": { "type": "string", "enum": ["horizontal", "vertical"] },
+        "syncScroll": { "type": "boolean" },
+        "activeMode": { "type": "string", "enum": ["parallel", "immersion"] },
+        "sourceLang": { "type": "string", "minLength": 2, "maxLength": 16 },
+        "targetLang": { "type": "string", "minLength": 2, "maxLength": 16 },
+        "uiLang": { "type": "string", "minLength": 2, "maxLength": 16 },
+        "speechRate": { "type": "number" },
+        "preferredVoice": { "type": "string", "maxLength": 200 },
+        "swapSides": { "type": "boolean" }
+      },
+      "required": ["fontSize", "lineHeight", "theme", "splitOrientation", "syncScroll", "activeMode", "sourceLang", "targetLang", "uiLang", "speechRate"]
     }
   },
   "firestore": {
     "/users/{userId}/vocabulary/{vocabularyId}": {
       "schema": "VocabularyEntry",
-      "description": "User vocabulary entries."
+      "description": "Private user vocabulary entries."
     },
     "/users/{userId}/stats/data": {
       "schema": "UserStats",
-      "description": "User reading statistics."
+      "description": "Private user reading statistics."
+    },
+    "/users/{userId}/documents/{documentId}": {
+      "schema": "ReadingDocument",
+      "description": "Private user parallel reading documents and progress."
+    },
+    "/users/{userId}/preferences/data": {
+      "schema": "ReadingPreferences",
+      "description": "Private user interface and reading preferences."
     }
   }
 }

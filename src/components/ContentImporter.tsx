@@ -25,32 +25,32 @@ import { apiService } from '../services/api';
 const PRESET_COVERS = [
   {
     id: 'literature',
-    label: 'Классика',
+    key: 'catLiterature',
     url: '/assets/images/book_cover_literature_1792926490325.jpg',
   },
   {
     id: 'reading',
-    label: 'Чтение',
+    key: 'navRead',
     url: '/assets/images/reading_desk_atmosphere_1793214356959.jpg',
   },
   {
     id: 'science',
-    label: 'Наука & Технологии',
+    key: 'catScience',
     url: '/assets/images/future_humanity_tech_1793205103986.jpg',
   },
   {
     id: 'dialogue',
-    label: 'Диалоги',
+    key: 'catDialogue',
     url: '/assets/images/book_cover_dialogues_1792926491648.jpg',
   },
   {
     id: 'kafka',
-    label: 'Философия',
+    key: 'sampleCategoryLiterature',
     url: '/assets/images/book_cover_kafka_1792929018156.jpg',
   },
   {
     id: 'app',
-    label: 'LingoTwice',
+    key: 'appTitle',
     url: '/assets/aistudio/file_000000004eec82468ea111a6735b2471_8524203a.png',
   },
 ];
@@ -253,12 +253,12 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
   const handleBilingualSubmit = async (e?: React.FormEvent, forceSave: boolean = saveToLibrary) => {
     if (e) e.preventDefault();
     if (!sourceTextInput.trim()) {
-      setErrorMessage('Пожалуйста, введите текст оригинала.');
+      setErrorMessage(t.needOriginalError);
       return;
     }
 
     if (isFree && sourceTextInput.length > 1000) {
-      setErrorMessage('Без Премиум тарифа лимит текста составляет 1000 символов. Пожалуйста, сократите текст или оформите Премиум доступ.');
+      setErrorMessage(t.freeCharLimitError);
       onOpenSubscription();
       return;
     }
@@ -474,11 +474,11 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
                 className="h-7 w-7 object-contain drop-shadow-xs"
               />
               <h3 className="font-serif text-lg font-bold text-slate-900 dark:text-white">
-                Добавление своего параллельного текста
+                {t.importerTitle}
               </h3>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Добавьте текст оригинала и текст перевода на выбранных языках для комфортного чтения абзац к абзацу
+              {t.importerSubtitle}
             </p>
           </div>
           <button
@@ -561,7 +561,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
               }`}
             >
               <FileText className="h-4 w-4" />
-              <span>Оригинал и Перевод (Текст)</span>
+              <span>{t.tabBilingual}</span>
             </button>
 
             <button
@@ -579,7 +579,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
               }`}
             >
               <Upload className="h-4 w-4" />
-              <span>Загрузить файлы</span>
+              <span>{t.tabFiles}</span>
               {isFree && <Lock className="h-3 w-3 text-amber-600 ml-0.5" />}
             </button>
 
@@ -598,7 +598,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
               }`}
             >
               <Globe className="h-4 w-4" />
-              <span>Из статьи по URL</span>
+              <span>{t.tabUrl}</span>
               {isFree && <Lock className="h-3 w-3 text-amber-600 ml-0.5" />}
             </button>
           </div>
@@ -609,26 +609,26 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-2">
                   <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                    Название издания / книги / статьи
+                    {t.docTitleLabel}
                   </label>
                   <input
                     type="text"
                     value={titleInput}
                     onChange={(e) => setTitleInput(e.target.value)}
-                    placeholder="Например: Маленький принц, Глава 1 или Статья о науке"
+                    placeholder={t.docTitlePlaceholder}
                     className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-1.5 text-xs focus:border-amber-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                   />
                 </div>
 
                 <div>
                   <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                    Автор (необязательно)
+                    {t.authorOptionalLabel}
                   </label>
                   <input
                     type="text"
                     value={authorInput}
                     onChange={(e) => setAuthorInput(e.target.value)}
-                    placeholder="Имя автора"
+                    placeholder={t.authorPlaceholder}
                     className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-1.5 text-xs focus:border-amber-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                   />
                 </div>
@@ -640,10 +640,10 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
                   <div className="flex items-center gap-1.5">
                     <ImageIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                     <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      Изображение / обложка текста
+                      {t.coverTitle}
                     </span>
                     <span className="text-[11px] text-slate-500 font-normal">
-                      (для библиотеки и карточки материала)
+                      {t.coverSubtitle}
                     </span>
                   </div>
 
@@ -652,10 +652,9 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
                       type="button"
                       onClick={() => setCustomCoverImage(null)}
                       className="inline-flex items-center gap-1 text-[11px] text-rose-600 hover:text-rose-700 dark:text-rose-400 cursor-pointer font-medium"
-                      title="Удалить выбранную обложку"
                     >
                       <Trash2 className="h-3 w-3" />
-                      <span>Сбросить обложку</span>
+                      <span>{t.resetCover}</span>
                     </button>
                   )}
                 </div>
@@ -674,12 +673,12 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
                           ? '/assets/images/book_cover_dialogues_1792926491648.jpg'
                           : '/assets/images/reading_desk_atmosphere_1793214356959.jpg')
                       }
-                      alt="Превью обложки"
+                      alt={t.coverTitle}
                       className="h-full w-full object-cover transition-transform group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-1.5">
                       <span className="text-[10px] text-white font-medium truncate">
-                        {customCoverImage ? 'Своя обложка' : 'По умолчанию'}
+                        {customCoverImage ? t.customCoverLabel : t.defaultCoverLabel}
                       </span>
                     </div>
                   </div>
@@ -687,10 +686,9 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
                   {/* Actions & Presets */}
                   <div className="flex-1 space-y-2 w-full">
                     <div className="flex flex-wrap items-center gap-2">
-                      {/* Upload local image file button */}
                       <label className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300 dark:border-amber-800/80 hover:bg-amber-500/20 transition-colors cursor-pointer shadow-xs">
                         <Upload className="h-3.5 w-3.5" />
-                        <span>Загрузить изображение</span>
+                        <span>{t.uploadImage}</span>
                         <input
                           type="file"
                           accept="image/png,image/jpeg,image/webp,image/gif"
@@ -699,18 +697,16 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
                         />
                       </label>
 
-                      {/* URL button */}
                       <button
                         type="button"
                         onClick={() => setIsUrlCoverOpen(!isUrlCoverOpen)}
                         className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer"
                       >
                         <LinkIcon className="h-3.5 w-3.5" />
-                        <span>Указать URL ссылку</span>
+                        <span>{t.enterImageUrl}</span>
                       </button>
                     </div>
 
-                    {/* URL Input subrow */}
                     {isUrlCoverOpen && (
                       <div className="flex items-center gap-2 pt-1">
                         <input
@@ -731,19 +727,19 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
                           onClick={handleApplyCoverUrl}
                           className="rounded-lg bg-amber-600 px-3 py-1 text-xs font-semibold text-white hover:bg-amber-700 cursor-pointer"
                         >
-                          Применить
+                          {t.applyBtn}
                         </button>
                       </div>
                     )}
 
-                    {/* Preset Badges / Mini thumbs */}
                     <div>
                       <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">
-                        Или выберите готовую обложку:
+                        {t.choosePresetCover}
                       </span>
                       <div className="flex flex-wrap items-center gap-1.5">
                         {PRESET_COVERS.map((preset) => {
                           const isSelected = customCoverImage === preset.url;
+                          const label = t[preset.key] || preset.id;
                           return (
                             <button
                               key={preset.id}
@@ -757,10 +753,10 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
                             >
                               <img
                                 src={preset.url}
-                                alt={preset.label}
+                                alt={label}
                                 className="h-4 w-4 rounded-xs object-cover"
                               />
-                              <span>{preset.label}</span>
+                              <span>{label}</span>
                               {isSelected && <Check className="h-3 w-3 text-amber-600" />}
                             </button>
                           );
@@ -776,18 +772,16 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
           {/* Tab 1: Bilingual Text Inputs */}
           {activeTab === 'bilingual' && (
             <div className="space-y-3">
-              {/* Dual Textareas: Side by side on Desktop */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                {/* 1. Original Text */}
                 <div className="flex flex-col">
                   <div className="flex items-center justify-between pb-1">
                     <span className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200">
                       <span>{sourceMeta.flag}</span>
-                      <span>Текст оригинала ({sourceMeta.name})</span>
+                      <span>{t.originalTextLabel} ({sourceMeta.name})</span>
                       <span className="text-amber-600">*</span>
                     </span>
                     <span className={`text-[11px] font-mono ${isFree && sourceTextInput.length > 1000 ? 'text-rose-600 font-bold' : 'text-slate-400'}`}>
-                      {sourceTextInput.length} {isFree ? '/ 1000 симв.' : 'симв.'} · {sourceWords} слов
+                      {sourceTextInput.length} {isFree ? `/ 1000 ${t.charsCount}` : t.charsCount} · {sourceWords} {t.wordsCount}
                     </span>
                   </div>
 
@@ -796,20 +790,19 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
                     required
                     value={sourceTextInput}
                     onChange={(e) => setSourceTextInput(e.target.value)}
-                    placeholder={`Вставьте текст оригинала на языке ${sourceMeta.name}.\n\nСовет: Разделяйте абзацы пустой строкой, чтобы они точно сопоставились с переводом.`}
+                    placeholder={t.origPlaceholder}
                     className="w-full flex-1 rounded-xl border border-slate-300 p-3 text-xs font-serif leading-relaxed focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-950 dark:text-white reader-scrollbar"
                   />
                 </div>
 
-                {/* 2. Translation Text */}
                 <div className="flex flex-col">
                   <div className="flex items-center justify-between pb-1">
                     <span className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200">
                       <span>{targetMeta.flag}</span>
-                      <span>Текст перевода ({targetMeta.name})</span>
+                      <span>{t.translationTextLabel} ({targetMeta.name})</span>
                     </span>
                     <span className="text-[11px] font-mono text-slate-400">
-                      {targetParagraphs.length} абз. · {targetWords} слов
+                      {targetParagraphs.length} {t.passagesCount} · {targetWords} {t.wordsCount}
                     </span>
                   </div>
 
@@ -817,36 +810,35 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
                     rows={9}
                     value={targetTextInput}
                     onChange={(e) => setTargetTextInput(e.target.value)}
-                    placeholder={`Вставьте соответствующий перевод на языке ${targetMeta.name}.\n\nКаждый абзац будет привязан к абзацу оригинала. Если перевода нет, система сможет перевести текст автоматически.`}
+                    placeholder={t.transPlaceholder}
                     className="w-full flex-1 rounded-xl border border-slate-300 p-3 text-xs font-serif leading-relaxed focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-950 dark:text-white reader-scrollbar"
                   />
                 </div>
               </div>
 
-              {/* Alignment Status Bar */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl bg-slate-50 px-3.5 py-2.5 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-800 text-xs">
                 <div className="flex items-center gap-2 flex-wrap">
                   {hasBothTexts ? (
                     isPerfectMatch ? (
                       <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-400">
                         <Check className="h-3.5 w-3.5" />
-                        <span>Идеальное выравнивание: {sourceParagraphs.length} абзацев (1:1)</span>
+                        <span>{t.perfectAlign}: {sourceParagraphs.length} (1:1)</span>
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 font-medium text-amber-700 dark:text-amber-400">
                         <AlertCircle className="h-3.5 w-3.5" />
                         <span>
-                          Оригинал: {sourceParagraphs.length} абз., Перевод: {targetParagraphs.length} абз. (Разница: {paragraphsDiff})
+                          {t.alignDiff}: {sourceParagraphs.length} / {targetParagraphs.length} ({paragraphsDiff})
                         </span>
                       </span>
                     )
                   ) : sourceParagraphs.length > 0 ? (
                     <span className="text-slate-500 dark:text-slate-400">
-                      Введено: {sourceParagraphs.length} абзацев оригинала. Введите перевод или откройте для автоперевода.
+                      {t.origHasParas} {sourceParagraphs.length}
                     </span>
                   ) : (
                     <span className="text-slate-400">
-                      Вставьте текст оригинала слева и текст перевода справа.
+                      {t.pasteInstructions}
                     </span>
                   )}
                 </div>
@@ -858,16 +850,15 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
                     className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer shrink-0"
                   >
                     {showPreview ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                    <span>{showPreview ? 'Скрыть предпросмотр' : `Предпросмотр пар (${alignedPairs.length})`}</span>
+                    <span>{showPreview ? t.hidePreview : `${t.showPreview} (${alignedPairs.length})`}</span>
                   </button>
                 )}
               </div>
 
-              {/* Optional Alignment Preview Box */}
               {showPreview && alignedPairs.length > 0 && (
                 <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-900/60 max-h-56 overflow-y-auto reader-scrollbar space-y-2">
                   <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                    Сверка сопоставления абзацев:
+                    {t.alignPreviewTitle}
                   </span>
                   {alignedPairs.slice(0, 6).map((pair) => (
                     <div
@@ -877,26 +868,25 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
                       <div className="border-r border-slate-100 dark:border-slate-800 pr-2">
                         <span className="text-amber-600 font-mono font-bold mr-1">#{pair.index}</span>
                         <span className="text-slate-800 dark:text-slate-200 line-clamp-2 font-serif">
-                          {pair.source || <i className="text-slate-400">— пусто —</i>}
+                          {pair.source || <i className="text-slate-400">{t.emptyPara}</i>}
                         </span>
                       </div>
                       <div className="pl-1">
                         <span className="text-slate-600 font-mono font-bold mr-1">#{pair.index}</span>
                         <span className="text-slate-700 dark:text-slate-300 line-clamp-2 font-serif">
-                          {pair.target || <i className="text-slate-400">— пусто —</i>}
+                          {pair.target || <i className="text-slate-400">{t.emptyPara}</i>}
                         </span>
                       </div>
                     </div>
                   ))}
                   {alignedPairs.length > 6 && (
                     <p className="text-[10px] text-center text-slate-400 pt-1">
-                      ... и ещё {alignedPairs.length - 6} абзацев
+                      ... {t.moreParas} {alignedPairs.length - 6}
                     </p>
                   )}
                 </div>
               )}
 
-              {/* Library & Category Settings */}
               <div className="rounded-xl border border-amber-200/80 bg-amber-50/50 p-3 dark:border-amber-900/50 dark:bg-amber-950/30">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -907,22 +897,22 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
                       className="h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
                     />
                     <span className="text-xs font-semibold text-amber-950 dark:text-amber-200">
-                      Сохранить в библиотеку LingoTwice
+                      {t.saveToLibrary}
                     </span>
                   </label>
 
                   {saveToLibrary && (
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">Категория:</span>
+                      <span className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">{t.categoryLabel}</span>
                       <select
                         value={selectedCategory}
                         onChange={(e) => setSelectedCategory(e.target.value as any)}
                         className="rounded-lg border border-amber-300 bg-white px-2 py-1 text-xs font-medium text-slate-800 dark:border-amber-800 dark:bg-slate-900 dark:text-slate-200 cursor-pointer"
                       >
-                        <option value="literature">Классическая литература</option>
-                        <option value="science">Наука и технологии</option>
-                        <option value="dialogue">Диалоги и речь</option>
-                        <option value="custom">Мои тексты</option>
+                        <option value="literature">{t.sampleCategoryLiterature}</option>
+                        <option value="science">{t.sampleCategoryScience}</option>
+                        <option value="dialogue">{t.sampleCategoryDialogue}</option>
+                        <option value="custom">{t.sampleCategoryCustom}</option>
                       </select>
                     </div>
                   )}
@@ -935,14 +925,13 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
           {activeTab === 'file' && (
             <div className="space-y-4 py-2">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* File for Original */}
                 <div className="rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 p-5 text-center">
                   <Upload className="mx-auto h-8 w-8 text-amber-600 mb-2" />
                   <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    Файл оригинала ({sourceMeta.name})
+                    {t.origFileTitle} ({sourceMeta.name})
                   </h4>
                   <p className="text-[11px] text-slate-400 mt-1 mb-3">
-                    Поддерживаются .txt, .pdf, .md
+                    {t.supportedFormats}
                   </p>
                   <label className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 cursor-pointer">
                     <input
@@ -952,18 +941,17 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
                       className="hidden"
                       onChange={(e) => handleFileUpload(e, 'source')}
                     />
-                    <span>Загрузить оригинал</span>
+                    <span>{t.uploadOrigFile}</span>
                   </label>
                 </div>
 
-                {/* File for Translation */}
                 <div className="rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 p-5 text-center">
                   <Upload className="mx-auto h-8 w-8 text-slate-400 mb-2" />
                   <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    Файл перевода ({targetMeta.name})
+                    {t.transFileTitle} ({targetMeta.name})
                   </h4>
                   <p className="text-[11px] text-slate-400 mt-1 mb-3">
-                    Поддерживаются .txt, .pdf, .md
+                    {t.supportedFormats}
                   </p>
                   <label className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-800 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 cursor-pointer">
                     <input
@@ -973,7 +961,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
                       className="hidden"
                       onChange={(e) => handleFileUpload(e, 'target')}
                     />
-                    <span>Загрузить перевод</span>
+                    <span>{t.uploadTransFile}</span>
                   </label>
                 </div>
               </div>
@@ -985,7 +973,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
             <form onSubmit={handleUrlSubmit} className="space-y-4 py-2">
               <div>
                 <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  {t.urlLabel || 'Ссылка на веб-статью (URL)'}
+                  {t.urlLabel}
                 </label>
                 <input
                   type="url"
@@ -1003,7 +991,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-600 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-amber-700 disabled:opacity-50 cursor-pointer shadow-sm"
               >
                 <Plus className="h-4 w-4" />
-                <span>{isProcessing ? progressStatus : 'Загрузить и открыть статью'}</span>
+                <span>{isProcessing ? progressStatus : t.urlFetchBtn}</span>
               </button>
             </form>
           )}
@@ -1025,7 +1013,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
               onClick={onClose}
               className="w-full sm:w-auto rounded-xl border border-slate-300 bg-white py-2 px-4 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 cursor-pointer"
             >
-              Отмена
+              {t.cancel}
             </button>
 
             <button
@@ -1034,7 +1022,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
               onClick={() => handleBilingualSubmit(undefined, false)}
               className="w-full sm:w-auto rounded-xl border border-slate-300 bg-white py-2 px-4 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
-              Открыть без сохранения
+              {t.openWithoutSaving}
             </button>
 
             <button
@@ -1044,7 +1032,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
               className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-amber-600 py-2 px-5 text-xs font-semibold text-white transition-colors hover:bg-amber-700 disabled:opacity-50 cursor-pointer shadow-sm"
             >
               <Plus className="h-4 w-4" />
-              <span>{isProcessing ? progressStatus : 'Добавить в библиотеку и открыть'}</span>
+              <span>{isProcessing ? progressStatus : t.addToLibAndOpen}</span>
             </button>
           </div>
         )}

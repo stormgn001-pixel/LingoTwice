@@ -34,7 +34,7 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
           {t.progressTitle}
         </span>
         <h1 className="mt-1 font-serif text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-          Учебная статистика и динамика
+          {t.progressMainHeading}
         </h1>
         <p className="mt-1 text-sm text-slate-500">
           {t.progressSubtitle}
@@ -54,7 +54,7 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
           <div className="mt-3 font-serif text-3xl font-bold text-slate-900 tabular-nums dark:text-white">
             {stats.streakDays}
           </div>
-          <p className="mt-1 text-[11px] text-slate-400">Дней непрерывного чтения</p>
+          <p className="mt-1 text-[11px] text-slate-400">{t.streakSub}</p>
         </div>
 
         {/* Minutes Read */}
@@ -68,7 +68,7 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
           <div className="mt-3 font-serif text-3xl font-bold text-slate-900 tabular-nums dark:text-white">
             {stats.totalReadingMinutes}
           </div>
-          <p className="mt-1 text-[11px] text-slate-400">Сегодня: {stats.todayReadingMinutes} мин</p>
+          <p className="mt-1 text-[11px] text-slate-400">{t.todayMinutes}: {stats.todayReadingMinutes} {t.minShort}</p>
         </div>
 
         {/* Words Learned */}
@@ -82,7 +82,7 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
           <div className="mt-3 font-serif text-3xl font-bold text-slate-900 tabular-nums dark:text-white">
             {vocabulary.length}
           </div>
-          <p className="mt-1 text-[11px] text-slate-400">В активном словаре</p>
+          <p className="mt-1 text-[11px] text-slate-400">{t.inActiveVocab}</p>
         </div>
 
         {/* Passages Read */}
@@ -96,23 +96,23 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
           <div className="mt-3 font-serif text-3xl font-bold text-slate-900 tabular-nums dark:text-white">
             {stats.totalPassagesRead}
           </div>
-          <p className="mt-1 text-[11px] text-slate-400">Синхронных фрагментов</p>
+          <p className="mt-1 text-[11px] text-slate-400">{t.syncPassages}</p>
         </div>
       </div>
 
       {/* Spaced Repetition Leitner Hierarchy */}
       <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
         <h3 className="font-serif text-base font-bold text-slate-900 dark:text-white">
-          Уровни долговременной памяти (Leitner Boxes)
+          {t.leitnerTitle}
         </h3>
         <p className="mt-1 text-xs text-slate-500">
-          Распределение сохранённых слов по стадиям интервального запоминания SM-2
+          {t.leitnerSubtitle}
         </p>
 
         <div className="mt-6 grid grid-cols-5 gap-3 text-center">
           {boxCounts.map((count, idx) => {
             const boxLevel = idx + 1;
-            const labels = ['Новые', 'Изучение', 'Закрепление', 'Уверенно', 'Освоено'];
+            const labels = [t.box1, t.box2, t.box3, t.box4, t.box5];
             return (
               <div
                 key={boxLevel}
@@ -122,7 +122,7 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
                 <div className="mt-1 font-mono text-xl font-bold text-slate-900 tabular-nums dark:text-white">
                   {count}
                 </div>
-                <div className="mt-1 text-[10px] text-slate-400">Уровень {boxLevel}</div>
+                <div className="mt-1 text-[10px] text-slate-400">{t.levelPrefix} {boxLevel}</div>
               </div>
             );
           })}
@@ -140,7 +140,7 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
               <div>
                 <p className="font-medium text-slate-800 dark:text-slate-200">{doc.title}</p>
                 <p className="text-[11px] text-slate-400">
-                  {new Date(doc.lastReadAt).toLocaleDateString('ru-RU', {
+                  {new Date(doc.lastReadAt).toLocaleDateString(uiLang, {
                     day: 'numeric',
                     month: 'short',
                     hour: '2-digit',
@@ -152,7 +152,7 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
                 <span className="font-mono font-semibold text-amber-700 dark:text-amber-400">
                   {doc.readingProgress}%
                 </span>
-                <span className="text-slate-400 ml-1">завершено</span>
+                <span className="text-slate-400 ml-1">{t.completedPct}</span>
               </div>
             </div>
           ))}

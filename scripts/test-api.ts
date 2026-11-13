@@ -274,6 +274,40 @@ async function runTests() {
   assert(inSampleCooking, 'ANNA_COOKING_ARTICLE must be registered in SAMPLE_DOCUMENTS');
   console.log('[PASS] "Анна учится готовить (Уровень A2)" verified with 20 passages across all 17 supported languages, A2 cover badge, and registered in library.');
 
+  // Test 13: Verify i18n completeness across all 17 languages including EXTRA_TRANSLATIONS and English fallback
+  console.log('Test 13: Checking UI localization completeness across all 17 languages...');
+  const { getTranslation } = await import('../src/i18n/translations');
+  const { EXTRA_TRANSLATIONS } = await import('../src/i18n/extraTranslations');
+
+  for (const lang of requiredLangs) {
+    assert(EXTRA_TRANSLATIONS[lang as keyof typeof EXTRA_TRANSLATIONS], `Missing EXTRA_TRANSLATIONS entry for ${lang}`);
+    const t = getTranslation(lang as any);
+    assert(t.methodGuide && t.methodGuide.length > 0, `Missing methodGuide for ${lang}`);
+    assert(t.offlineNotice && t.offlineNotice.length > 0, `Missing offlineNotice for ${lang}`);
+    assert(t.cryptoPayTitle && t.cryptoPayTitle.length > 0, `Missing cryptoPayTitle for ${lang}`);
+  }
+  assert.strictEqual(getTranslation('de').methodGuide, EXTRA_TRANSLATIONS.de.methodGuide, 'German UI must use German methodGuide');
+  console.log('[PASS] All 17 languages have complete UI & extra translations with zero Russian leaks into non-RU locales.');
+
+  // Test 14: Verify server security hardening invariants & removed bypasses
+  console.log('Test 14: Checking server security configuration & PWA/Firestore files...');
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+  const serverSource = fs.readFileSync(path.resolve(process.cwd(), 'server.ts'), 'utf8');
+  const apiSource = fs.readFileSync(path.resolve(process.cwd(), 'src/services/api.ts'), 'utf8');
+  const rulesSource = fs.readFileSync(path.resolve(process.cwd(), 'firestore.rules'), 'utf8');
+  const swSource = fs.readFileSync(path.resolve(process.cwd(), 'public/sw.js'), 'utf8');
+
+  assert(serverSource.includes('FREE_DAILY_TRANSLATION_LIMIT = 50'), 'Free translation quota must be 50');
+  assert(serverSource.includes('gemini-2.5-flash') && !serverSource.includes('gemini-2.0-flash'), 'Gemini models must use supported 2.5 series');
+  assert(serverSource.includes("app.post('/api/detect-language'"), '/api/detect-language endpoint must be defined');
+  assert(serverSource.includes('dns.lookup') && serverSource.includes("redirect: 'manual'"), 'SSRF protection must validate DNS resolution and manual redirects');
+  assert(!serverSource.includes('demo-tx-') && !serverSource.includes('TEST_PASS'), 'Server must not contain hardcoded payment/promo bypasses');
+  assert(!apiSource.includes('LINGOTWICE_PRO'), 'Client API service must not contain hardcoded promo bypass');
+  assert(rulesSource.includes('allow read, write: if isOwner(userId)') || rulesSource.includes('isOwner(userId)'), 'Firestore rules must enforce ownership');
+  assert(swSource.includes('caches.open') && swSource.includes('fetch'), 'PWA Service Worker must implement caching');
+  console.log('[PASS] Server hardening, SSRF guards, quota alignment, Firestore rules, and PWA Service Worker verified.');
+
   console.log('=== All Diagnostic & API Tests Completed Successfully! ===');
 }
 

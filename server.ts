@@ -1,6 +1,9 @@
 import express from 'express';
 import type { Request, Response } from 'express';
 import path from 'path';
+import crypto from 'node:crypto';
+import dns from 'node:dns/promises';
+import net from 'node:net';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -13,6 +16,10 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3000;
+const FREE_DAILY_TRANSLATION_LIMIT = 50;
+const MAX_CACHE_ENTRIES = 1000;
+const TOKEN_SIGNING_SECRET =
+  process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 
 // Body parsing with safe size limits (10MB)
 app.use(express.json({ limit: '10mb' }));
@@ -45,9 +52,72 @@ app.use((req: Request, res: Response, next) => {
   next();
 });
 
-// In-memory caches to reduce API consumption
+// Bounded caches to prevent unbounded memory growth
 const translationCache = new Map<string, string>();
 const dictionaryCache = new Map<string, any>();
+
+const setBoundedCache = <T>(cache: Map<string, T>, key: string, value: T) => {
+  if (cache.has(key)) {
+    cache.delete(key);
+  } else if (cache.size >= MAX_CACHE_ENTRIES) {
+    const oldestKey = cache.keys().next().value;
+    if (oldestKey !== undefined) {
+      cache.delete(oldestKey);
+    }
+  }
+  cache.set(key, value);
+};
+
+// Signed Premium Session Tokens (verifiable without trusting raw promo strings)
+const createSignedSubscriptionToken = (plan: string, refId: string, expiresAt: number): string => {
+  const payload = Buffer.from(
+    JSON.stringify({ tier: 'premium', plan, refId, expiresAt })
+  ).toString('base64url');
+  const sig = crypto
+    .createHmac('sha256', TOKEN_SIGNING_SECRET)
+    .update(payload)
+    .digest('base64url');
+  return `lt_${payload}.${sig}`;
+};
+
+const verifySignedSubscriptionToken = (
+  token?: string | null
+): { valid: boolean; expiresAt?: number; plan?: string } => {
+  if (!token || !token.startsWith('lt_') || !token.includes('.')) {
+    return { valid: false };
+  }
+  const [rawPayload, sig] = token.slice(3).split('.');
+  if (!rawPayload || !sig) return { valid: false };
+  const expectedSig = crypto
+    .createHmac('sha256', TOKEN_SIGNING_SECRET)
+    .update(rawPayload)
+    .digest('base64url');
+  const sigBuf = Buffer.from(sig);
+  const expectedBuf = Buffer.from(expectedSig);
+  if (sigBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(sigBuf, expectedBuf)) {
+    return { valid: false };
+  }
+  try {
+    const parsed = JSON.parse(Buffer.from(rawPayload, 'base64url').toString('utf8'));
+    if (parsed.tier === 'premium' && typeof parsed.expiresAt === 'number' && parsed.expiresAt > Date.now()) {
+      return { valid: true, expiresAt: parsed.expiresAt, plan: parsed.plan };
+    }
+  } catch {
+    return { valid: false };
+  }
+  return { valid: false };
+};
+
+const extractAuthToken = (req: Request): string | null => {
+  const authHeader = req.headers['authorization'];
+  if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7).trim();
+  }
+  if (typeof req.query.code === 'string' && req.query.code.trim()) {
+    return req.query.code.trim();
+  }
+  return null;
+};
 
 // Simple session-level usage tracker for quota enforcement
 interface QuotaTracker {
@@ -55,6 +125,7 @@ interface QuotaTracker {
   wordsCount: number;
   lastResetDate: string;
   isPremium: boolean;
+  expiresAt?: number;
 }
 
 const userQuotas = new Map<string, QuotaTracker>();
@@ -67,7 +138,7 @@ const getClientIp = (req: Request): string => {
   );
 };
 
-const getOrInitQuota = (ip: string): QuotaTracker => {
+const getOrInitQuota = (ip: string, req?: Request): QuotaTracker => {
   const today = new Date().toISOString().slice(0, 10);
   let tracker = userQuotas.get(ip);
   if (!tracker || tracker.lastResetDate !== today) {
@@ -76,8 +147,21 @@ const getOrInitQuota = (ip: string): QuotaTracker => {
       wordsCount: 0,
       lastResetDate: today,
       isPremium: tracker?.isPremium || false,
+      expiresAt: tracker?.expiresAt,
     };
     userQuotas.set(ip, tracker);
+  }
+  if (req) {
+    const token = extractAuthToken(req);
+    const verified = verifySignedSubscriptionToken(token);
+    if (verified.valid) {
+      tracker.isPremium = true;
+      tracker.expiresAt = verified.expiresAt;
+    }
+  }
+  if (tracker.expiresAt && tracker.expiresAt <= Date.now()) {
+    tracker.isPremium = false;
+    tracker.expiresAt = undefined;
   }
   return tracker;
 };
@@ -193,15 +277,55 @@ const getAiClient = (): GoogleGenAI | null => {
 };
 
 // -------------------------------------------------------------
-// SSRF Protection Helper for URL Import
+// Hardened SSRF Protection Helpers for URL Import
 // -------------------------------------------------------------
-const isPrivateIpOrRestrictedHost = (host: string): boolean => {
-  const normalized = host.toLowerCase().trim();
+const isRestrictedIpAddress = (ip: string): boolean => {
+  const cleaned = ip.toLowerCase().trim().replace(/^\[|\]$/g, '');
+  const version = net.isIP(cleaned);
+  if (!version) return true;
 
-  // Prohibited hostnames
+  if (version === 4) {
+    const parts = cleaned.split('.').map(Number);
+    const [o1, o2] = parts;
+    if (o1 === 0) return true; // 0.0.0.0/8
+    if (o1 === 10) return true; // 10.0.0.0/8
+    if (o1 === 100 && o2 >= 64 && o2 <= 127) return true; // 100.64.0.0/10 CGNAT
+    if (o1 === 127) return true; // 127.0.0.0/8 loopback
+    if (o1 === 169 && o2 === 254) return true; // 169.254.0.0/16 link-local & cloud metadata
+    if (o1 === 172 && o2 >= 16 && o2 <= 31) return true; // 172.16.0.0/12
+    if (o1 === 192 && o2 === 168) return true; // 192.168.0.0/16
+    if (o1 >= 224) return true; // Multicast / reserved
+    return false;
+  }
+
+  // IPv6 checks
+  if (cleaned === '::' || cleaned === '::1') return true;
+  if (cleaned.startsWith('fe80:') || cleaned.startsWith('fe9') || cleaned.startsWith('fea') || cleaned.startsWith('feb')) {
+    return true; // fe80::/10 link-local
+  }
+  if (cleaned.startsWith('fc') || cleaned.startsWith('fd')) {
+    return true; // fc00::/7 unique local addresses
+  }
+  if (cleaned.startsWith('ff')) return true; // multicast
+  if (cleaned.startsWith('::ffff:')) {
+    const mappedV4 = cleaned.slice(7);
+    if (net.isIPv4(mappedV4)) {
+      return isRestrictedIpAddress(mappedV4);
+    }
+    return true;
+  }
+  return false;
+};
+
+const isPrivateIpOrRestrictedHost = (host: string): boolean => {
+  const normalized = host.toLowerCase().trim().replace(/^\[|\]$/g, '');
+
   if (
+    !normalized ||
     normalized === 'localhost' ||
+    normalized.endsWith('.localhost') ||
     normalized.endsWith('.local') ||
+    normalized.endsWith('.internal') ||
     normalized === 'metadata.google.internal' ||
     normalized === '169.254.169.254' ||
     normalized === 'instance-data'
@@ -209,30 +333,31 @@ const isPrivateIpOrRestrictedHost = (host: string): boolean => {
     return true;
   }
 
-  // Check IPv4 ranges
-  const ipv4Match = normalized.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-  if (ipv4Match) {
-    const [, o1, o2] = ipv4Match.map(Number);
-    // 127.0.0.0/8 (loopback)
-    if (o1 === 127) return true;
-    // 10.0.0.0/8 (private)
-    if (o1 === 10) return true;
-    // 172.16.0.0/12 (private)
-    if (o1 === 172 && o2 >= 16 && o2 <= 31) return true;
-    // 192.168.0.0/16 (private)
-    if (o1 === 192 && o2 === 168) return true;
-    // 169.254.0.0/16 (link-local, cloud metadata)
-    if (o1 === 169 && o2 === 254) return true;
-    // 0.0.0.0/8
-    if (o1 === 0) return true;
-  }
-
-  // IPv6 loopback
-  if (normalized === '::1' || normalized === '[::1]') {
-    return true;
+  if (net.isIP(normalized)) {
+    return isRestrictedIpAddress(normalized);
   }
 
   return false;
+};
+
+const validateUrlForSsrf = async (rawUrl: string): Promise<URL> => {
+  const parsedUrl = new URL(rawUrl);
+  if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+    throw new Error('SSRF_PROTOCOL');
+  }
+  if (isPrivateIpOrRestrictedHost(parsedUrl.hostname)) {
+    throw new Error('SSRF_BLOCKED');
+  }
+  const records = await dns.lookup(parsedUrl.hostname, { all: true });
+  if (!records || records.length === 0) {
+    throw new Error('SSRF_DNS_EMPTY');
+  }
+  for (const record of records) {
+    if (isRestrictedIpAddress(record.address)) {
+      throw new Error('SSRF_BLOCKED');
+    }
+  }
+  return parsedUrl;
 };
 
 // -------------------------------------------------------------
@@ -376,7 +501,22 @@ app.post('/api/translate', async (req: Request, res: Response) => {
     const { sourceLang, targetLang, paragraphs } = req.body;
 
     if (!Array.isArray(paragraphs) || paragraphs.length === 0) {
-      res.status(400).json({ error: 'Параграф(ы) для перевода не предоставлены.' });
+      res.status(400).json({ error: 'Paragraphs for translation are required.' });
+      return;
+    }
+
+    const ip = getClientIp(req);
+    const quota = getOrInitQuota(ip, req);
+
+    if (!quota.isPremium && quota.translationsCount >= FREE_DAILY_TRANSLATION_LIMIT) {
+      res.status(429).json({
+        error: 'Daily free translation limit reached.',
+        code: 'QUOTA_EXCEEDED',
+        usageQuota: {
+          used: quota.translationsCount,
+          limit: FREE_DAILY_TRANSLATION_LIMIT,
+        },
+      });
       return;
     }
 
@@ -389,6 +529,10 @@ app.post('/api/translate', async (req: Request, res: Response) => {
         translatedParagraphs: paragraphs,
         cachedCount: 0,
         provider: 'identity',
+        usageQuota: {
+          used: quota.translationsCount,
+          limit: quota.isPremium ? 99999 : FREE_DAILY_TRANSLATION_LIMIT,
+        },
       });
       return;
     }
@@ -418,6 +562,10 @@ app.post('/api/translate', async (req: Request, res: Response) => {
         translatedParagraphs: results,
         cachedCount,
         provider: 'cache',
+        usageQuota: {
+          used: quota.translationsCount,
+          limit: quota.isPremium ? 99999 : FREE_DAILY_TRANSLATION_LIMIT,
+        },
       });
       return;
     }
@@ -438,7 +586,7 @@ app.post('/api/translate', async (req: Request, res: Response) => {
         }
       } catch (apertiumErr: any) {
         console.warn('[Apertium] Failed, falling back to neural translate:', apertiumErr.message);
-        translatedBatch.length = 0; // reset
+        translatedBatch.length = 0;
       }
     }
 
@@ -483,17 +631,28 @@ app.post('/api/translate', async (req: Request, res: Response) => {
       const trans = translatedBatch[batchIdx] || missingTexts[batchIdx];
       results[origIdx] = trans;
       const cacheKey = `trans:${sourceLang}:${targetLang}:${paragraphs[origIdx].trim()}`;
-      translationCache.set(cacheKey, trans);
+      setBoundedCache(translationCache, cacheKey, trans);
     });
+
+    const wordCount = missingTexts.reduce(
+      (acc, t) => acc + (t.trim() ? t.trim().split(/\s+/).length : 0),
+      0
+    );
+    quota.translationsCount += missingTexts.length;
+    quota.wordsCount += wordCount;
 
     res.json({
       translatedParagraphs: results,
       cachedCount,
       provider: activeProvider,
+      usageQuota: {
+        used: quota.translationsCount,
+        limit: quota.isPremium ? 99999 : FREE_DAILY_TRANSLATION_LIMIT,
+      },
     });
   } catch (error: any) {
     console.error('Translate route error:', error);
-    res.status(500).json({ error: 'Внутренняя ошибка сервиса перевода.' });
+    res.status(500).json({ error: 'Internal translation service error.' });
   }
 });
 
@@ -532,7 +691,7 @@ Provide a thorough linguistic breakdown:
    - CEFR proficiency level (A1 to C2)
 5. 2 natural example sentences showing this word in use, with translations.`;
 
-        const modelsToTry = ['gemini-3.1-flash-lite', 'gemini-3.8-flash'];
+        const modelsToTry = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];
         for (const modelName of modelsToTry) {
           try {
             const timeoutPromise = new Promise<never>((_, reject) =>
@@ -581,7 +740,7 @@ Provide a thorough linguistic breakdown:
             const response = await Promise.race([geminiPromise, timeoutPromise]);
             const data = JSON.parse(response.text || '{}');
             if (data.word && data.translation) {
-              dictionaryCache.set(dictCacheKey, data);
+              setBoundedCache(dictionaryCache, dictCacheKey, data);
               res.json(data);
               return;
             }
@@ -594,26 +753,41 @@ Provide a thorough linguistic breakdown:
       }
     }
 
-    // Default response if Gemini offline
+    // Fallback using free neural translate when Gemini is unconfigured or offline
+    let fallbackTranslation = word;
+    try {
+      const from = !sourceLang || sourceLang === 'auto' ? null : sourceLang.toLowerCase();
+      const to = (targetLang || 'en').toLowerCase();
+      if (!from || from !== to) {
+        const tr = await bingTranslate(word, from, to);
+        if (tr?.translation) {
+          fallbackTranslation = tr.translation;
+        }
+      }
+    } catch {}
+
+    const isRu = (targetLang || '').toLowerCase() === 'ru';
     res.json({
       word,
-      translation: `Перевод «${word}»`,
-      contextualMeaning: `Контекстное значение в предложении.`,
+      translation: fallbackTranslation,
+      contextualMeaning: isRu
+        ? `Контекстное значение слова «${word}».`
+        : `Contextual meaning of "${word}".`,
       phonetic: `/${word.toLowerCase()}/`,
       grammar: {
-        partOfSpeech: 'Слово',
+        partOfSpeech: isRu ? 'Слово' : 'Word',
         cefrLevel: 'B1',
       },
       examples: [
         {
           source: contextSentence || word,
-          target: 'Пример употребления в контексте.',
+          target: fallbackTranslation,
         },
       ],
     });
   } catch (error: any) {
     console.error('Lookup route error:', error);
-    res.status(500).json({ error: 'Ошибка разбора слова.' });
+    res.status(500).json({ error: 'Word lookup error.' });
   }
 });
 
@@ -640,15 +814,15 @@ Passage:
 ${sourceText}
 """`;
 
-        const modelsToTry = ['gemini-3.1-flash-lite', 'gemini-3.8-flash'];
-        for (const model of modelsToTry) {
+        const modelsToTry = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+        for (const modelName of modelsToTry) {
           try {
             const timeoutPromise = new Promise<never>((_, reject) =>
               setTimeout(() => reject(new Error('Quiz timeout')), 14000)
             );
 
             const geminiPromise = ai.models.generateContent({
-              model,
+              model: modelName,
               contents: prompt,
               config: {
                 responseMimeType: 'application/json',
@@ -685,7 +859,7 @@ ${sourceText}
               return;
             }
           } catch (modelErr: any) {
-            console.warn(`Quiz model ${model} error:`, modelErr.message);
+            console.warn(`Quiz model ${modelName} error:`, modelErr.message);
           }
         }
       } catch (err: any) {
@@ -693,97 +867,185 @@ ${sourceText}
       }
     }
 
-    // Fallback quiz
+    const isRuQuiz = (targetLang || '').toLowerCase() === 'ru';
     res.json({
       questions: [
         {
           id: 'q-demo-1',
-          question: 'Какова центральная мысль или действие в этом фрагменте?',
-          options: [
-            'Установление глубокого понимания и взаимной связи',
-            'Случайный диалог без существенного смысла',
-            'Прекращение общения и прощание',
-            'Описание второстепенных погодных явлений',
-          ],
+          question: isRuQuiz
+            ? 'Какова центральная мысль или действие в этом фрагменте?'
+            : 'What is the main idea or action in this passage?',
+          options: isRuQuiz
+            ? [
+                'Установление глубокого понимания и взаимной связи',
+                'Случайный диалог без существенного смысла',
+                'Прекращение общения и прощание',
+                'Описание второстепенных погодных явлений',
+              ]
+            : [
+                'Establishing deeper understanding and meaningful connection',
+                'A casual dialogue with no central theme',
+                'Ending communication and saying goodbye',
+                'Describing minor weather details',
+              ],
           correctOptionIndex: 0,
-          explanation: 'Фрагмент раскрывает тему создания эмоциональной и смысловой связи.',
+          explanation: isRuQuiz
+            ? 'Фрагмент раскрывает тему создания смысловой связи.'
+            : 'The passage focuses on building meaning and connection.',
         },
       ],
     });
   } catch (error: any) {
-    res.status(500).json({ error: 'Ошибка генерации вопросов.' });
+    res.status(500).json({ error: 'Quiz generation failed.' });
   }
 });
 
 /**
- * SSRF-Protected Web Article URL Import
+ * Detect Language of a Text Snippet (All 17 Languages)
+ */
+app.post('/api/detect-language', (req: Request, res: Response) => {
+  const { text } = req.body || {};
+  if (!text || typeof text !== 'string' || !text.trim()) {
+    res.status(400).json({ error: 'Text is required for language detection.' });
+    return;
+  }
+
+  const sample = text.trim();
+  let detectedLang = 'en';
+
+  if (/[\u0590-\u05FF]/.test(sample)) {
+    detectedLang = 'he';
+  } else if (/[\u0600-\u06FF]/.test(sample)) {
+    detectedLang = 'ar';
+  } else if (/[\u3040-\u309F\u30A0-\u30FF]/.test(sample)) {
+    detectedLang = 'ja';
+  } else if (/[\uAC00-\uD7AF]/.test(sample)) {
+    detectedLang = 'ko';
+  } else if (/[\u4E00-\u9FFF]/.test(sample)) {
+    detectedLang = 'zh';
+  } else if (/[\u0400-\u04FF]/.test(sample)) {
+    detectedLang = /[іїєґ]/i.test(sample) ? 'uk' : 'ru';
+  } else if (/[äöüß]/i.test(sample) || /\b(und|der|die|das|ist|nicht|mit)\b/i.test(sample)) {
+    detectedLang = 'de';
+  } else if (/[àâçéèêëîïôûùüÿœ]/i.test(sample) || /\b(le|la|les|et|est|dans|pour|avec)\b/i.test(sample)) {
+    detectedLang = 'fr';
+  } else if (/[ñ¿¡]/i.test(sample) || /\b(el|la|los|las|que|para|con|una)\b/i.test(sample)) {
+    detectedLang = 'es';
+  } else if (/[ąćęłńóśźż]/i.test(sample) || /\b(jest|nie|się|oraz|przez)\b/i.test(sample)) {
+    detectedLang = 'pl';
+  } else if (/[çğıİöşü]/i.test(sample) || /\b(ve|bir|bu|için|ile)\b/i.test(sample)) {
+    detectedLang = 'tr';
+  } else if (/[ãõ]/i.test(sample) || /\b(não|com|para|uma|que|os)\b/i.test(sample)) {
+    detectedLang = 'pt';
+  } else if (/[å]/i.test(sample) || /\b(och|att|det|som|är|för)\b/i.test(sample)) {
+    detectedLang = 'sv';
+  } else if (/\b(het|een|van|en|dat|zijn|voor|met)\b/i.test(sample)) {
+    detectedLang = 'nl';
+  } else if (/\b(che|non|per|con|una|della|sono)\b/i.test(sample)) {
+    detectedLang = 'it';
+  }
+
+  res.json({ detectedLang });
+});
+
+/**
+ * SSRF-Protected Web Article URL Import (with DNS, IPv6, manual redirect validation & 2MB size cap)
  */
 app.post('/api/import-url', async (req: Request, res: Response) => {
   try {
-    const authCode = req.headers['authorization']?.replace('Bearer ', '');
     const ip = getClientIp(req);
-    const quota = getOrInitQuota(ip);
-
-    if (authCode && (authCode === 'LINGOTWICE_PRO' || authCode === 'LINGOTWIN_PRO' || authCode === 'LINGUATWIN_PRO' || authCode === 'PRO2026' || authCode === 'TEST_PASS')) {
-      quota.isPremium = true;
-    }
+    const quota = getOrInitQuota(ip, req);
 
     if (!quota.isPremium) {
-      res.status(403).json({ error: 'Импорт статей по ссылке доступен только в Премиум тарифе.' });
+      res.status(403).json({ error: 'URL import is available for Premium subscribers.' });
       return;
     }
 
     const { url } = req.body;
     if (!url || typeof url !== 'string') {
-      res.status(400).json({ error: 'Укажите корректный URL статьи.' });
+      res.status(400).json({ error: 'Valid article URL is required.' });
       return;
     }
 
-    let parsedUrl: URL;
+    let currentUrl: URL;
     try {
-      parsedUrl = new URL(url);
-    } catch {
-      res.status(400).json({ error: 'Некорректный формат URL.' });
+      currentUrl = await validateUrlForSsrf(url);
+    } catch (ssrfErr: any) {
+      if (ssrfErr.message === 'SSRF_PROTOCOL') {
+        res.status(400).json({ error: 'Only HTTP and HTTPS protocols are supported.' });
+        return;
+      }
+      if (ssrfErr.message === 'SSRF_BLOCKED' || ssrfErr.message === 'SSRF_DNS_EMPTY') {
+        res.status(403).json({
+          error: 'Access to internal, local, or restricted network addresses is blocked (SSRF Protection).',
+        });
+        return;
+      }
+      res.status(400).json({ error: 'Invalid URL format.' });
       return;
     }
 
-    // SSRF Check: protocol
-    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-      res.status(400).json({ error: 'Поддерживаются только веб-протоколы HTTP и HTTPS.' });
-      return;
-    }
-
-    // SSRF Check: hostname & private network IP
-    if (isPrivateIpOrRestrictedHost(parsedUrl.hostname)) {
-      res.status(403).json({
-        error: 'Доступ к внутренним или локальным сетевым адресам заблокирован правилами безопасности (SSRF Protection).',
-      });
-      return;
-    }
-
-    // Fetch HTML with timeout (8000ms) and size limit
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
+    let fetchResponse: globalThis.Response | null = null;
+    let redirectsRemaining = 2;
 
-    const fetchResponse = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 LingoTwiceReader/1.0',
-        Accept: 'text/html,application/xhtml+xml,text/plain;q=0.9',
-      },
-    });
+    while (true) {
+      fetchResponse = await fetch(currentUrl.toString(), {
+        signal: controller.signal,
+        redirect: 'manual',
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 LingoTwiceReader/1.0',
+          Accept: 'text/html,application/xhtml+xml,text/plain;q=0.9',
+        },
+      });
+
+      if (fetchResponse.status >= 300 && fetchResponse.status < 400) {
+        const location = fetchResponse.headers.get('location');
+        if (!location || redirectsRemaining <= 0) {
+          clearTimeout(timeout);
+          res.status(400).json({ error: 'Too many redirects or invalid redirect target.' });
+          return;
+        }
+        redirectsRemaining -= 1;
+        const resolvedRedirect = new URL(location, currentUrl).toString();
+        try {
+          currentUrl = await validateUrlForSsrf(resolvedRedirect);
+        } catch {
+          clearTimeout(timeout);
+          res.status(403).json({
+            error: 'Redirect to restricted internal network address blocked (SSRF Protection).',
+          });
+          return;
+        }
+        continue;
+      }
+      break;
+    }
 
     clearTimeout(timeout);
 
-    if (!fetchResponse.ok) {
+    if (!fetchResponse || !fetchResponse.ok) {
       res.status(400).json({
-        error: `Веб-сайт вернул ошибку HTTP ${fetchResponse.status}. Страница может быть защищена авторизацией или блокировать запросы.`,
+        error: `Website returned HTTP ${fetchResponse?.status ?? 500}.`,
       });
       return;
     }
 
-    const html = await fetchResponse.text();
+    const contentLength = Number(fetchResponse.headers.get('content-length') || 0);
+    if (contentLength > 2 * 1024 * 1024) {
+      res.status(413).json({ error: 'Article page exceeds 2MB size limit.' });
+      return;
+    }
+
+    const rawBuffer = await fetchResponse.arrayBuffer();
+    if (rawBuffer.byteLength > 2 * 1024 * 1024) {
+      res.status(413).json({ error: 'Article page exceeds 2MB size limit.' });
+      return;
+    }
+    const html = new TextDecoder('utf-8').decode(rawBuffer);
+    const parsedUrl = currentUrl;
 
     // Extract title
     const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
@@ -849,17 +1111,12 @@ app.post('/api/import-url', async (req: Request, res: Response) => {
 });
 
 /**
- * Subscription Status & Upgrade endpoints (Server-verified)
+ * Subscription Status & Upgrade endpoints (Server-verified with HMAC signed tokens & live blockchain checks)
  */
 app.get('/api/subscription/status', (req: Request, res: Response) => {
   try {
     const ip = getClientIp(req);
-    const quota = getOrInitQuota(ip);
-    const { code } = req.query;
-
-    if (code && (code === 'LINGOTWICE_PRO' || code === 'LINGOTWIN_PRO' || code === 'PRO2026' || code === 'TEST_PASS')) {
-      quota.isPremium = true;
-    }
+    const quota = getOrInitQuota(ip, req);
 
     if (quota.isPremium) {
       res.json({
@@ -867,7 +1124,7 @@ app.get('/api/subscription/status', (req: Request, res: Response) => {
         hasSubscription: true,
         tier: 'premium',
         isActive: true,
-        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+        expiresAt: quota.expiresAt || Date.now() + 30 * 24 * 60 * 60 * 1000,
         dailyTranslationsUsed: quota.translationsCount,
         dailyTranslationsLimit: 99999,
         wordsTranslatedToday: quota.wordsCount,
@@ -875,121 +1132,170 @@ app.get('/api/subscription/status', (req: Request, res: Response) => {
       return;
     }
 
-    // Normal business state when no transaction/subscription is found (inactive / free)
     res.json({
       status: 'inactive',
       hasSubscription: false,
       tier: 'free',
       isActive: true,
       dailyTranslationsUsed: quota.translationsCount,
-      dailyTranslationsLimit: 50,
+      dailyTranslationsLimit: FREE_DAILY_TRANSLATION_LIMIT,
       wordsTranslatedToday: quota.wordsCount,
-      message: 'Активная подписка не обнаружена. Пользователь на бесплатном тарифе.',
     });
   } catch (err: any) {
     console.error('Subscription status DB/server error:', err);
-    res.status(500).json({ error: 'Внутренняя ошибка базы данных или сервера при проверке подписки.' });
+    res.status(500).json({ error: 'Internal error checking subscription status.' });
   }
 });
 
 app.post('/api/subscription/upgrade', (req: Request, res: Response) => {
   try {
-    const { code, method, plan, transactionId } = req.body;
+    const { code, plan } = req.body || {};
     const ip = getClientIp(req);
-    const quota = getOrInitQuota(ip);
+    const quota = getOrInitQuota(ip, req);
 
-    const validMethods = ['card', 'paypal', 'crypto', 'promo'];
-    const isMethodPayment = method && validMethods.includes(method);
-    const isPromoValid =
-      !code ||
-      code === 'LINGOTWICE_PRO' ||
-      code === 'LINGOTWIN_PRO' ||
-      code === 'PRO2026' ||
-      code === 'TEST_PASS' ||
-      code.startsWith('PRO_') ||
-      code.startsWith('PREMIUM_');
+    const configuredCodes = (process.env.PREMIUM_ACTIVATION_CODES || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
 
-    if (isMethodPayment || isPromoValid) {
-      quota.isPremium = true;
-      res.json({
-        success: true,
-        status: 'active',
-        hasSubscription: true,
-        tier: 'premium',
-        plan: plan || 'monthly',
-        method: method || 'card',
-        transactionId: transactionId || `LT-${Date.now().toString(36).toUpperCase()}`,
-        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
-        message: 'Тариф Премиум успешно активирован.',
-      });
+    if (!code || typeof code !== 'string' || !configuredCodes.includes(code.trim())) {
+      res.status(400).json({ error: 'Invalid or missing activation code.' });
       return;
     }
 
-    res.status(400).json({ error: 'Неверный код активации или ошибка проверки платежа.' });
+    const now = Date.now();
+    const durationDays = plan === 'yearly' ? 365 : plan === 'lifetime' ? 36500 : 30;
+    const expiresAt = now + durationDays * 24 * 60 * 60 * 1000;
+    const token = createSignedSubscriptionToken(plan || 'monthly', code.trim(), expiresAt);
+
+    quota.isPremium = true;
+    quota.expiresAt = expiresAt;
+
+    res.json({
+      success: true,
+      status: 'active',
+      hasSubscription: true,
+      tier: 'premium',
+      plan: plan || 'monthly',
+      method: 'promo',
+      token,
+      transactionId: `LT-${Date.now().toString(36).toUpperCase()}`,
+      expiresAt,
+    });
   } catch (err: any) {
     console.error('Subscription upgrade error:', err);
-    res.status(500).json({ error: 'Ошибка сервера при оформлении подписки.' });
+    res.status(500).json({ error: 'Server error processing upgrade.' });
   }
 });
 
 /**
- * Real Blockchain Transaction Verification Endpoint (Verifies TxID in blockchain explorers)
+ * Real Blockchain Transaction Verification Endpoint (Verifies TxID against live blockchain explorers/nodes)
  */
 app.post('/api/subscription/verify-tx', async (req: Request, res: Response) => {
   try {
-    const { cryptoType, txHash, plan } = req.body;
+    const { cryptoType, txHash, plan } = req.body || {};
     const ip = getClientIp(req);
-    const quota = getOrInitQuota(ip);
+    const quota = getOrInitQuota(ip, req);
 
-    if (!txHash || typeof txHash !== 'string' || txHash.trim().length < 16) {
-      res.status(400).json({ error: 'Укажите корректный хеш транзакции (TxID) для проверки в блокчейне.' });
+    if (!txHash || typeof txHash !== 'string' || !/^[a-zA-Z0-9]{32,128}$/.test(txHash.trim())) {
+      res.status(400).json({ error: 'Please provide a valid blockchain transaction hash (TxID).' });
       return;
     }
 
     const cleanTx = txHash.trim();
     let isVerified = false;
-    let blockConfirmations = 1;
+    let blockConfirmations = 0;
     let isExternalApiDown = false;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     try {
       if (cryptoType === 'BTC') {
-        const btcRes = await fetch(`https://mempool.space/api/tx/${cleanTx}`);
+        const btcRes = await fetch(`https://mempool.space/api/tx/${encodeURIComponent(cleanTx)}`, {
+          signal: controller.signal,
+        });
         if (btcRes.ok) {
           const btcData = await btcRes.json();
-          isVerified = true;
-          blockConfirmations = btcData.status?.block_height ? 2 : 1;
+          if (btcData?.txid) {
+            isVerified = true;
+            blockConfirmations = btcData.status?.confirmed ? 2 : 1;
+          }
         } else if (btcRes.status >= 500) {
           isExternalApiDown = true;
         }
+      } else if (cryptoType === 'ETH') {
+        const ethRes = await fetch(`https://eth.blockscout.com/api/v2/transactions/${encodeURIComponent(cleanTx)}`, {
+          signal: controller.signal,
+        });
+        if (ethRes.ok) {
+          const ethData = await ethRes.json();
+          if (ethData?.hash && ethData.status === 'ok') {
+            isVerified = true;
+            blockConfirmations = Number(ethData.confirmations || 1);
+          }
+        } else if (ethRes.status >= 500) {
+          isExternalApiDown = true;
+        }
+      } else if (cryptoType === 'SOL') {
+        const solRes = await fetch('https://api.mainnet-beta.solana.com', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'getTransaction',
+            params: [cleanTx, { encoding: 'json', maxSupportedTransactionVersion: 0 }],
+          }),
+        });
+        if (solRes.ok) {
+          const solData = await solRes.json();
+          if (solData?.result && !solData.result.meta?.err) {
+            isVerified = true;
+            blockConfirmations = 1;
+          }
+        } else if (solRes.status >= 500) {
+          isExternalApiDown = true;
+        }
       } else {
-        if (cleanTx.length >= 20) {
-          isVerified = true;
-          blockConfirmations = 3;
+        // USDT_TRC20 via Tronscan API
+        const tronRes = await fetch(
+          `https://apilist.tronscanapi.com/api/transaction-info?hash=${encodeURIComponent(cleanTx)}`,
+          { signal: controller.signal }
+        );
+        if (tronRes.ok) {
+          const tronData = await tronRes.json();
+          if (tronData?.hash && tronData.contractRet === 'SUCCESS') {
+            isVerified = true;
+            blockConfirmations = tronData.confirmed ? 2 : 1;
+          }
+        } else if (tronRes.status >= 500) {
+          isExternalApiDown = true;
         }
       }
-
-      if (!isVerified && cleanTx.length >= 20 && !isExternalApiDown) {
-        // Accept valid test transaction hashes
-        isVerified = true;
-        blockConfirmations = 1;
-      }
     } catch (networkErr: any) {
-      console.warn('External payment/blockchain API warning:', networkErr.message);
-      // If external API is down, return 502/503 for temporary upstream unavailability
+      console.warn('External blockchain API warning:', networkErr.message);
       isExternalApiDown = true;
+    } finally {
+      clearTimeout(timeoutId);
     }
 
     if (isExternalApiDown) {
-      res.status(503).json({ error: 'Платёжный шлюз или блокчейн-нода временно недоступны. Повторите попытку позже.' });
+      res.status(503).json({ error: 'Blockchain verification gateway is temporarily unavailable.' });
       return;
     }
 
     if (isVerified) {
-      quota.isPremium = true;
       const now = Date.now();
       let durationDays = 30;
       if (plan === 'yearly') durationDays = 365;
       if (plan === 'lifetime') durationDays = 36500;
+      const expiresAt = now + durationDays * 24 * 60 * 60 * 1000;
+      const token = createSignedSubscriptionToken(plan || 'monthly', cleanTx, expiresAt);
+
+      quota.isPremium = true;
+      quota.expiresAt = expiresAt;
 
       res.json({
         success: true,
@@ -998,25 +1304,23 @@ app.post('/api/subscription/verify-tx', async (req: Request, res: Response) => {
         tier: 'premium',
         plan: plan || 'monthly',
         txHash: cleanTx,
+        token,
         confirmations: blockConfirmations,
         network: cryptoType || 'USDT_TRC20',
-        expiresAt: now + durationDays * 24 * 60 * 60 * 1000,
-        message: 'Транзакция успешно подтверждена в блокчейне! Премиум доступ активирован.',
+        expiresAt,
       });
       return;
     }
 
-    // Transaction not found is a normal business state, NOT an error or 503
     res.json({
       success: false,
       status: 'inactive',
       hasSubscription: false,
       tier: 'free',
-      message: 'Транзакция не найдена в блокчейне или ожидает подтверждения. Активная подписка отсутствует.',
     });
   } catch (err: any) {
     console.error('Verify TX error:', err);
-    res.status(500).json({ error: 'Ошибка базы данных при проверке транзакции.' });
+    res.status(500).json({ error: 'Server error verifying transaction.' });
   }
 });
 

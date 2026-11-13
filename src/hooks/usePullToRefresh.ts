@@ -23,6 +23,8 @@ export function usePullToRefresh({
   const startYRef = useRef(0);
   const startXRef = useRef(0);
   const isEligibleRef = useRef(false);
+  const isPullingRef = useRef(false);
+  const pullDistanceRef = useRef(0);
   const isRefreshingRef = useRef(false);
   const hasVibratedRef = useRef(false);
 
@@ -48,6 +50,14 @@ export function usePullToRefresh({
   useEffect(() => {
     if (disabled || typeof window === 'undefined') return;
 
+    const resetPullState = () => {
+      isPullingRef.current = false;
+      pullDistanceRef.current = 0;
+      setIsPulling(false);
+      setPullDistance(0);
+      setCanRelease(false);
+    };
+
     const handleTouchStart = (e: TouchEvent) => {
       if (isRefreshingRef.current) return;
       if (e.touches.length !== 1) return;
@@ -72,9 +82,8 @@ export function usePullToRefresh({
       // If dragging upward, immediately disqualify and let native scrolling work
       if (diffY <= 0) {
         isEligibleRef.current = false;
-        if (isPulling) {
-          setIsPulling(false);
-          setPullDistance(0);
+        if (isPullingRef.current) {
+          resetPullState();
         }
         return;
       }
@@ -82,14 +91,16 @@ export function usePullToRefresh({
       // If user is swiping horizontally more than vertically, do not hijack
       if (Math.abs(diffX) > Math.abs(diffY)) {
         isEligibleRef.current = false;
+        if (isPullingRef.current) {
+          resetPullState();
+        }
         return;
       }
 
       // Double check that container hasn't scrolled down
       if (!isAtScrollTop(e.target)) {
         isEligibleRef.current = false;
-        setIsPulling(false);
-        setPullDistance(0);
+        resetPullState();
         return;
       }
 
@@ -97,6 +108,8 @@ export function usePullToRefresh({
       const distance = Math.min(diffY * resistance, maxPullDistance);
 
       if (distance > 5) {
+        isPullingRef.current = true;
+        pullDistanceRef.current = distance;
         setIsPulling(true);
         setPullDistance(distance);
         const reachedThreshold = distance >= pullThreshold;
@@ -123,31 +136,26 @@ export function usePullToRefresh({
       if (!isEligibleRef.current) return;
       isEligibleRef.current = false;
 
-      if (pullDistance >= pullThreshold && !isRefreshingRef.current) {
+      if (pullDistanceRef.current >= pullThreshold && !isRefreshingRef.current) {
         isRefreshingRef.current = true;
+        pullDistanceRef.current = 50;
         setIsRefreshing(true);
-        setPullDistance(50); // Keep indicator visible while refreshing
+        setPullDistance(50);
 
         try {
           if (onRefresh) {
             await onRefresh();
           } else {
-            // Default action: smooth page reload
             await new Promise((resolve) => setTimeout(resolve, 350));
             window.location.reload();
           }
         } finally {
           setIsRefreshing(false);
           isRefreshingRef.current = false;
-          setIsPulling(false);
-          setPullDistance(0);
-          setCanRelease(false);
+          resetPullState();
         }
       } else {
-        // Did not reach threshold - animate back to top
-        setIsPulling(false);
-        setPullDistance(0);
-        setCanRelease(false);
+        resetPullState();
       }
     };
 
@@ -162,7 +170,7 @@ export function usePullToRefresh({
       window.removeEventListener('touchend', handleTouchEnd);
       window.removeEventListener('touchcancel', handleTouchEnd);
     };
-  }, [disabled, isAtScrollTop, onRefresh, pullThreshold, maxPullDistance, resistance, pullDistance]);
+  }, [disabled, isAtScrollTop, onRefresh, pullThreshold, maxPullDistance, resistance]);
 
   return {
     pullDistance,

@@ -60,7 +60,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
           </h2>
           <p className="mt-2 text-sm text-slate-500">
             {sessionReviewedCount > 0
-              ? `Вы успешно закрепили ${sessionReviewedCount} ${t.wordsCount} по алгоритму интервального повторения SM-2.`
+              ? `${t.cardsMastered} ${sessionReviewedCount} ${t.wordsCount}`
               : t.noCardsToReview}
           </p>
 
@@ -84,7 +84,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
     <div className="mx-auto max-w-xl px-4 py-8">
       {/* Session Progress Header */}
       <div className="flex items-center justify-between text-xs font-medium text-slate-500 mb-3">
-        <span>Карточка {currentIndex + 1} из {dueCards.length}</span>
+        <span>{t.cardOf} {currentIndex + 1} {t.ofWord} {dueCards.length}</span>
         <span className="font-mono tabular-nums">{progressPct}%</span>
       </div>
       <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden dark:bg-slate-800 mb-6">
@@ -100,12 +100,12 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
           {/* Card Top: Level & Audio */}
           <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
             <span className="text-xs font-medium text-slate-400">
-              Уровень повторения: {currentCard.box || 1} / 5
+              {t.reviewLevel} {currentCard.box || 1} / 5
             </span>
             <button
               onClick={playAudio}
               className="rounded-full bg-amber-50 p-2 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-400"
-              title="Прослушать"
+              title={t.listenTitle}
             >
               <Volume2 className="h-4 w-4" />
             </button>
@@ -139,7 +139,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
 
               {currentCard.grammar && (
                 <div className="flex flex-wrap justify-center items-center gap-2 text-xs text-slate-500">
-                  {currentCard.grammar.gender && <span>Род: {currentCard.grammar.gender}</span>}
+                  {currentCard.grammar.gender && <span>{t.gender}: {currentCard.grammar.gender}</span>}
                   {currentCard.grammar.plural && <span>Pl: {currentCard.grammar.plural}</span>}
                   {currentCard.grammar.cefrLevel && (
                     <span className="font-mono font-semibold text-amber-600">

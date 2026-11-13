@@ -99,10 +99,10 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
             {t.navVocabulary}
           </span>
           <h1 className="mt-1 font-serif text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Личный словарный запас
+            {t.vocabMainHeading}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Сохранённые слова с грамматическими пояснениями и контекстом
+            {t.vocabSubtitle}
           </p>
         </div>
 
@@ -115,7 +115,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
               className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer"
             >
               <Download className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-              <span>Экспорт слов</span>
+              <span>{t.exportWords}</span>
               <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
             </button>
 
@@ -127,8 +127,8 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                 >
                   <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
                   <div>
-                    <div className="font-semibold">Экспорт в Anki (.csv)</div>
-                    <div className="text-[10px] text-slate-400">С контекстом и грамматикой</div>
+                    <div className="font-semibold">{t.exportAnki}</div>
+                    <div className="text-[10px] text-slate-400">{t.exportAnkiSub}</div>
                   </div>
                 </button>
                 <button
@@ -137,8 +137,8 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                 >
                   <Copy className="h-4 w-4 text-sky-600" />
                   <div>
-                    <div className="font-semibold">Копировать для Quizlet</div>
-                    <div className="text-[10px] text-slate-400">Вставка текста с табуляцией</div>
+                    <div className="font-semibold">{t.copyQuizlet}</div>
+                    <div className="text-[10px] text-slate-400">{t.copyQuizletSub}</div>
                   </div>
                 </button>
                 <button
@@ -147,8 +147,8 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                 >
                   <Download className="h-4 w-4 text-amber-600" />
                   <div>
-                    <div className="font-semibold">Резервная копия (.json)</div>
-                    <div className="text-[10px] text-slate-400">Полный дамп карточек</div>
+                    <div className="font-semibold">{t.backupJson}</div>
+                    <div className="text-[10px] text-slate-400">{t.backupJsonSub}</div>
                   </div>
                 </button>
               </div>
@@ -160,7 +160,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
               onClick={onStartReview}
               className="flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-amber-700 shadow-sm shrink-0 cursor-pointer"
             >
-              <span>Повторить слова ({dueCount})</span>
+              <span>{t.reviewWordsBtn} ({dueCount})</span>
               <ArrowRight className="h-4 w-4" />
             </button>
           )}
@@ -170,7 +170,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
       {copiedNotice && (
         <div className="mt-4 flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs font-medium text-emerald-800 dark:bg-emerald-950/60 dark:border-emerald-800 dark:text-emerald-300">
           <Check className="h-4 w-4 text-emerald-600" />
-          <span>Слова скопированы в буфер обмена! Теперь откройте Quizlet → Создать модуль → Импорт и нажмите Ctrl+V.</span>
+          <span>{t.quizletCopied}</span>
         </div>
       )}
 
@@ -182,7 +182,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Поиск по слову или переводу..."
+            placeholder={t.searchVocabPlaceholder}
             className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 py-2 text-xs focus:border-amber-500 focus:outline-hidden dark:border-slate-800 dark:bg-slate-900"
           />
         </div>
@@ -197,7 +197,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                 : 'hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            Все ({vocabulary.length})
+            {t.all} ({vocabulary.length})
           </button>
           {[1, 2, 3, 4, 5].map((box) => (
             <button
@@ -209,7 +209,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                   : 'hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              Уровень {box}
+              {t.levelPrefix} {box}
             </button>
           ))}
         </div>
@@ -220,7 +220,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
         {filteredWords.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 p-12 text-center text-slate-500 dark:border-slate-800">
             <BookOpen className="mx-auto h-8 w-8 text-slate-400" />
-            <p className="mt-3 text-sm font-medium">Слов пока не найдено</p>
+            <p className="mt-3 text-sm font-medium">{t.noWordsFound}</p>
           </div>
         ) : (
           <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white overflow-hidden dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
@@ -236,7 +236,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                     </span>
                     <button
                       onClick={() => handlePlay(entry.word, entry.sourceLang)}
-                      title="Прослушать"
+                      title={t.listenTitle}
                       className="rounded-full p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-800"
                     >
                       <Volume2 className="h-3.5 w-3.5" />
@@ -261,7 +261,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                   {/* Grammar details row */}
                   {entry.grammar && (
                     <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
-                      {entry.grammar.gender && <span>Род: {entry.grammar.gender}</span>}
+                      {entry.grammar.gender && <span>{t.gender}: {entry.grammar.gender}</span>}
                       {entry.grammar.plural && <span>Pl: {entry.grammar.plural}</span>}
                       {entry.grammar.verbForms && <span>{entry.grammar.verbForms}</span>}
                     </div>
@@ -272,16 +272,16 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
                   {/* Spaced repetition indicator */}
                   <div className="text-right">
                     <div className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                      Уровень {entry.box || 1} / 5
+                      {t.levelPrefix} {entry.box || 1} / 5
                     </div>
                     <div className="text-[10px] text-slate-400">
-                      Повторено: {entry.repetitionCount || 0} раз
+                      {t.repeatedTimes} {entry.repetitionCount || 0} {t.timesShort}
                     </div>
                   </div>
 
                   <button
                     onClick={() => onDeleteWord(entry.id)}
-                    title="Удалить слово"
+                    title={t.deleteWordTitle}
                     className="rounded p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />

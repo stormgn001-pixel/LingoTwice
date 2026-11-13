@@ -1,8 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { BookOpen, Sparkles, Languages, HelpCircle } from 'lucide-react';
+import { BookOpen, Sparkles, Languages, HelpCircle, LogIn, LogOut } from 'lucide-react';
 import { InterfaceLanguage, SubscriptionStatus } from '../types';
 import { getTranslation } from '../i18n/translations';
 import { PWAInstallButton } from './PWAInstallButton';
+import { useAuthActions } from '../contexts/AuthContext';
 
 interface HeaderProps {
   currentView: 'read' | 'library' | 'vocabulary' | 'review' | 'progress' | 'about' | 'contact' | 'privacy' | 'terms';
@@ -42,6 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
   theme = 'light',
 }) => {
   const t = getTranslation(uiLang);
+  const { user, signIn, signOut } = useAuthActions();
   const navRef = useRef<HTMLElement>(null);
   const activeTabRef = useRef<HTMLButtonElement>(null);
 
@@ -230,7 +232,7 @@ export const Header: React.FC<HeaderProps> = ({
         {onOpenOnboarding && (
           <button
             onClick={onOpenOnboarding}
-            title={uiLang === 'ru' ? 'Как работает метод параллельного чтения' : 'How it works'}
+            title={t.methodGuideTitle}
             className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               theme === 'dark'
                 ? 'border-slate-800 bg-slate-900 text-slate-300 hover:border-amber-500/50 hover:text-white'
@@ -240,7 +242,7 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <HelpCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-            <span className="hidden sm:inline">{uiLang === 'ru' ? 'Методика' : 'Guide'}</span>
+            <span className="hidden sm:inline">{t.methodGuide}</span>
           </button>
         )}
 
@@ -256,8 +258,40 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
           <span className="hidden xs:inline">{subscription.tier === 'premium' ? 'PRO' : t.upgradePremium}</span>
-          <span className="xs:hidden">{subscription.tier === 'premium' ? 'PRO' : 'PRO'}</span>
+          <span className="xs:hidden">PRO</span>
         </button>
+
+        {user ? (
+          <button
+            onClick={() => signOut()}
+            title={`${t.signedInAs} ${user.email || user.displayName || ''} (${t.signOut})`}
+            className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+              theme === 'dark'
+                ? 'border-slate-800 bg-slate-900 text-emerald-400 hover:bg-slate-800'
+                : theme === 'sepia'
+                ? 'border-[#dfd5c0] bg-[#f4efe2] text-emerald-800 hover:bg-[#eadebf]'
+                : 'border-slate-200 bg-white text-emerald-700 hover:bg-slate-100'
+            }`}
+          >
+            <LogOut className="h-3.5 w-3.5 shrink-0" />
+            <span className="hidden md:inline max-w-[90px] truncate">{user.displayName?.split(' ')[0] || t.signOut}</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => signIn()}
+            title={t.signInGoogle}
+            className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+              theme === 'dark'
+                ? 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white'
+                : theme === 'sepia'
+                ? 'border-[#dfd5c0] bg-[#f4efe2] text-[#2b2118] hover:bg-[#eadebf]'
+                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            <LogIn className="h-3.5 w-3.5 shrink-0" />
+            <span className="hidden md:inline">{t.signInGoogle}</span>
+          </button>
+        )}
 
         <button
           onClick={onOpenSettings}

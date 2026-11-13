@@ -165,7 +165,9 @@
       (function() {
         try {
           document.documentElement.classList.add('js-ready');
-          localStorage.setItem('lingotwice_adsense_pub_id', 'ca-pub-2319563738462034');
+          if (!localStorage.getItem('lingotwice_adsense_pub_id')) {
+            localStorage.setItem('lingotwice_adsense_pub_id', 'ca-pub-2319563738462034');
+          }
           var prefs = JSON.parse(localStorage.getItem('linguatwin_preferences_v1'));
           var theme = (prefs && prefs.theme) || 'dark';
           var metaTheme = document.getElementById('theme-color-meta');

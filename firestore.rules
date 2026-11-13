@@ -1,24 +1,151 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Global helper primitives
-    function isSignedIn() { return request.auth != null; }
-    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
-    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
-
-    // Default deny
+    // Global safety net: deny all reads and writes by default
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Vocabulary entries: Only owner can read/write
-    match /users/{userId}/vocabulary/{vocabularyId} {
-      allow read, write: if isOwner(userId) && isValidId(vocabularyId);
+    // Global helper primitives
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    function incoming() {
+      return request.resource.data;
+    }
+    function existing() {
+      return resource.data;
     }
 
-    // Stats: Only owner can read/write
+    // Validation blueprint: VocabularyEntry
+    function isValidVocabularyEntry(data, docId) {
+      return data.keys().hasAll(['id', 'word', 'translation', 'sourceLang', 'targetLang', 'box', 'interval', 'repetitionCount', 'nextReviewDate', 'createdAt'])
+        && data.keys().hasOnly(['id', 'word', 'translation', 'contextSentence', 'contextTranslation', 'sourceLang', 'targetLang', 'grammar', 'notes', 'box', 'interval', 'repetitionCount', 'easeFactor', 'nextReviewDate', 'lastReviewedDate', 'correctCount', 'incorrectCount', 'createdAt'])
+        && isValidId(data.id)
+        && data.id == docId
+        && data.word is string && data.word.size() >= 1 && data.word.size() <= 200
+        && data.translation is string && data.translation.size() >= 1 && data.translation.size() <= 500
+        && data.sourceLang is string && data.sourceLang.size() >= 2 && data.sourceLang.size() <= 16
+        && data.targetLang is string && data.targetLang.size() >= 2 && data.targetLang.size() <= 16
+        && (!('contextSentence' in data) || (data.contextSentence is string && data.contextSentence.size() <= 2000))
+        && (!('contextTranslation' in data) || (data.contextTranslation is string && data.contextTranslation.size() <= 2000))
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000))
+        && (!('grammar' in data) || data.grammar is map)
+        && data.box is number && data.box >= 1 && data.box <= 5
+        && data.interval is number && data.interval >= 0 && data.interval <= 36500
+        && data.repetitionCount is number && data.repetitionCount >= 0
+        && (!('easeFactor' in data) || (data.easeFactor is number && data.easeFactor >= 1.0 && data.easeFactor <= 5.0))
+        && data.nextReviewDate is number
+        && (!('lastReviewedDate' in data) || data.lastReviewedDate is number)
+        && (!('correctCount' in data) || (data.correctCount is number && data.correctCount >= 0))
+        && (!('incorrectCount' in data) || (data.incorrectCount is number && data.incorrectCount >= 0))
+        && data.createdAt is number;
+    }
+
+    // Validation blueprint: UserStats
+    function isValidUserStats(data) {
+      return data.keys().hasAll(['streakDays', 'totalReadingMinutes', 'totalWordsLearned'])
+        && data.keys().hasOnly(['streakDays', 'lastStreakDate', 'totalReadingMinutes', 'totalWordsLearned', 'totalPassagesRead', 'dailyGoalMinutes', 'dailyGoalWords', 'todayReadingMinutes', 'todayWordsLearned'])
+        && data.streakDays is number && data.streakDays >= 0 && data.streakDays <= 100000
+        && data.totalReadingMinutes is number && data.totalReadingMinutes >= 0
+        && data.totalWordsLearned is number && data.totalWordsLearned >= 0
+        && (!('lastStreakDate' in data) || (data.lastStreakDate is string && data.lastStreakDate.size() <= 20))
+        && (!('totalPassagesRead' in data) || (data.totalPassagesRead is number && data.totalPassagesRead >= 0))
+        && (!('dailyGoalMinutes' in data) || (data.dailyGoalMinutes is number && data.dailyGoalMinutes >= 1 && data.dailyGoalMinutes <= 1440))
+        && (!('dailyGoalWords' in data) || (data.dailyGoalWords is number && data.dailyGoalWords >= 1 && data.dailyGoalWords <= 1000))
+        && (!('todayReadingMinutes' in data) || (data.todayReadingMinutes is number && data.todayReadingMinutes >= 0))
+        && (!('todayWordsLearned' in data) || (data.todayWordsLearned is number && data.todayWordsLearned >= 0));
+    }
+
+    // Validation blueprint: ReadingDocument
+    function isValidReadingDocument(data, docId) {
+      return data.keys().hasAll(['id', 'title', 'sourceLang', 'targetLang', 'category', 'createdAt', 'lastReadAt', 'readingProgress', 'wordCount', 'passages'])
+        && data.keys().hasOnly(['id', 'title', 'author', 'sourceLang', 'targetLang', 'passages', 'translations', 'coverImage', 'sourceUrl', 'titleTranslations', 'category', 'level', 'createdAt', 'lastReadAt', 'readingProgress', 'lastActivePassageId', 'wordCount', 'isSample'])
+        && isValidId(data.id)
+        && data.id == docId
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 300
+        && (!('author' in data) || (data.author is string && data.author.size() <= 200))
+        && data.sourceLang is string && data.sourceLang.size() >= 2 && data.sourceLang.size() <= 16
+        && data.targetLang is string && data.targetLang.size() >= 2 && data.targetLang.size() <= 16
+        && data.category in ['literature', 'science', 'news', 'dialogue', 'philosophy', 'custom', 'method']
+        && (!('level' in data) || data.level in ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'])
+        && (!('coverImage' in data) || (data.coverImage is string && data.coverImage.size() <= 500000))
+        && (!('sourceUrl' in data) || (data.sourceUrl is string && data.sourceUrl.size() <= 2048))
+        && (!('lastActivePassageId' in data) || (data.lastActivePassageId is string && data.lastActivePassageId.size() <= 128))
+        && (!('translations' in data) || data.translations is map)
+        && (!('titleTranslations' in data) || data.titleTranslations is map)
+        && (!('isSample' in data) || data.isSample is bool)
+        && data.createdAt is number
+        && data.lastReadAt is number
+        && data.readingProgress is number && data.readingProgress >= 0 && data.readingProgress <= 100
+        && data.wordCount is number && data.wordCount >= 0 && data.wordCount <= 5000000
+        && data.passages is list && data.passages.size() <= 2000;
+    }
+
+    // Validation blueprint: ReadingPreferences
+    function isValidReadingPreferences(data) {
+      return data.keys().hasAll(['fontSize', 'lineHeight', 'theme', 'splitOrientation', 'syncScroll', 'activeMode', 'sourceLang', 'targetLang', 'uiLang', 'speechRate'])
+        && data.keys().hasOnly(['fontSize', 'lineHeight', 'theme', 'splitOrientation', 'syncScroll', 'activeMode', 'sourceLang', 'targetLang', 'uiLang', 'speechRate', 'preferredVoice', 'swapSides'])
+        && data.fontSize is number && data.fontSize >= 12 && data.fontSize <= 32
+        && data.lineHeight in ['normal', 'relaxed', 'loose']
+        && data.theme in ['light', 'dark', 'sepia']
+        && data.splitOrientation in ['horizontal', 'vertical']
+        && data.syncScroll is bool
+        && data.activeMode in ['parallel', 'immersion']
+        && data.sourceLang is string && data.sourceLang.size() >= 2 && data.sourceLang.size() <= 16
+        && data.targetLang is string && data.targetLang.size() >= 2 && data.targetLang.size() <= 16
+        && data.uiLang is string && data.uiLang.size() >= 2 && data.uiLang.size() <= 16
+        && data.speechRate is number && data.speechRate >= 0.5 && data.speechRate <= 2.5
+        && (!('preferredVoice' in data) || (data.preferredVoice is string && data.preferredVoice.size() <= 200))
+        && (!('swapSides' in data) || data.swapSides is bool);
+    }
+
+    // User Vocabulary Collection
+    match /users/{userId}/vocabulary/{vocabularyId} {
+      allow get: if isOwner(userId) && isValidId(vocabularyId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(vocabularyId) && isValidVocabularyEntry(incoming(), vocabularyId);
+      allow update: if isOwner(userId) && isValidId(vocabularyId) && isValidVocabularyEntry(incoming(), vocabularyId)
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['word', 'translation', 'contextSentence', 'contextTranslation', 'sourceLang', 'targetLang', 'grammar', 'notes', 'box', 'interval', 'repetitionCount', 'easeFactor', 'nextReviewDate', 'lastReviewedDate', 'correctCount', 'incorrectCount']);
+      allow delete: if isOwner(userId) && isValidId(vocabularyId);
+    }
+
+    // User Stats Singleton Document
     match /users/{userId}/stats/data {
-      allow read, write: if isOwner(userId);
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUserStats(incoming());
+      allow update: if isOwner(userId) && isValidUserStats(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly(['streakDays', 'lastStreakDate', 'totalReadingMinutes', 'totalWordsLearned', 'totalPassagesRead', 'dailyGoalMinutes', 'dailyGoalWords', 'todayReadingMinutes', 'todayWordsLearned']);
+      allow delete: if isOwner(userId);
+    }
+
+    // User Reading Documents Collection
+    match /users/{userId}/documents/{documentId} {
+      allow get: if isOwner(userId) && isValidId(documentId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(documentId) && isValidReadingDocument(incoming(), documentId);
+      allow update: if isOwner(userId) && isValidId(documentId) && isValidReadingDocument(incoming(), documentId)
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'author', 'sourceLang', 'targetLang', 'passages', 'translations', 'coverImage', 'sourceUrl', 'titleTranslations', 'category', 'level', 'lastReadAt', 'readingProgress', 'lastActivePassageId', 'wordCount', 'isSample']);
+      allow delete: if isOwner(userId) && isValidId(documentId);
+    }
+
+    // User Preferences Singleton Document
+    match /users/{userId}/preferences/data {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidReadingPreferences(incoming());
+      allow update: if isOwner(userId) && isValidReadingPreferences(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly(['fontSize', 'lineHeight', 'theme', 'splitOrientation', 'syncScroll', 'activeMode', 'sourceLang', 'targetLang', 'uiLang', 'speechRate', 'preferredVoice', 'swapSides']);
+      allow delete: if isOwner(userId);
     }
   }
 }

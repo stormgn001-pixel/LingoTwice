@@ -97,7 +97,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-medium">
             <span className="text-slate-400 dark:text-slate-500 mr-1 hidden sm:inline-flex items-center gap-1 font-semibold">
               <Filter className="h-3.5 w-3.5" />
-              <span>Категория:</span>
+              <span>{t.categoryLabel}</span>
             </span>
 
             <button
@@ -166,13 +166,13 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
         {/* Row 2: CEFR Level Pills */}
         <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
-          <span className="text-slate-400 dark:text-slate-500 font-semibold mr-1">Уровень CEFR:</span>
+          <span className="text-slate-400 dark:text-slate-500 font-semibold mr-1">{t.cefrLevelLabel}</span>
           {[
-            { id: 'all', label: 'Все' },
-            { id: 'A1', label: 'A1 Начинающий' },
-            { id: 'A2', label: 'A2 Базовый' },
-            { id: 'B1', label: 'B1 Средний' },
-            { id: 'B2+', label: 'B2–C1 Продвинутый' },
+            { id: 'all', label: t.cefrAll },
+            { id: 'A1', label: t.cefrA1 },
+            { id: 'A2', label: t.cefrA2 },
+            { id: 'B1', label: t.cefrB1 },
+            { id: 'B2+', label: t.cefrB2Plus },
           ].map((lvl) => (
             <button
               key={lvl.id}
@@ -304,13 +304,12 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                       </p>
                     )}
 
-                    {/* Metadata line */}
                     <div className="mt-3 flex items-center gap-2 text-xs text-slate-400 flex-wrap">
                       <span className="font-mono tabular-nums">{doc.wordCount} {t.wordsCount}</span>
                       <span aria-hidden="true">·</span>
                       <span className="font-mono tabular-nums">{doc.passages.length} {t.passagesCount}</span>
                       <span aria-hidden="true">·</span>
-                      <span>⏱ ~{Math.max(1, Math.ceil(doc.wordCount / 140))} мин</span>
+                      <span>⏱ ~{Math.max(1, Math.ceil(doc.wordCount / 140))} {t.minShort}</span>
                     </div>
 
                     {/* Reading progress bar */}
@@ -348,17 +347,17 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         <div className="mt-8 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 p-12 text-center bg-slate-50/50 dark:bg-slate-900/30">
           <Globe className="mx-auto h-12 w-12 text-slate-400/60" />
           <h3 className="mt-4 font-serif text-lg font-bold text-slate-800 dark:text-slate-200">
-            {t.noMatchingDocs || 'Нет изданий по выбранным фильтрам'}
+            {t.noMatchingDocs}
           </h3>
           <p className="mt-1 text-xs text-slate-500 max-w-sm mx-auto">
-            Попробуйте изменить категорию или выбрать другой язык оригинала.
+            {t.tryChangeFilter}
           </p>
           <button
             onClick={handleResetFilters}
             className="mt-5 inline-flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-700 transition-colors cursor-pointer"
           >
             <RotateCcw className="h-3.5 w-3.5" />
-            <span>{t.resetFilters || 'Сбросить фильтры'}</span>
+            <span>{t.resetFilters}</span>
           </button>
         </div>
       )}

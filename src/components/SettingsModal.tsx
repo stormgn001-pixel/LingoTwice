@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X, Download, Trash2, Globe, Shield, FileText } from 'lucide-react';
+import { X, Download, Trash2, Globe, Check, LogIn, LogOut, Cloud } from 'lucide-react';
 import { InterfaceLanguage, ReadingPreferences, UserStats, VocabularyEntry, ReadingDocument } from '../types';
 import { SUPPORTED_LANGUAGES } from '../constants/languages';
 import { getTranslation } from '../i18n/translations';
+import { useAuthActions } from '../contexts/AuthContext';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -26,7 +27,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onOpenLegal,
 }) => {
   const t = getTranslation(preferences.uiLang);
+  const { user, signIn, signOut } = useAuthActions();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [adsenseSaved, setAdsenseSaved] = useState(false);
   const [adsensePubId, setAdsensePubId] = useState(() => {
     return localStorage.getItem('lingotwice_adsense_pub_id') || '';
   });
@@ -34,7 +37,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleSaveAdsense = (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('lingotwice_adsense_pub_id', adsensePubId.trim());
-    alert('Google AdSense Publisher ID успешно сохранен!');
+    setAdsenseSaved(true);
+    setTimeout(() => setAdsenseSaved(false), 3000);
   };
 
   const handleExportData = () => {
@@ -64,6 +68,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label={t.closeBtn}
             className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 cursor-pointer"
           >
             <X className="h-5 w-5" />
@@ -71,6 +76,42 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         <div className="mt-4 space-y-5 text-xs">
+          {/* Cloud Account & Sync */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-800/40">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
+                  <Cloud className="h-4 w-4 text-amber-600 shrink-0" />
+                  <span className="truncate">
+                    {user ? `${t.signedInAs} ${user.email || user.displayName}` : t.cloudSyncActive}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                  {user ? t.cloudSyncDesc : t.cloudSyncGuestDesc}
+                </p>
+              </div>
+              {user ? (
+                <button
+                  type="button"
+                  onClick={() => signOut()}
+                  className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 shrink-0 cursor-pointer"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  <span>{t.signOut}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => signIn()}
+                  className="flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 font-semibold text-white hover:bg-amber-700 shrink-0 cursor-pointer"
+                >
+                  <LogIn className="h-3.5 w-3.5" />
+                  <span>{t.signInGoogle}</span>
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* UI Language */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
@@ -78,7 +119,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 {t.uiLanguage}
               </label>
               <span className="text-[11px] text-slate-400">
-                {SUPPORTED_LANGUAGES.length} языков
+                {SUPPORTED_LANGUAGES.length} {t.languagesCountLabel}
               </span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 max-h-60 overflow-y-auto p-0.5 reader-scrollbar">
@@ -87,8 +128,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   key={item.code}
                   onClick={() => {
                     const newUiLang = item.code as InterfaceLanguage;
-                    // If user selects a foreign UI language, parallel translation should be Russian ('ru')
-                    // If user selects Russian UI, parallel translation should be English ('en') (or previous target if non-Russian)
                     const newTargetLang = newUiLang === 'ru'
                       ? (preferences.targetLang && preferences.targetLang !== 'ru' ? preferences.targetLang : 'en')
                       : 'ru';
@@ -118,7 +157,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <button
                   key={lh}
                   onClick={() => onUpdatePreferences({ lineHeight: lh })}
-                  className={`rounded-lg border py-2 text-center transition-colors ${
+                  className={`rounded-lg border py-2 text-center transition-colors cursor-pointer ${
                     preferences.lineHeight === lh
                       ? 'border-amber-600 bg-amber-50 text-amber-900 font-semibold dark:bg-amber-950/60 dark:text-amber-200'
                       : 'border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300'
@@ -136,21 +175,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="border-t border-slate-100 pt-4 dark:border-slate-800 space-y-2">
             <button
               onClick={handleExportData}
-              className="flex w-full items-center justify-between rounded-xl border border-slate-200 p-2.5 font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="flex w-full items-center justify-between rounded-xl border border-slate-200 p-2.5 font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer"
             >
               <div className="flex items-center gap-2">
                 <Download className="h-4 w-4 text-slate-400" />
                 <span>{t.exportData}</span>
               </div>
               <span className="font-mono text-[11px] text-slate-400">
-                {allData.vocabulary.length} слов
+                {allData.vocabulary.length} {t.wordsCount}
               </span>
             </button>
 
             {!confirmDelete ? (
               <button
                 onClick={() => setConfirmDelete(true)}
-                className="flex w-full items-center justify-between rounded-xl border border-rose-200 p-2.5 font-medium text-rose-700 hover:bg-rose-50 dark:border-rose-900/60 dark:text-rose-400 dark:hover:bg-rose-950/40"
+                className="flex w-full items-center justify-between rounded-xl border border-rose-200 p-2.5 font-medium text-rose-700 hover:bg-rose-50 dark:border-rose-900/60 dark:text-rose-400 dark:hover:bg-rose-950/40 cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <Trash2 className="h-4 w-4" />
@@ -167,13 +206,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       setConfirmDelete(false);
                       onClose();
                     }}
-                    className="rounded bg-rose-600 px-3 py-1 font-semibold text-white"
+                    className="rounded bg-rose-600 px-3 py-1 font-semibold text-white cursor-pointer"
                   >
-                    Да, удалить
+                    {t.confirmDeleteYes}
                   </button>
                   <button
                     onClick={() => setConfirmDelete(false)}
-                    className="rounded bg-slate-200 px-3 py-1 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    className="rounded bg-slate-200 px-3 py-1 text-slate-700 dark:bg-slate-800 dark:text-slate-300 cursor-pointer"
                   >
                     {t.cancel}
                   </button>
@@ -187,10 +226,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <form onSubmit={handleSaveAdsense} className="rounded-xl border border-amber-200 bg-amber-50/50 p-3.5 dark:border-amber-900/60 dark:bg-amber-950/30 space-y-2">
               <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-300">
                 <Globe className="h-4 w-4 text-amber-600" />
-                <span>Монетизация Google AdSense</span>
+                <span>{t.adsenseTitle}</span>
               </div>
               <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                Введите ваш издательский ID для показа рекламы Google AdSense и получения выплат на ваш аккаунт.
+                {t.adsenseDesc}
               </p>
               <div className="flex gap-2">
                 <input
@@ -204,9 +243,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   type="submit"
                   className="rounded-lg bg-amber-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 cursor-pointer"
                 >
-                  Сохранить
+                  {t.saveBtn}
                 </button>
               </div>
+              {adsenseSaved && (
+                <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                  <Check className="h-3.5 w-3.5" />
+                  <span>{t.adsenseSaved}</span>
+                </div>
+              )}
             </form>
           </div>
 
