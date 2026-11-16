@@ -308,6 +308,30 @@ async function runTests() {
   assert(swSource.includes('caches.open') && swSource.includes('fetch'), 'PWA Service Worker must implement caching');
   console.log('[PASS] Server hardening, SSRF guards, quota alignment, Firestore rules, and PWA Service Worker verified.');
 
+  // Test 15: Verify Mia the Cat A1 library story, cover asset, and all 17 translations
+  console.log('Test 15: Checking "Кошка Мия" library story and 17 language translations...');
+  const { ANNA_CAT_MIA_ARTICLE } = await import('../src/constants/annaCatMiaArticle');
+
+  assert(ANNA_CAT_MIA_ARTICLE, 'ANNA_CAT_MIA_ARTICLE must be defined');
+  assert.strictEqual(ANNA_CAT_MIA_ARTICLE.id, 'anna_cat_mia_a1_001');
+  assert(ANNA_CAT_MIA_ARTICLE.title.includes('A1'), 'Title should indicate level A1');
+  assert.strictEqual(ANNA_CAT_MIA_ARTICLE.level, 'A1', 'Level must be A1');
+  assert(ANNA_CAT_MIA_ARTICLE.coverImage && ANNA_CAT_MIA_ARTICLE.coverImage.length > 0, 'Cover image must be specified');
+  const publicCoverPath = path.resolve(process.cwd(), 'public', ANNA_CAT_MIA_ARTICLE.coverImage.replace(/^\//, ''));
+  assert(fs.existsSync(publicCoverPath), `Cover image file must exist in public assets: ${publicCoverPath}`);
+  assert.strictEqual(ANNA_CAT_MIA_ARTICLE.passages.length, 48, 'Mia the Cat story should have 48 passages');
+
+  for (const lang of requiredLangs) {
+    assert(ANNA_CAT_MIA_ARTICLE.titleTranslations?.[lang as any], `Missing title translation for ${lang}`);
+    for (const p of ANNA_CAT_MIA_ARTICLE.passages) {
+      assert(p.translations?.[lang], `Missing translation for paragraph ${p.id} in ${lang}`);
+    }
+  }
+
+  const inSampleMia = SAMPLE_DOCUMENTS.some(d => d.id === 'anna_cat_mia_a1_001');
+  assert(inSampleMia, 'ANNA_CAT_MIA_ARTICLE must be registered in SAMPLE_DOCUMENTS');
+  console.log('[PASS] "Кошка Мия (Уровень A1)" verified with 48 passages across all 17 supported languages, A1 cover, and registered in library.');
+
   console.log('=== All Diagnostic & API Tests Completed Successfully! ===');
 }
 

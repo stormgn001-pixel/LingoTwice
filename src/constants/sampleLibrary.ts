@@ -7,8 +7,10 @@ import { ANNA_DOCTOR_ARTICLE } from './annaDoctorArticle';
 import { ANNA_BERLIN_ARTICLE } from './annaBerlinArticle';
 import { ANNA_HIKE_ARTICLE } from './annaHikeArticle';
 import { ANNA_COOKING_ARTICLE } from './annaCookingArticle';
+import { ANNA_CAT_MIA_ARTICLE } from './annaCatMiaArticle';
 
 export const SAMPLE_DOCUMENTS: ReadingDocument[] = [
+  ANNA_CAT_MIA_ARTICLE,
   ANNA_COOKING_ARTICLE,
   ANNA_HIKE_ARTICLE,
   ANNA_BERLIN_ARTICLE,
