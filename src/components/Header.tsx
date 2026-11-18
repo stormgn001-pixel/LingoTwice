@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { BookOpen, Sparkles, Languages, HelpCircle, LogIn, LogOut } from 'lucide-react';
-import { InterfaceLanguage, SubscriptionStatus } from '../types';
+import { BookOpen, Languages, HelpCircle, LogIn, LogOut } from 'lucide-react';
+import { InterfaceLanguage } from '../types';
 import { getTranslation } from '../i18n/translations';
 import { PWAInstallButton } from './PWAInstallButton';
 import { useAuthActions } from '../contexts/AuthContext';
@@ -9,9 +9,7 @@ interface HeaderProps {
   currentView: 'read' | 'library' | 'vocabulary' | 'review' | 'progress' | 'about' | 'contact' | 'privacy' | 'terms';
   onNavigate: (view: 'read' | 'library' | 'vocabulary' | 'review' | 'progress' | 'about' | 'contact' | 'privacy' | 'terms') => void;
   uiLang: InterfaceLanguage;
-  subscription: SubscriptionStatus;
   onOpenSettings: () => void;
-  onOpenSubscription: () => void;
   onOpenOnboarding?: () => void;
   dueCardsCount: number;
   isDistractionFree?: boolean;
@@ -34,9 +32,7 @@ export const Header: React.FC<HeaderProps> = ({
   currentView,
   onNavigate,
   uiLang,
-  subscription,
   onOpenSettings,
-  onOpenSubscription,
   onOpenOnboarding,
   dueCardsCount,
   isDistractionFree,
@@ -225,7 +221,7 @@ export const Header: React.FC<HeaderProps> = ({
         </nav>
       </div>
 
-      {/* Zone 3: Actions (PWA, Help, PRO & Settings) */}
+      {/* Zone 3: Actions (PWA, Help, Auth & Settings) */}
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         <PWAInstallButton uiLang={uiLang} theme={theme} />
 
@@ -245,21 +241,6 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="hidden sm:inline">{t.methodGuide}</span>
           </button>
         )}
-
-        <button
-          onClick={onOpenSubscription}
-          className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-            theme === 'dark'
-              ? 'border-slate-800 bg-slate-900 text-slate-200 hover:border-amber-500/60 hover:bg-slate-800'
-              : theme === 'sepia'
-              ? 'border-[#dfd5c0] bg-[#f4efe2] text-[#2b2118] hover:border-amber-600'
-              : 'border-slate-200 bg-white text-slate-700 hover:border-amber-300 hover:bg-amber-50/50'
-          }`}
-        >
-          <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-          <span className="hidden xs:inline">{subscription.tier === 'premium' ? 'PRO' : t.upgradePremium}</span>
-          <span className="xs:hidden">PRO</span>
-        </button>
 
         {user ? (
           <button

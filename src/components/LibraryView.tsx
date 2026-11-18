@@ -1,10 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { BookOpen, Plus, Trash2, ArrowRight, ShieldCheck, Globe, Filter, RotateCcw, ChevronDown, Languages } from 'lucide-react';
-import { InterfaceLanguage, ReadingDocument, SubscriptionStatus } from '../types';
+import { InterfaceLanguage, ReadingDocument } from '../types';
 import { getTranslation, getDocTitle } from '../i18n/translations';
 import { getLanguageByCode } from '../constants/languages';
 import { SAMPLE_DOCUMENTS } from '../constants/sampleLibrary';
-import { AdSenseBanner } from './AdSenseBanner';
 
 interface LibraryViewProps {
   documents: ReadingDocument[];
@@ -12,7 +11,6 @@ interface LibraryViewProps {
   onOpenImporter: () => void;
   onDeleteDocument: (docId: string) => void;
   uiLang: InterfaceLanguage;
-  subscription: SubscriptionStatus;
   onOpenSettings: () => void;
 }
 
@@ -22,7 +20,6 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   onOpenImporter,
   onDeleteDocument,
   uiLang,
-  subscription,
   onOpenSettings,
 }) => {
   const t = getTranslation(uiLang);
@@ -238,8 +235,11 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                           referrerPolicy="no-referrer"
                           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-103"
                           onError={(e) => {
-                            // Fallback if the specific asset fails to load
-                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=800';
+                            const img = e.currentTarget;
+                            if (!img.dataset.fallbackApplied) {
+                              img.dataset.fallbackApplied = 'true';
+                              img.src = '/assets/images/reading_desk_atmosphere_1793214356959.jpg';
+                            }
                           }}
                         />
                       );
@@ -359,13 +359,6 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             <RotateCcw className="h-3.5 w-3.5" />
             <span>{t.resetFilters}</span>
           </button>
-        </div>
-      )}
-
-      {/* Google AdSense Ad Unit & Monetization Slot */}
-      {subscription.tier === 'free' && (
-        <div className="mt-10">
-          <AdSenseBanner />
         </div>
       )}
     </div>

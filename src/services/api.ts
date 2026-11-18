@@ -1,7 +1,6 @@
 import {
   ComprehensionQuestion,
-  SubscriptionStatus,
-  WordLookupResponse
+  WordLookupResponse,
 } from '../types';
 
 import { translateOnDevice } from './clientTranslator';
@@ -17,15 +16,11 @@ export interface TranslateResponse {
   detectedSourceLang?: string;
   cachedCount: number;
   provider: string;
-  usageQuota?: {
-    used: number;
-    limit: number;
-  };
 }
 
 export const apiService = {
   /**
-   * Get base URL for backend API (supports separate backend deployment like Render/Railway/VPS)
+   * Get base URL for backend API (supports separate backend deployment)
    */
   getBaseUrl() {
     const raw = (import.meta.env.VITE_API_BASE_URL as string) || '';
@@ -34,19 +29,10 @@ export const apiService = {
   },
 
   /**
-   * Helper to get common headers
+   * Helper to get common JSON headers
    */
-  getHeaders() {
-    const token =
-      localStorage.getItem('lingotwice_subscription_token') ||
-      localStorage.getItem('lingotwice_activation_code') ||
-      localStorage.getItem('lingotwin_activation_code') ||
-      localStorage.getItem('linguatwin_activation_code');
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    return headers;
+  getHeaders(): Record<string, string> {
+    return { 'Content-Type': 'application/json' };
   },
 
   /**
@@ -61,21 +47,17 @@ export const apiService = {
         body: JSON.stringify(req),
       });
 
-      if (res.status === 429) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Daily free translation limit reached (50).');
-      }
-
       if (res.ok) {
         const data = await res.json();
-        if (data && Array.isArray(data.translatedParagraphs) && data.translatedParagraphs.length === req.paragraphs.length) {
+        if (
+          data &&
+          Array.isArray(data.translatedParagraphs) &&
+          data.translatedParagraphs.length === req.paragraphs.length
+        ) {
           return data;
         }
       }
-    } catch (serverErr: any) {
-      if (serverErr?.message && serverErr.message.includes('limit')) {
-        throw serverErr;
-      }
+    } catch {
       console.warn('Backend server translation unavailable, falling back to on-device translation...');
     }
 
@@ -85,10 +67,6 @@ export const apiService = {
       translatedParagraphs: onDeviceRes.translatedParagraphs,
       cachedCount: onDeviceRes.cachedCount,
       provider: onDeviceRes.provider,
-      usageQuota: {
-        used: 1,
-        limit: 50,
-      },
     };
   },
 
@@ -132,9 +110,9 @@ export const apiService = {
         examples: [
           {
             source: params.contextSentence || params.word,
-            target: isRussian ? 'Пример использования в литературном контексте.' : 'Usage example in literary context.'
-          }
-        ]
+            target: isRussian ? 'Пример использования в литературном контексте.' : 'Usage example in literary context.',
+          },
+        ],
       };
     }
   },
@@ -170,53 +148,29 @@ export const apiService = {
               id: 'q-1',
               question: 'Какова главная мысль или ключевое действие в прочитанном фрагменте?',
               options: [
-                'Установление глубокой смысловой связи между персонажами или понятиями',
-                'Поверхностный диалог без существенного развития мысли',
-                'Отказ от дальнейшего взаимодействия и прекращение беседы',
-                'Описание второстепенных бытовых деталей обстановки'
+                'Установление глубокого понимания и взаимной связи',
+                'Случайный диалог без существенного смысла',
+                'Прекращение общения и прощание',
+                'Описание второстепенных погодных явлений',
               ],
               correctOptionIndex: 0,
-              explanation: 'Текст раскрывает суть создания уз и взаимной ответственности.'
+              explanation: 'Текст раскрывает тему создания смысловой связи.',
             },
-            {
-              id: 'q-2',
-              question: 'Какое утверждение наилучшим образом передаёт настроение автора?',
-              options: [
-                'Агрессивное и конфликтное',
-                'Философское, созерцательное и доверительное',
-                'Иронично-насмешливое',
-                'Абсолютно нейтральное статистическое'
-              ],
-              correctOptionIndex: 1,
-              explanation: 'Автор использует мягкую и глубокую метафорическую интонацию.'
-            }
           ]
         : [
             {
               id: 'q-1',
               question: 'What is the main idea or key event in the passage?',
               options: [
-                'Establishing a meaningful connection between characters or ideas',
-                'Superficial small talk with no progression',
+                'Establishing deeper understanding and meaningful connection',
+                'A casual dialogue with no central theme',
                 'Refusing further communication',
-                'A dry inventory of household objects'
+                'A dry inventory of household objects',
               ],
               correctOptionIndex: 0,
-              explanation: 'The passage focuses on context, connection, and mutual understanding.'
+              explanation: 'The passage focuses on context, connection, and mutual understanding.',
             },
-            {
-              id: 'q-2',
-              question: 'Which option best describes the tone of the passage?',
-              options: [
-                'Aggressive and confrontational',
-                'Reflective, engaging, and thoughtful',
-                'Sarcastic and dismissive',
-                'Purely statistical'
-              ],
-              correctOptionIndex: 1,
-              explanation: 'The author uses an inviting and thoughtful narrative tone.'
-            }
-          ]
+          ],
     };
   },
 
@@ -245,153 +199,27 @@ export const apiService = {
   },
 
   /**
-   * Fetch current subscription status with robust handling of HTTP 503, 401, 404, network errors, and local fallback
+   * Submit contact form inquiry to backend
    */
-  async getSubscription(): Promise<SubscriptionStatus> {
-    const defaultStatus: SubscriptionStatus = {
-      tier: 'free',
-      isActive: true,
-      dailyTranslationsUsed: 0,
-      dailyTranslationsLimit: 50,
-      wordsTranslatedToday: 0,
-    };
-
-    try {
-      const token =
-        localStorage.getItem('lingotwice_subscription_token') ||
-        localStorage.getItem('lingotwice_activation_code') ||
-        localStorage.getItem('lingotwin_activation_code') ||
-        localStorage.getItem('linguatwin_activation_code');
-      const baseUrl = this.getBaseUrl();
-      const endpointUrl = token
-        ? `${baseUrl}/api/subscription/status?code=${encodeURIComponent(token)}`
-        : `${baseUrl}/api/subscription/status`;
-
-      const res = await fetch(endpointUrl, {
-        headers: this.getHeaders()
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.status === 'inactive' || data.hasSubscription === false || data.tier === 'free') {
-          return {
-            tier: 'free',
-            isActive: true,
-            dailyTranslationsUsed: data.dailyTranslationsUsed ?? 0,
-            dailyTranslationsLimit: data.dailyTranslationsLimit ?? 50,
-            wordsTranslatedToday: data.wordsTranslatedToday ?? 0,
-          };
-        }
-        return {
-          tier: data.tier || (data.hasSubscription ? 'premium' : 'free'),
-          isActive: data.isActive ?? true,
-          expiresAt: data.expiresAt,
-          dailyTranslationsUsed: data.dailyTranslationsUsed ?? 0,
-          dailyTranslationsLimit: data.dailyTranslationsLimit ?? 99999,
-          wordsTranslatedToday: data.wordsTranslatedToday ?? 0,
-        };
-      }
-
-      if (res.status === 401) {
-        localStorage.removeItem('lingotwice_subscription_token');
-        localStorage.removeItem('lingotwice_activation_code');
-        localStorage.removeItem('lingotwin_activation_code');
-        localStorage.removeItem('linguatwin_activation_code');
-        return defaultStatus;
-      }
-
-      if (res.status === 404) {
-        return defaultStatus;
-      }
-
-      if (res.status === 500 || res.status === 502 || res.status === 503) {
-        console.warn(`Subscription API returned HTTP ${res.status}. Using local state.`);
-      }
-    } catch (err) {
-      console.warn('Failed to fetch subscription status (offline), using local fallback', err);
-    }
-
-    // Only honor previously verified signed subscription tokens offline
-    const signedToken = localStorage.getItem('lingotwice_subscription_token');
-    if (signedToken && signedToken.startsWith('lt_') && signedToken.includes('.')) {
-      return {
-        tier: 'premium',
-        isActive: true,
-        dailyTranslationsUsed: 0,
-        dailyTranslationsLimit: 99999,
-        wordsTranslatedToday: 0,
-      };
-    }
-
-    return defaultStatus;
-  },
-
-  /**
-   * Verify cryptocurrency transaction in real-time via blockchain explorer API
-   */
-  async verifyCryptoTx(params: {
-    cryptoType: string;
-    txHash: string;
-    plan: 'monthly' | 'yearly' | 'lifetime';
-  }): Promise<{ success: boolean; tier: 'premium'; plan: string; txHash: string; confirmations: number; token?: string }> {
+  async sendContactMessage(params: {
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+  }): Promise<{ success: boolean; messageId?: string }> {
     const baseUrl = this.getBaseUrl();
-    const res = await fetch(`${baseUrl}/api/subscription/verify-tx`, {
+    const res = await fetch(`${baseUrl}/api/contact`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(params),
     });
 
     if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || 'Blockchain transaction verification failed.');
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to send message.');
     }
 
-    const data = await res.json();
-    if (data.success && data.token) {
-      localStorage.setItem('lingotwice_subscription_token', data.token);
-      localStorage.setItem('lingotwice_activation_code', data.token);
-      localStorage.setItem('lingotwin_activation_code', data.token);
-      localStorage.setItem('linguatwin_activation_code', data.token);
-      localStorage.setItem('lingotwice_subscription_plan', data.plan);
-      localStorage.setItem('lingotwice_subscription_method', 'crypto');
-    }
-    return data;
-  },
-
-  /**
-   * Upgrade subscription tier via backend-verified promo/activation code
-   */
-  async upgradeSubscription(params?: {
-    code?: string;
-    method?: 'promo';
-    plan?: 'monthly' | 'yearly' | 'lifetime';
-  } | string): Promise<{ success: boolean; tier: 'premium'; plan?: string; method?: string; token?: string }> {
-    const payload = typeof params === 'string'
-      ? { code: params, method: 'promo' as const }
-      : { code: params?.code, method: 'promo' as const, plan: params?.plan || 'monthly' };
-
-    const baseUrl = this.getBaseUrl();
-    const res = await fetch(`${baseUrl}/api/subscription/upgrade`, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || 'Invalid activation code.');
-    }
-
-    const data = await res.json();
-    if (data.success && data.token) {
-      localStorage.setItem('lingotwice_subscription_token', data.token);
-      localStorage.setItem('lingotwice_activation_code', data.token);
-      localStorage.setItem('lingotwin_activation_code', data.token);
-      localStorage.setItem('linguatwin_activation_code', data.token);
-      if (data.plan) localStorage.setItem('lingotwice_subscription_plan', data.plan);
-      if (data.method) localStorage.setItem('lingotwice_subscription_method', data.method);
-    }
-    return data;
+    return await res.json();
   },
 
   /**
@@ -425,5 +253,5 @@ export const apiService = {
       if (res.ok) return await res.json();
     } catch {}
     return null;
-  }
+  },
 };

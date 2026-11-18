@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Header } from './components/Header';
 import { ReaderWorkspace } from './components/ReaderWorkspace';
 import { VocabularyCard } from './components/VocabularyCard';
@@ -8,7 +8,6 @@ import { VocabularyView } from './components/VocabularyView';
 import { ReviewView } from './components/ReviewView';
 import { ProgressView } from './components/ProgressView';
 import { SettingsModal } from './components/SettingsModal';
-import { SubscriptionModal } from './components/SubscriptionModal';
 import { LegalModal } from './components/LegalModal';
 import { InfoPageView } from './components/InfoPageView';
 import { OnboardingModal } from './components/OnboardingModal';
@@ -19,7 +18,6 @@ import { SAMPLE_DOCUMENTS } from './constants/sampleLibrary';
 import {
   ReadingDocument,
   ReadingPreferences,
-  SubscriptionStatus,
   UserStats,
   VocabularyEntry,
   WordLookupResponse,
@@ -53,16 +51,55 @@ const DEFAULT_PREFERENCES: ReadingPreferences = {
   swapSides: false,
 };
 
-const DEFAULT_STATS: UserStats = {
-  streakDays: 4,
-  lastStreakDate: new Date().toISOString().slice(0, 10),
-  totalReadingMinutes: 48,
-  totalWordsLearned: 32,
-  totalPassagesRead: 28,
+const getTodayDateKey = () => new Date().toISOString().slice(0, 10);
+const getYesterdayDateKey = () => new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+const createDefaultStats = (): UserStats => ({
+  streakDays: 0,
+  lastStreakDate: getTodayDateKey(),
+  totalReadingMinutes: 0,
+  totalWordsLearned: 0,
+  totalPassagesRead: 0,
   dailyGoalMinutes: 20,
   dailyGoalWords: 10,
-  todayReadingMinutes: 12,
-  todayWordsLearned: 5,
+  todayReadingMinutes: 0,
+  todayWordsLearned: 0,
+});
+
+const normalizeStatsForToday = (raw?: Partial<UserStats> | null): UserStats => {
+  const base = createDefaultStats();
+  if (!raw) return base;
+  const today = getTodayDateKey();
+  const yesterday = getYesterdayDateKey();
+  const isToday = raw.lastStreakDate === today;
+  const keepStreak = isToday || raw.lastStreakDate === yesterday;
+  return {
+    ...base,
+    ...raw,
+    streakDays: keepStreak ? Math.max(0, Number(raw.streakDays) || 0) : 0,
+    todayReadingMinutes: isToday ? Math.max(0, Number(raw.todayReadingMinutes) || 0) : 0,
+    todayWordsLearned: isToday ? Math.max(0, Number(raw.todayWordsLearned) || 0) : 0,
+  };
+};
+
+const applyDailyActivity = (prev: UserStats, delta: { readingMinutes?: number; wordsLearned?: number; passagesRead?: number }): UserStats => {
+  const normalized = normalizeStatsForToday(prev);
+  const today = getTodayDateKey();
+  const yesterday = getYesterdayDateKey();
+  let nextStreak = normalized.streakDays;
+  if (prev.lastStreakDate !== today || nextStreak === 0) {
+    nextStreak = prev.lastStreakDate === yesterday && normalized.streakDays > 0 ? normalized.streakDays + 1 : 1;
+  }
+  return {
+    ...normalized,
+    streakDays: nextStreak,
+    lastStreakDate: today,
+    totalReadingMinutes: normalized.totalReadingMinutes + (delta.readingMinutes || 0),
+    todayReadingMinutes: normalized.todayReadingMinutes + (delta.readingMinutes || 0),
+    totalWordsLearned: normalized.totalWordsLearned + (delta.wordsLearned || 0),
+    todayWordsLearned: normalized.todayWordsLearned + (delta.wordsLearned || 0),
+    totalPassagesRead: normalized.totalPassagesRead + (delta.passagesRead || 0),
+  };
 };
 
 import { useAuth } from './contexts/AuthContext';
@@ -89,7 +126,9 @@ const sanitizeDocuments = (docs: ReadingDocument[]): ReadingDocument[] => {
         targetLang,
         passages: doc.passages.map((p, idx) => ({
           ...p,
-          targetText: (targetLang === 'ru' ? p.sourceText : null) || p.targetText || sampleTrans?.[idx] || p.translations?.[targetLang] || '',
+          targetText: p.isEdited
+            ? (p.targetText || '')
+            : ((targetLang === 'ru' ? p.sourceText : null) || p.targetText || sampleTrans?.[idx] || p.translations?.[targetLang] || ''),
         })),
       };
     }
@@ -185,7 +224,16 @@ export default function App() {
     return 'ru';
   };
 
-  const [vocabulary, setVocabulary] = useState<VocabularyEntry[]>([]);
+  const [vocabulary, setVocabulary] = useState<VocabularyEntry[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.VOCABULARY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
+  });
   const [preferences, setPreferences] = useState<ReadingPreferences>(() => {
     const initialUi = getInitialUiLang();
     try {
@@ -197,7 +245,26 @@ export default function App() {
     } catch {}
     return { ...DEFAULT_PREFERENCES, uiLang: initialUi };
   });
-  const [stats, setStats] = useState<UserStats>(DEFAULT_STATS);
+  const [stats, setStats] = useState<UserStats>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.STATS);
+      if (saved) {
+        return normalizeStatsForToday(JSON.parse(saved));
+      }
+    } catch {}
+    return createDefaultStats();
+  });
+
+  const documentsRef = useRef(documents);
+  documentsRef.current = documents;
+  const vocabularyRef = useRef(vocabulary);
+  vocabularyRef.current = vocabulary;
+  const statsRef = useRef(stats);
+  statsRef.current = stats;
+  const lastSyncedPrefsJsonRef = useRef<string | null>(null);
+  const readPassagesSessionRef = useRef<Set<string>>(new Set());
+  const progressCloudTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeLookupContextRef = useRef<string>('');
 
   // Synchronize browser URL, document title, and SEO tags with active UI language
   useEffect(() => {
@@ -261,29 +328,92 @@ export default function App() {
       setLoading(true);
       if (user) {
         try {
-          const [docs, vocab, statsData, prefsData] = await Promise.all([
+          const [cloudDocs, cloudVocab, cloudStats, cloudPrefs] = await Promise.all([
             dbService.getDocuments(user.uid),
             dbService.getVocabulary(user.uid),
             dbService.getStats(user.uid),
             dbService.getPreferences(user.uid)
           ]);
 
-          if (docs.length > 0) {
-            try {
-              const deletedIds: string[] = JSON.parse(localStorage.getItem('linguatwin_deleted_ids_v1') || '[]');
-              const activeSamples = SAMPLE_DOCUMENTS.filter(s => !deletedIds.includes(s.id));
-              const existingIds = new Set(docs.map(d => d.id));
-              const missingSamples = activeSamples.filter(s => !existingIds.has(s.id));
-              setDocuments(sanitizeDocuments([...docs, ...missingSamples]));
-            } catch {
-              setDocuments(sanitizeDocuments(docs));
+          let deletedIds: string[] = [];
+          try {
+            const parsed = JSON.parse(localStorage.getItem('linguatwin_deleted_ids_v1') || '[]');
+            if (Array.isArray(parsed)) deletedIds = parsed;
+          } catch {}
+          const deletedSet = new Set(deletedIds);
+
+          // Merge cloud documents with guest custom documents & active samples
+          const cloudDocIds = new Set(cloudDocs.map((d) => d.id));
+          const guestCustomDocs = documentsRef.current.filter(
+            (d) => !isBuiltInDoc(d) && !cloudDocIds.has(d.id) && !deletedSet.has(d.id)
+          );
+          const mergedNonSamples = [...cloudDocs.filter((d) => !deletedSet.has(d.id)), ...guestCustomDocs];
+          const mergedIds = new Set(mergedNonSamples.map((d) => d.id));
+          const activeSamples = SAMPLE_DOCUMENTS.filter(
+            (s) => !mergedIds.has(s.id) && !deletedSet.has(s.id)
+          );
+          const mergedDocs = sanitizeDocuments([...mergedNonSamples, ...activeSamples]);
+          if (mergedDocs.length > 0) {
+            setDocuments(mergedDocs);
+          }
+          // Push guest custom documents up to Firestore
+          for (const gDoc of guestCustomDocs) {
+            dbService.saveDocument(user.uid, gDoc).catch((e) => console.error('Guest doc sync failed:', e));
+          }
+
+          // Merge cloud vocabulary with guest vocabulary
+          const cloudWords = new Set(cloudVocab.map((v) => v.word.toLowerCase()));
+          const cloudVocabIds = new Set(cloudVocab.map((v) => v.id));
+          const guestExtraVocab = vocabularyRef.current.filter(
+            (v) => !cloudVocabIds.has(v.id) && !cloudWords.has(v.word.toLowerCase())
+          );
+          const mergedVocab = [...cloudVocab, ...guestExtraVocab];
+          if (mergedVocab.length > 0) {
+            setVocabulary(mergedVocab);
+          }
+          for (const gEntry of guestExtraVocab) {
+            dbService.saveVocabularyEntry(user.uid, gEntry).catch((e) => console.error('Guest vocab sync failed:', e));
+          }
+
+          // Merge stats cleanly
+          const localStats = normalizeStatsForToday(statsRef.current);
+          const remoteStats = cloudStats ? normalizeStatsForToday(cloudStats) : null;
+          if (remoteStats) {
+            const mergedStats: UserStats = {
+              ...remoteStats,
+              streakDays: Math.max(remoteStats.streakDays, localStats.streakDays),
+              totalReadingMinutes: Math.max(remoteStats.totalReadingMinutes, localStats.totalReadingMinutes),
+              totalWordsLearned: Math.max(remoteStats.totalWordsLearned, localStats.totalWordsLearned, mergedVocab.length),
+              totalPassagesRead: Math.max(remoteStats.totalPassagesRead, localStats.totalPassagesRead),
+              todayReadingMinutes: Math.max(remoteStats.todayReadingMinutes, localStats.todayReadingMinutes),
+              todayWordsLearned: Math.max(remoteStats.todayWordsLearned, localStats.todayWordsLearned),
+            };
+            setStats(mergedStats);
+            if (
+              mergedStats.totalReadingMinutes !== remoteStats.totalReadingMinutes ||
+              mergedStats.totalWordsLearned !== remoteStats.totalWordsLearned ||
+              mergedStats.totalPassagesRead !== remoteStats.totalPassagesRead
+            ) {
+              dbService.saveStats(user.uid, mergedStats).catch((e) => console.error('Merged stats sync failed:', e));
             }
+          } else if (
+            localStats.totalReadingMinutes > 0 ||
+            localStats.totalWordsLearned > 0 ||
+            localStats.totalPassagesRead > 0 ||
+            mergedVocab.length > 0
+          ) {
+            const initialCloudStats = {
+              ...localStats,
+              totalWordsLearned: Math.max(localStats.totalWordsLearned, mergedVocab.length),
+            };
+            setStats(initialCloudStats);
+            dbService.saveStats(user.uid, initialCloudStats).catch((e) => console.error('Initial stats sync failed:', e));
           }
-          if (vocab.length > 0) {
-            setVocabulary(vocab);
+
+          if (cloudPrefs) {
+            lastSyncedPrefsJsonRef.current = JSON.stringify(cloudPrefs);
+            setPreferences((prev) => ({ ...prev, ...cloudPrefs }));
           }
-          if (statsData) setStats(statsData);
-          if (prefsData) setPreferences(prefsData);
         } catch (err) {
           console.error('Failed to load Firestore user data:', err);
         }
@@ -293,25 +423,18 @@ export default function App() {
     loadUserData();
   }, [user]);
 
-  // Persist preferences to Firestore when changed
+  // Persist preferences to Firestore when changed locally (skipping echo right after cloud load)
   useEffect(() => {
-    if (user && preferences !== DEFAULT_PREFERENCES) {
-      dbService.savePreferences(user.uid, preferences).catch((err) => console.error('Save prefs failed:', err));
-    }
+    if (!user) return;
+    const serialized = JSON.stringify(preferences);
+    if (lastSyncedPrefsJsonRef.current === serialized) return;
+    lastSyncedPrefsJsonRef.current = serialized;
+    dbService.savePreferences(user.uid, preferences).catch((err) => console.error('Save prefs failed:', err));
   }, [preferences, user]);
-
-  const [subscription, setSubscription] = useState<SubscriptionStatus>({
-    tier: 'free',
-    isActive: true,
-    dailyTranslationsUsed: 0,
-    dailyTranslationsLimit: 50,
-    wordsTranslatedToday: 0,
-  });
 
   // Modal states
   const [isImporterOpen, setIsImporterOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
   const [legalPage, setLegalPage] = useState<'privacy' | 'terms' | 'faq' | null>(null);
   const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
     try {
@@ -341,7 +464,23 @@ export default function App() {
     window.location.reload();
   };
 
-  const isAnyModalOpen = isImporterOpen || isSettingsOpen || isSubscriptionOpen || legalPage !== null || showOnboarding;
+  const isAnyModalOpen = isImporterOpen || isSettingsOpen || legalPage !== null || showOnboarding;
+
+  // Reading time tracker (1 minute interval when actively reading)
+  useEffect(() => {
+    if (currentView !== 'read' || isAnyModalOpen) return;
+
+    const timer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+      const nextStats = applyDailyActivity(statsRef.current, { readingMinutes: 1 });
+      setStats(nextStats);
+      if (user) {
+        dbService.saveStats(user.uid, nextStats).catch((e) => console.error('Cloud save reading minutes failed:', e));
+      }
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, [currentView, isAnyModalOpen, user]);
 
   const { pullDistance, isPulling, isRefreshing, canRelease } = usePullToRefresh({
     onRefresh: handlePullRefresh,
@@ -380,11 +519,6 @@ export default function App() {
       localStorage.setItem(STORAGE_KEYS.ACTIVE_DOC_ID, activeDocId);
     } catch {}
   }, [activeDocId]);
-
-  // Fetch verified subscription status on mount
-  useEffect(() => {
-    apiService.getSubscription().then(setSubscription);
-  }, []);
 
   // Guarantee window and document scroll position is reset to 0 whenever the view changes
   useEffect(() => {
@@ -429,6 +563,7 @@ export default function App() {
 
   // Handle word selection and vocabulary lookup
   const handleWordClick = async (word: string, contextSentence: string) => {
+    activeLookupContextRef.current = contextSentence;
     setIsLookupLoading(true);
     setActiveLookup({
       word,
@@ -468,10 +603,11 @@ export default function App() {
     }
 
     const newEntry: VocabularyEntry = {
-      id: `vocab-${Date.now()}`,
+      id: `vocab-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       word: lookup.word,
       translation: lookup.translation,
-      contextSentence: lookup.contextualMeaning || '',
+      contextSentence: activeLookupContextRef.current || lookup.contextualMeaning || '',
+      notes: lookup.contextualMeaning || undefined,
       sourceLang: activeDocument.sourceLang,
       targetLang: activeDocument.targetLang,
       grammar: lookup.grammar,
@@ -485,11 +621,7 @@ export default function App() {
       createdAt: Date.now(),
     };
 
-    const nextStats: UserStats = {
-      ...stats,
-      totalWordsLearned: stats.totalWordsLearned + 1,
-      todayWordsLearned: stats.todayWordsLearned + 1,
-    };
+    const nextStats = applyDailyActivity(statsRef.current, { wordsLearned: 1 });
 
     setVocabulary((prev) => [newEntry, ...prev]);
     setStats(nextStats);
@@ -504,47 +636,72 @@ export default function App() {
     return vocabulary.some((v) => v.word.toLowerCase() === word.toLowerCase());
   };
 
-  // Update multiple passages at once (for batch translation)
-  const handleUpdatePassages = (
+  // Update multiple passages at once (for batch translation and manual edits)
+  const handleUpdatePassages = useCallback((
     docId: string,
-    updates: { id: string; sourceText: string; targetText: string }[]
+    updates: { id: string; sourceText: string; targetText: string; isEdited?: boolean }[]
   ) => {
-    const updateMap = new Map(updates.map(u => [u.id, u]));
-    let modifiedDoc: ReadingDocument | null = null;
+    const updateMap = new Map(updates.map((u) => [u.id, u]));
+    const targetDoc = documentsRef.current.find((d) => d.id === docId);
+    let updatedForCloud: ReadingDocument | null = null;
+    if (targetDoc) {
+      updatedForCloud = {
+        ...targetDoc,
+        passages: targetDoc.passages.map((p) => {
+          const up = updateMap.get(p.id);
+          return up
+            ? {
+                ...p,
+                sourceText: up.sourceText,
+                targetText: up.targetText,
+                ...(up.isEdited !== undefined ? { isEdited: up.isEdited } : {}),
+              }
+            : p;
+        }),
+      };
+    }
+
     setDocuments((prevDocs) =>
       prevDocs.map((doc) => {
         if (doc.id !== docId) return doc;
-        modifiedDoc = {
+        return {
           ...doc,
           passages: doc.passages.map((p) => {
             const up = updateMap.get(p.id);
-            return up ? { ...p, sourceText: up.sourceText, targetText: up.targetText } : p;
+            return up
+              ? {
+                  ...p,
+                  sourceText: up.sourceText,
+                  targetText: up.targetText,
+                  ...(up.isEdited !== undefined ? { isEdited: up.isEdited } : {}),
+                }
+              : p;
           }),
         };
-        return modifiedDoc;
       })
     );
-    if (user && modifiedDoc) {
-      dbService.saveDocument(user.uid, modifiedDoc).catch((e) => console.error('Cloud save doc failed:', e));
-    }
-  };
 
-  // Update single passage text
-  const handleUpdatePassage = (
+    if (user && updatedForCloud) {
+      dbService.saveDocument(user.uid, updatedForCloud).catch((e) => console.error('Cloud save doc failed:', e));
+    }
+  }, [user]);
+
+  // Update single passage text (explicit user edit)
+  const handleUpdatePassage = useCallback((
     passageId: string,
     sourceText: string,
     targetText: string
   ) => {
-    handleUpdatePassages(activeDocument.id, [{ id: passageId, sourceText, targetText }]);
-  };
+    handleUpdatePassages(activeDocument.id, [{ id: passageId, sourceText, targetText, isEdited: true }]);
+  }, [activeDocument.id, handleUpdatePassages]);
 
-  // Update progress
-  const handleProgressUpdate = (
+  // Update progress (with unique passage tracking and debounced cloud persistence)
+  const handleProgressUpdate = useCallback((
     docId: string,
     progress: number,
     activePassageId?: string
   ) => {
-    const targetDoc = documents.find((d) => d.id === docId);
+    const targetDoc = documentsRef.current.find((d) => d.id === docId);
     const updatedDoc: ReadingDocument | null = targetDoc
       ? {
           ...targetDoc,
@@ -555,22 +712,43 @@ export default function App() {
       : null;
 
     setDocuments((prev) =>
-      prev.map((d) => (d.id === docId && updatedDoc ? updatedDoc : d))
+      prev.map((d) =>
+        d.id === docId
+          ? {
+              ...d,
+              readingProgress: Math.max(d.readingProgress, progress),
+              lastReadAt: Date.now(),
+              lastActivePassageId: activePassageId,
+            }
+          : d
+      )
     );
 
-    const nextStats: UserStats = {
-      ...stats,
-      totalPassagesRead: stats.totalPassagesRead + 1,
-    };
-    setStats(nextStats);
-
-    if (user) {
-      if (updatedDoc) {
-        dbService.saveDocument(user.uid, updatedDoc).catch((e) => console.error('Cloud save progress failed:', e));
+    let nextStatsToSave: UserStats | null = null;
+    if (activePassageId) {
+      const visitKey = `${docId}:${activePassageId}`;
+      if (!readPassagesSessionRef.current.has(visitKey)) {
+        readPassagesSessionRef.current.add(visitKey);
+        nextStatsToSave = applyDailyActivity(statsRef.current, { passagesRead: 1 });
+        setStats(nextStatsToSave);
       }
-      dbService.saveStats(user.uid, nextStats).catch((e) => console.error('Cloud save stats failed:', e));
     }
-  };
+
+    if (user && (updatedDoc || nextStatsToSave)) {
+      if (progressCloudTimerRef.current) {
+        clearTimeout(progressCloudTimerRef.current);
+      }
+      const statsSnapshot = nextStatsToSave;
+      progressCloudTimerRef.current = setTimeout(() => {
+        if (updatedDoc) {
+          dbService.saveDocument(user.uid, updatedDoc).catch((e) => console.error('Cloud save progress failed:', e));
+        }
+        if (statsSnapshot) {
+          dbService.saveStats(user.uid, statsSnapshot).catch((e) => console.error('Cloud save stats failed:', e));
+        }
+      }, 1200);
+    }
+  }, [user]);
 
   // Delete document
   const handleDeleteDocument = (docId: string) => {
@@ -594,7 +772,7 @@ export default function App() {
 
   // Update document language pair (only permitted for built-in library articles)
   const handleChangeLanguages = (docId: string, sourceLang: string, targetLang: string) => {
-    const doc = documents.find((d) => d.id === docId);
+    const doc = documentsRef.current.find((d) => d.id === docId);
     if (!doc || !isBuiltInDoc(doc)) return;
     const updatedDoc = { ...doc, sourceLang, targetLang };
     setDocuments((prev) =>
@@ -605,10 +783,10 @@ export default function App() {
     }
   };
 
-  // Swap document languages AND their texts so both fields remain aligned
+  // Swap document languages AND their texts so both fields remain aligned (non-built-in only)
   const handleSwapDocumentLanguages = (docId: string) => {
-    const doc = documents.find((d) => d.id === docId);
-    if (!doc) return;
+    const doc = documentsRef.current.find((d) => d.id === docId);
+    if (!doc || isBuiltInDoc(doc)) return;
     const updatedDoc: ReadingDocument = {
       ...doc,
       sourceLang: doc.targetLang,
@@ -633,25 +811,24 @@ export default function App() {
     field: 'source' | 'target',
     newLang: string
   ) => {
-    const doc = documents.find((d) => d.id === docId);
+    const doc = documentsRef.current.find((d) => d.id === docId);
     if (!doc || !isBuiltInDoc(doc)) return;
 
     const currentLang = field === 'source' ? doc.sourceLang : doc.targetLang;
     if (currentLang.toLowerCase() === newLang.toLowerCase()) {
       if (field === 'target' && newLang.toLowerCase() === 'ru') {
-        setDocuments((prev) =>
-          prev.map((d) => {
-            if (d.id !== docId) return d;
-            return {
-              ...d,
-              targetLang: 'ru',
-              passages: d.passages.map((p) => ({
-                ...p,
-                targetText: p.sourceText || p.targetText || '',
-              })),
-            };
-          })
-        );
+        const updatedDoc: ReadingDocument = {
+          ...doc,
+          targetLang: 'ru',
+          passages: doc.passages.map((p) => ({
+            ...p,
+            targetText: p.sourceText || p.targetText || '',
+          })),
+        };
+        setDocuments((prev) => prev.map((d) => (d.id === docId ? updatedDoc : d)));
+        if (user) {
+          dbService.saveDocument(user.uid, updatedDoc).catch((e) => console.error('Cloud save translate failed:', e));
+        }
       }
       return;
     }
@@ -663,22 +840,19 @@ export default function App() {
         : sampleDoc?.translations?.[newLang] || doc.translations?.[newLang];
 
     if (field === 'target') {
+      let updatedDoc: ReadingDocument;
       if (existingTranslations && existingTranslations.length > 0) {
-        setDocuments((prev) =>
-          prev.map((d) => {
-            if (d.id !== docId) return d;
-            return {
-              ...d,
-              targetLang: newLang,
-              passages: d.passages.map((p, idx) => ({
-                ...p,
-                targetText: existingTranslations[idx] || p.translations?.[newLang] || p.targetText || '',
-              })),
-            };
-          })
-        );
+        updatedDoc = {
+          ...doc,
+          targetLang: newLang,
+          passages: doc.passages.map((p, idx) => ({
+            ...p,
+            targetText: p.isEdited
+              ? p.targetText
+              : (existingTranslations[idx] || p.translations?.[newLang] || p.targetText || ''),
+          })),
+        };
       } else {
-        // Try translate through apiService
         try {
           const res = await apiService.translate({
             sourceLang: doc.sourceLang,
@@ -686,42 +860,70 @@ export default function App() {
             paragraphs: doc.passages.map((p) => p.sourceText),
           });
           if (res && res.translatedParagraphs && res.translatedParagraphs.length > 0) {
-            setDocuments((prev) =>
-              prev.map((d) => {
-                if (d.id !== docId) return d;
-                return {
-                  ...d,
-                  targetLang: newLang,
-                  passages: d.passages.map((p, idx) => ({
-                    ...p,
-                    targetText: res.translatedParagraphs[idx] || p.targetText || '',
-                  })),
-                };
-              })
-            );
+            updatedDoc = {
+              ...doc,
+              targetLang: newLang,
+              passages: doc.passages.map((p, idx) => ({
+                ...p,
+                targetText: p.isEdited ? p.targetText : (res.translatedParagraphs[idx] || p.targetText || ''),
+              })),
+            };
           } else {
-            setDocuments((prev) =>
-              prev.map((d) => (d.id === docId ? { ...d, targetLang: newLang } : d))
-            );
+            updatedDoc = { ...doc, targetLang: newLang };
           }
         } catch {
-          setDocuments((prev) =>
-            prev.map((d) => (d.id === docId ? { ...d, targetLang: newLang } : d))
-          );
+          updatedDoc = { ...doc, targetLang: newLang };
         }
       }
+      setDocuments((prev) => prev.map((d) => (d.id === docId ? updatedDoc : d)));
+      if (user) {
+        dbService.saveDocument(user.uid, updatedDoc).catch((e) => console.error('Cloud save translate failed:', e));
+      }
     } else {
-      setDocuments((prev) =>
-        prev.map((d) => (d.id === docId ? { ...d, sourceLang: newLang } : d))
-      );
+      const updatedDoc = { ...doc, sourceLang: newLang };
+      setDocuments((prev) => prev.map((d) => (d.id === docId ? updatedDoc : d)));
+      if (user) {
+        dbService.saveDocument(user.uid, updatedDoc).catch((e) => console.error('Cloud save translate failed:', e));
+      }
     }
   };
 
   // Retranslate document into new target language (now lazy, only for built-in documents)
   const handleRetranslateDocument = async (docId: string, newTargetLang: string) => {
-    const doc = documents.find((d) => d.id === docId);
+    const doc = documentsRef.current.find((d) => d.id === docId);
     if (!doc || !isBuiltInDoc(doc)) return;
     await handleTranslateField(docId, 'target', newTargetLang);
+  };
+
+  // Unified preference update handler across Reader & SettingsModal
+  const handleUpdatePreferences = (newPrefs: Partial<ReadingPreferences>) => {
+    const next = { ...preferences, ...newPrefs };
+    if (newPrefs.uiLang && newPrefs.uiLang !== preferences.uiLang) {
+      const newTargetLang = newPrefs.targetLang || (
+        newPrefs.uiLang === 'ru'
+          ? (preferences.targetLang && preferences.targetLang !== 'ru' ? preferences.targetLang : 'en')
+          : 'ru'
+      );
+      next.targetLang = newTargetLang;
+      setPreferences(next);
+      if (activeDocument && isBuiltInDoc(activeDocument)) {
+        handleChangeLanguages(activeDocument.id, newPrefs.uiLang, newTargetLang);
+        handleRetranslateDocument(activeDocument.id, newTargetLang);
+      }
+    } else {
+      setPreferences(next);
+    }
+  };
+
+  const handleUpdateStats = (partial: Partial<UserStats>) => {
+    const nextStats: UserStats = {
+      ...statsRef.current,
+      ...partial,
+    };
+    setStats(nextStats);
+    if (user) {
+      dbService.saveStats(user.uid, nextStats).catch((e) => console.error('Cloud save stats failed:', e));
+    }
   };
 
   // Review flashcard session
@@ -772,9 +974,7 @@ export default function App() {
         currentView={currentView}
         onNavigate={setCurrentView}
         uiLang={preferences.uiLang}
-        subscription={subscription}
         onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenSubscription={() => setIsSubscriptionOpen(true)}
         onOpenOnboarding={() => setShowOnboarding(true)}
         dueCardsCount={dueCards.length}
         isDistractionFree={isDistractionFree}
@@ -795,24 +995,7 @@ export default function App() {
             onTranslateField={handleTranslateField}
             onSwapLanguages={handleSwapDocumentLanguages}
             preferences={preferences}
-            onUpdatePreferences={(newPrefs) => {
-              const next = { ...preferences, ...newPrefs };
-              if (newPrefs.uiLang && newPrefs.uiLang !== preferences.uiLang) {
-                const newTargetLang = newPrefs.targetLang || (
-                  newPrefs.uiLang === 'ru'
-                    ? (preferences.targetLang && preferences.targetLang !== 'ru' ? preferences.targetLang : 'en')
-                    : 'ru'
-                );
-                next.targetLang = newTargetLang;
-                setPreferences(next);
-                if (activeDocument && isBuiltInDoc(activeDocument)) {
-                  handleChangeLanguages(activeDocument.id, newPrefs.uiLang, newTargetLang);
-                  handleRetranslateDocument(activeDocument.id, newTargetLang);
-                }
-              } else {
-                setPreferences(next);
-              }
-            }}
+            onUpdatePreferences={handleUpdatePreferences}
             onUpdatePassages={handleUpdatePassages}
             onUpdatePassage={handleUpdatePassage}
             onWordClick={handleWordClick}
@@ -841,7 +1024,6 @@ export default function App() {
               onOpenImporter={() => setIsImporterOpen(true)}
               onDeleteDocument={handleDeleteDocument}
               uiLang={preferences.uiLang}
-              subscription={subscription}
               onOpenSettings={() => setIsSettingsOpen(true)}
             />
           </div>
@@ -903,6 +1085,8 @@ export default function App() {
         isSaved={isWordSaved(activeLookup?.word)}
         uiLang={preferences.uiLang}
         sourceLang={activeDocument.sourceLang}
+        speechRate={preferences.speechRate}
+        preferredVoice={preferences.preferredVoice}
       />
 
       {/* Importer Modal */}
@@ -921,11 +1105,6 @@ export default function App() {
           uiLang={preferences.uiLang}
           defaultSourceLang={preferences.sourceLang}
           defaultTargetLang={preferences.targetLang}
-          subscription={subscription}
-          onOpenSubscription={() => {
-            setIsImporterOpen(false);
-            setIsSubscriptionOpen(true);
-          }}
         />
       )}
 
@@ -934,42 +1113,22 @@ export default function App() {
         <SettingsModal
           onClose={() => setIsSettingsOpen(false)}
           preferences={preferences}
-          onUpdatePreferences={(newPrefs) => {
-            const next = { ...preferences, ...newPrefs };
-            if (newPrefs.uiLang && newPrefs.uiLang !== preferences.uiLang) {
-              if (activeDocument && isBuiltInDoc(activeDocument) && newPrefs.uiLang !== activeDocument.sourceLang) {
-                next.targetLang = newPrefs.uiLang;
-                setPreferences(next);
-                handleChangeLanguages(activeDocument.id, activeDocument.sourceLang, newPrefs.uiLang);
-                handleRetranslateDocument(activeDocument.id, newPrefs.uiLang);
-              } else {
-                setPreferences(next);
-              }
-            } else {
-              setPreferences(next);
-            }
-          }}
+          onUpdatePreferences={handleUpdatePreferences}
+          stats={stats}
+          onUpdateStats={handleUpdateStats}
           allData={{ documents, vocabulary, stats }}
           onClearAllData={() => {
+            const resetStats = createDefaultStats();
             setDocuments(SAMPLE_DOCUMENTS);
             setActiveDocId(SAMPLE_DOCUMENTS[0].id);
             setVocabulary([]);
-            setStats(DEFAULT_STATS);
+            setStats(resetStats);
+            readPassagesSessionRef.current.clear();
             try {
               localStorage.removeItem('linguatwin_deleted_ids_v1');
             } catch {}
           }}
           onOpenLegal={(page) => setLegalPage(page)}
-        />
-      )}
-
-      {/* Subscription Modal */}
-      {isSubscriptionOpen && (
-        <SubscriptionModal
-          onClose={() => setIsSubscriptionOpen(false)}
-          subscription={subscription}
-          onSubscriptionUpdated={setSubscription}
-          uiLang={preferences.uiLang}
         />
       )}
 
@@ -988,7 +1147,7 @@ export default function App() {
         onClose={() => setShowOnboarding(false)}
         uiLang={preferences.uiLang}
         onSelectLanguage={(lang) => {
-          setPreferences((prev) => ({ ...prev, uiLang: lang }));
+          handleUpdatePreferences({ uiLang: lang });
         }}
       />
 

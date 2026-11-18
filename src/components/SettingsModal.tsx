@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
-import { X, Download, Trash2, Globe, Check, LogIn, LogOut, Cloud } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { X, Download, Trash2, LogIn, LogOut, Cloud, Sun, Moon, Coffee, Columns2, Rows2, Volume2, Target } from 'lucide-react';
 import { InterfaceLanguage, ReadingPreferences, UserStats, VocabularyEntry, ReadingDocument } from '../types';
 import { SUPPORTED_LANGUAGES } from '../constants/languages';
 import { getTranslation } from '../i18n/translations';
 import { useAuthActions } from '../contexts/AuthContext';
+import { speechService } from '../services/speech';
 
 interface SettingsModalProps {
   onClose: () => void;
   preferences: ReadingPreferences;
   onUpdatePreferences: (prefs: Partial<ReadingPreferences>) => void;
+  stats?: UserStats;
+  onUpdateStats?: (partial: Partial<UserStats>) => void;
   allData: {
     documents: ReadingDocument[];
     vocabulary: VocabularyEntry[];
@@ -22,6 +25,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
   preferences,
   onUpdatePreferences,
+  stats,
+  onUpdateStats,
   allData,
   onClearAllData,
   onOpenLegal,
@@ -29,17 +34,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const t = getTranslation(preferences.uiLang);
   const { user, signIn, signOut } = useAuthActions();
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [adsenseSaved, setAdsenseSaved] = useState(false);
-  const [adsensePubId, setAdsensePubId] = useState(() => {
-    return localStorage.getItem('lingotwice_adsense_pub_id') || '';
-  });
 
-  const handleSaveAdsense = (e: React.FormEvent) => {
-    e.preventDefault();
-    localStorage.setItem('lingotwice_adsense_pub_id', adsensePubId.trim());
-    setAdsenseSaved(true);
-    setTimeout(() => setAdsenseSaved(false), 3000);
-  };
+  const availableVoices = useMemo(() => {
+    return speechService.getAvailableVoicesForLocale(preferences.sourceLang || 'en');
+  }, [preferences.sourceLang]);
 
   const handleExportData = () => {
     const jsonStr = JSON.stringify(allData, null, 2);
@@ -171,6 +169,150 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
+          {/* Reading Theme & Split Layout */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="font-medium text-slate-700 dark:text-slate-300">
+                {t.readingThemeLabel}
+              </label>
+              <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+                {([
+                  { id: 'light', label: t.themeLight, Icon: Sun },
+                  { id: 'sepia', label: t.themeSepia, Icon: Coffee },
+                  { id: 'dark', label: t.themeDark, Icon: Moon },
+                ] as const).map(({ id, label, Icon }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => onUpdatePreferences({ theme: id })}
+                    className={`flex items-center justify-center gap-1 rounded-lg border py-2 px-1.5 transition-colors cursor-pointer ${
+                      preferences.theme === id
+                        ? 'border-amber-600 bg-amber-50 text-amber-900 font-semibold dark:bg-amber-950/60 dark:text-amber-200'
+                        : 'border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300'
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate text-[11px]">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="font-medium text-slate-700 dark:text-slate-300">
+                {t.splitViewLabel}
+              </label>
+              <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onUpdatePreferences({ splitOrientation: 'horizontal' })}
+                  className={`flex items-center justify-center gap-1.5 rounded-lg border py-2 px-2 transition-colors cursor-pointer ${
+                    preferences.splitOrientation === 'horizontal'
+                      ? 'border-amber-600 bg-amber-50 text-amber-900 font-semibold dark:bg-amber-950/60 dark:text-amber-200'
+                      : 'border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300'
+                  }`}
+                >
+                  <Columns2 className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate text-[11px]">{t.splitHorizontal}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onUpdatePreferences({ splitOrientation: 'vertical' })}
+                  className={`flex items-center justify-center gap-1.5 rounded-lg border py-2 px-2 transition-colors cursor-pointer ${
+                    preferences.splitOrientation === 'vertical'
+                      ? 'border-amber-600 bg-amber-50 text-amber-900 font-semibold dark:bg-amber-950/60 dark:text-amber-200'
+                      : 'border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300'
+                  }`}
+                >
+                  <Rows2 className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate text-[11px]">{t.splitVertical}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Speech Rate & Voice */}
+          <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-800/30 space-y-3">
+            <div>
+              <label className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
+                <Volume2 className="h-3.5 w-3.5 text-amber-600" />
+                <span>{t.speechRateLabel}</span>
+              </label>
+              <div className="mt-1.5 grid grid-cols-4 gap-1.5">
+                {[0.75, 1.0, 1.15, 1.35].map((rate) => (
+                  <button
+                    key={rate}
+                    type="button"
+                    onClick={() => onUpdatePreferences({ speechRate: rate })}
+                    className={`rounded-lg border py-1.5 text-center font-mono text-[11px] transition-colors cursor-pointer ${
+                      Math.abs((preferences.speechRate || 1.0) - rate) < 0.05
+                        ? 'border-amber-600 bg-amber-50 text-amber-900 font-bold dark:bg-amber-950/60 dark:text-amber-200'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
+                    }`}
+                  >
+                    {rate}x
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {availableVoices.length > 0 && (
+              <div>
+                <label className="font-medium text-slate-700 dark:text-slate-300 block mb-1">
+                  {t.voiceSelectLabel}
+                </label>
+                <select
+                  value={preferences.preferredVoice || ''}
+                  onChange={(e) => onUpdatePreferences({ preferredVoice: e.target.value || undefined })}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 cursor-pointer"
+                >
+                  <option value="">{t.defaultVoiceOption}</option>
+                  {availableVoices.map((v) => (
+                    <option key={`${v.name}-${v.lang}`} value={v.name}>
+                      {v.name} ({v.lang})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Daily Learning Goals */}
+          {stats && onUpdateStats && (
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-800/30">
+              <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <Target className="h-3.5 w-3.5 text-amber-600" />
+                <span>{t.dailyGoal}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="text-[11px] text-slate-500 block mb-1">{t.dailyGoalMinutesLabel}</label>
+                  <input
+                    type="number"
+                    min={5}
+                    max={240}
+                    step={5}
+                    value={stats.dailyGoalMinutes}
+                    onChange={(e) => onUpdateStats({ dailyGoalMinutes: Math.max(5, Math.min(240, Number(e.target.value) || 20)) })}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono text-xs dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-slate-500 block mb-1">{t.dailyGoalWordsLabel}</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={200}
+                    step={1}
+                    value={stats.dailyGoalWords}
+                    onChange={(e) => onUpdateStats({ dailyGoalWords: Math.max(1, Math.min(200, Number(e.target.value) || 10)) })}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono text-xs dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Data Export & Reset */}
           <div className="border-t border-slate-100 pt-4 dark:border-slate-800 space-y-2">
             <button
@@ -219,40 +361,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Google AdSense Integration */}
-          <div className="border-t border-slate-100 pt-4 dark:border-slate-800">
-            <form onSubmit={handleSaveAdsense} className="rounded-xl border border-amber-200 bg-amber-50/50 p-3.5 dark:border-amber-900/60 dark:bg-amber-950/30 space-y-2">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-300">
-                <Globe className="h-4 w-4 text-amber-600" />
-                <span>{t.adsenseTitle}</span>
-              </div>
-              <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                {t.adsenseDesc}
-              </p>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={adsensePubId}
-                  onChange={(e) => setAdsensePubId(e.target.value)}
-                  placeholder="ca-pub-XXXXXXXXXXXXXXXX"
-                  className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-mono focus:border-amber-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-                />
-                <button
-                  type="submit"
-                  className="rounded-lg bg-amber-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 cursor-pointer"
-                >
-                  {t.saveBtn}
-                </button>
-              </div>
-              {adsenseSaved && (
-                <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
-                  <Check className="h-3.5 w-3.5" />
-                  <span>{t.adsenseSaved}</span>
-                </div>
-              )}
-            </form>
           </div>
 
           {/* Legal Pages & Privacy */}

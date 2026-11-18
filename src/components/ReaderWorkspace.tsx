@@ -10,7 +10,6 @@ import {
   Unlink,
   Edit3,
   Check,
-  RotateCcw,
   Sun,
   Moon,
   Coffee,
@@ -19,12 +18,9 @@ import {
   ArrowLeftRight,
   Play,
   Pause,
-  Sparkles,
   RefreshCw,
   BookOpen,
   ChevronDown,
-  Search,
-  X,
   AlertCircle,
   Share2
 } from 'lucide-react';
@@ -120,7 +116,7 @@ const SourcePassage = React.memo(({
           : 'hover:bg-slate-500/5'
       }`}
     >
-      <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute right-2 top-2 flex items-center gap-1 opacity-75 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         {mode === 'immersion' && toggleReveal && (
           <button
             onClick={() => toggleReveal(passage.id)}
@@ -155,10 +151,10 @@ const SourcePassage = React.memo(({
             rows={4}
           />
           <div className="flex items-center gap-2">
-            <button onClick={saveEditing} className="flex items-center gap-1 rounded bg-amber-600 px-3 py-1 text-xs text-white">
+            <button onClick={saveEditing} className="flex items-center gap-1 rounded bg-amber-600 px-3 py-1 text-xs text-white cursor-pointer">
               <Check className="h-3 w-3" /> {t.saveChanges}
             </button>
-            <button onClick={cancelEditing} className="rounded px-3 py-1 text-xs text-slate-500 hover:bg-slate-100">
+            <button onClick={cancelEditing} className="rounded px-3 py-1 text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
               {t.cancel}
             </button>
           </div>
@@ -204,6 +200,8 @@ const TargetPassage = React.memo(({
   isEditing, 
   editTargetText, 
   setEditTargetText, 
+  saveEditing,
+  cancelEditing,
   playAudio, 
   isTranslating,
   translationError,
@@ -219,6 +217,8 @@ const TargetPassage = React.memo(({
   isEditing: boolean;
   editTargetText: string;
   setEditTargetText: (val: string) => void;
+  saveEditing: () => void;
+  cancelEditing: () => void;
   playAudio: (text: string) => void;
   isTranslating: boolean;
   translationError?: string | null;
@@ -238,13 +238,13 @@ const TargetPassage = React.memo(({
           : 'hover:bg-slate-500/5'
       }`}
     >
-      <div className="absolute right-2 top-2 flex items-center gap-1 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+      <div className="absolute right-2 top-2 flex items-center gap-1 opacity-75 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         {!isTranslating && passage.targetText && (
           <>
             {onShareQuote && (
               <button
                 onClick={() => onShareQuote(passage)}
-                title="Поделиться цитатой"
+                title={t.shareQuoteTooltip}
                 className="rounded p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
               >
                 <Share2 className="h-3.5 w-3.5" />
@@ -269,12 +269,20 @@ const TargetPassage = React.memo(({
             className="w-full rounded-lg border border-slate-300 p-2 text-sm focus:border-amber-500 dark:border-slate-700 dark:bg-slate-900"
             rows={4}
           />
+          <div className="flex items-center gap-2">
+            <button onClick={saveEditing} className="flex items-center gap-1 rounded bg-amber-600 px-3 py-1 text-xs text-white cursor-pointer">
+              <Check className="h-3 w-3" /> {t.saveChanges}
+            </button>
+            <button onClick={cancelEditing} className="rounded px-3 py-1 text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+              {t.cancel}
+            </button>
+          </div>
         </div>
       ) : isTranslating ? (
         <div className="flex flex-col gap-2 py-1.5">
           <div className="flex items-center gap-2 text-xs font-medium text-amber-600 dark:text-amber-400">
             <RefreshCw className="h-3 w-3 animate-spin" />
-            <span>Перевод выполняется...</span>
+            <span>{t.translatingProgress}</span>
           </div>
           <div className="h-3 w-full animate-pulse rounded bg-slate-200 dark:bg-slate-800"></div>
           <div className="h-3 w-4/5 animate-pulse rounded bg-slate-200 dark:bg-slate-800"></div>
@@ -284,7 +292,7 @@ const TargetPassage = React.memo(({
           <div className="rounded-xl border border-dashed border-rose-300 bg-rose-50/60 p-3 text-xs text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200">
             <div className="flex items-center gap-1.5 font-semibold text-rose-700 dark:text-rose-300">
               <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-              <span>Не удалось получить перевод</span>
+              <span>{t.translationErrorTitle}</span>
             </div>
             <p className="mt-1 text-[11px] text-rose-600/90 dark:text-rose-300/80">{translationError}</p>
             {onRetry && (
@@ -294,14 +302,14 @@ const TargetPassage = React.memo(({
                 className="mt-2 inline-flex items-center gap-1 rounded-lg bg-rose-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-700 cursor-pointer shadow-xs"
               >
                 <RefreshCw className="h-3 w-3" />
-                <span>Повторить перевод</span>
+                <span>{t.retryTranslation}</span>
               </button>
             )}
           </div>
         ) : (
           <div className="flex items-center gap-2 py-1 text-[11px] text-slate-400 italic">
             <RefreshCw className="h-3 w-3 animate-spin" />
-            <span>Ожидание перевода...</span>
+            <span>{t.waitingTranslation}</span>
           </div>
         )
       ) : (
@@ -376,9 +384,11 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
   const [translationErrorMessage, setTranslationErrorMessage] = useState<string | null>(null);
   const [retryTrigger, setRetryTrigger] = useState(0);
   const inFlightIdsRef = React.useRef<Set<string>>(new Set());
+  const hasErrorRef = React.useRef<boolean>(false);
 
   const retryTranslation = React.useCallback(() => {
     inFlightIdsRef.current.clear();
+    hasErrorRef.current = false;
     setTranslationErrorMessage(null);
     setTranslationStatus('idle');
     setRetryTrigger((prev) => prev + 1);
@@ -388,12 +398,14 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
   useEffect(() => {
     setVisibleCount(100);
     inFlightIdsRef.current.clear();
+    hasErrorRef.current = false;
+    setTranslatingPassageIds(new Set());
     setTranslationStatus('idle');
     setTranslationErrorMessage(null);
   }, [document.id]);
 
   // Synchronized scroll hook
-  const { sourceRef, targetRef, activePassageId, scrollToPassage } = useSynchronizedScroll({
+  const { sourceRef, targetRef, activePassageId } = useSynchronizedScroll({
     enabled: preferences.syncScroll,
     onActivePassageChange: (id) => {
       const idx = document.passages.findIndex((p) => p.id === id);
@@ -435,10 +447,9 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
     return speechService.subscribe(setSpeechState);
   }, []);
 
-
   const playAudio = React.useCallback((text: string, lang: string) => {
-    speechService.speak(text, lang, preferences.speechRate);
-  }, [preferences.speechRate]);
+    speechService.speak(text, lang, preferences.speechRate, preferences.preferredVoice);
+  }, [preferences.speechRate, preferences.preferredVoice]);
 
   // Handle word tap/click with context
   const handleWordSelect = React.useCallback((word: string, passage: AlignedPassage) => {
@@ -448,12 +459,141 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
     }
   }, [onWordClick]);
 
+  const isBuiltIn = Boolean(document.isSample || SAMPLE_DOCUMENTS.some((s) => s.id === document.id));
+
+  // Determine effective source language
+  const effectiveSourceLang = isBuiltIn
+    ? (document.translations?.[uiLang] ? uiLang : (document.sourceLang || 'ru'))
+    : (document.sourceLang || 'ru');
+
+  // Determine effective target language (never incorrectly overridden by uiLang)
+  const effectiveTargetLang = isBuiltIn
+    ? (document.targetLang && document.targetLang !== effectiveSourceLang
+        ? document.targetLang
+        : preferences.targetLang && preferences.targetLang !== effectiveSourceLang
+        ? preferences.targetLang
+        : effectiveSourceLang === 'ru' ? 'en' : 'ru')
+    : (document.targetLang || (effectiveSourceLang === 'ru' ? 'en' : 'ru'));
+
+  const resolvePassageTexts = React.useCallback((passage: AlignedPassage, idx: number) => {
+    const resolvedSource = isBuiltIn && !passage.isEdited
+      ? (uiLang === 'ru'
+          ? (passage.translations?.['ru'] || document.translations?.['ru']?.[idx] || passage.sourceText || '')
+          : (document.translations?.[uiLang]?.[idx] || passage.translations?.[uiLang] || passage.sourceText || ''))
+      : passage.sourceText || '';
+
+    const resolvedTarget = isBuiltIn && !passage.isEdited
+      ? (passage.translations?.[effectiveTargetLang] ||
+         document.translations?.[effectiveTargetLang]?.[idx] ||
+         (effectiveTargetLang === 'ru' ? (passage.translations?.['ru'] || document.translations?.['ru']?.[idx] || passage.sourceText) : '') ||
+         passage.targetText ||
+         '')
+      : (passage.targetText || '');
+
+    return { resolvedSource, resolvedTarget };
+  }, [isBuiltIn, uiLang, document.translations, effectiveTargetLang]);
+
+  // Lazy auto-translation for custom/imported documents with empty targetText passages
+  useEffect(() => {
+    if (
+      isBuiltIn ||
+      hasErrorRef.current ||
+      !onUpdatePassages ||
+      effectiveSourceLang.toLowerCase() === effectiveTargetLang.toLowerCase()
+    ) {
+      return;
+    }
+
+    const missing = visiblePassages.filter(
+      (p) => p.sourceText.trim() && !p.targetText?.trim() && !inFlightIdsRef.current.has(p.id)
+    );
+    if (missing.length === 0) return;
+
+    let cancelled = false;
+
+    const runLazyTranslation = async () => {
+      setTranslationStatus('translating');
+      setTranslationErrorMessage(null);
+
+      try {
+        for (let i = 0; i < missing.length; i += 5) {
+          if (cancelled) return;
+          const batch = missing.slice(i, i + 5);
+          batch.forEach((p) => inFlightIdsRef.current.add(p.id));
+          setTranslatingPassageIds((prev) => {
+            const next = new Set(prev);
+            batch.forEach((p) => next.add(p.id));
+            return next;
+          });
+
+          const res = await apiService.translate({
+            sourceLang: effectiveSourceLang,
+            targetLang: effectiveTargetLang,
+            paragraphs: batch.map((p) => p.sourceText),
+          });
+
+          if (cancelled) return;
+
+          const updates = batch.map((p, idx) => ({
+            id: p.id,
+            sourceText: p.sourceText,
+            targetText: res.translatedParagraphs?.[idx] || '',
+          }));
+
+          setTranslatingPassageIds((prev) => {
+            const next = new Set(prev);
+            batch.forEach((p) => next.delete(p.id));
+            return next;
+          });
+
+          const hasAnyTranslated = updates.some((u) => u.targetText.trim().length > 0);
+          if (!hasAnyTranslated) {
+            throw new Error(t.translationErrorTitle);
+          }
+
+          onUpdatePassages(document.id, updates);
+        }
+
+        if (!cancelled) {
+          setTranslationStatus('ready');
+        }
+      } catch (err: any) {
+        if (cancelled) return;
+        hasErrorRef.current = true;
+        setTranslatingPassageIds(new Set());
+        setTranslationStatus('error');
+        setTranslationErrorMessage(err?.message || t.translationErrorTitle);
+      }
+    };
+
+    runLazyTranslation();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    document.id,
+    document.passages,
+    visibleCount,
+    isBuiltIn,
+    effectiveSourceLang,
+    effectiveTargetLang,
+    onUpdatePassages,
+    retryTrigger,
+    t.translationErrorTitle,
+  ]);
+
   // Passage editing handlers
   const startEditing = React.useCallback((p: AlignedPassage) => {
+    const idx = document.passages.findIndex((item) => item.id === p.id);
+    const { resolvedSource, resolvedTarget } = idx >= 0
+      ? resolvePassageTexts(document.passages[idx], idx)
+      : { resolvedSource: p.sourceText, resolvedTarget: p.targetText };
+
     setEditingPassageId(p.id);
-    setEditSourceText(p.sourceText);
-    setEditTargetText(p.targetText);
-  }, []);
+    setEditSourceText(resolvedSource);
+    setEditTargetText(resolvedTarget);
+  }, [document.passages, resolvePassageTexts]);
 
   const saveEditing = React.useCallback(() => {
     if (editingPassageId) {
@@ -474,22 +614,6 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
       return next;
     });
   }, []);
-
-  const isBuiltIn = Boolean(document.isSample || SAMPLE_DOCUMENTS.some((s) => s.id === document.id));
-
-  // Determine effective source language
-  const effectiveSourceLang = isBuiltIn
-    ? (document.translations?.[uiLang] ? uiLang : (document.sourceLang || 'ru'))
-    : (document.sourceLang || 'ru');
-
-  // Determine effective target language (never incorrectly overridden by uiLang)
-  const effectiveTargetLang = isBuiltIn
-    ? (document.targetLang && document.targetLang !== effectiveSourceLang
-        ? document.targetLang
-        : preferences.targetLang && preferences.targetLang !== effectiveSourceLang
-        ? preferences.targetLang
-        : effectiveSourceLang === 'ru' ? 'en' : 'ru')
-    : (document.targetLang || (effectiveSourceLang === 'ru' ? 'en' : 'ru'));
 
   const playSourceAudio = React.useCallback((text: string) => {
     playAudio(text, effectiveSourceLang);
@@ -590,12 +714,8 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
       >
         <div className="space-y-4 sm:space-y-5 max-w-2xl mx-auto pb-16">
           {visiblePassages.map((passage, idx) => {
-            const resolvedSourceText = isBuiltIn
-              ? (uiLang === 'ru'
-                  ? (passage.translations?.['ru'] || document.translations?.['ru']?.[idx] || passage.sourceText || '')
-                  : (document.translations?.[uiLang]?.[idx] || passage.translations?.[uiLang] || passage.sourceText || ''))
-              : passage.sourceText || '';
-            const displaySourcePassage = { ...passage, sourceText: resolvedSourceText };
+            const { resolvedSource } = resolvePassageTexts(passage, idx);
+            const displaySourcePassage = { ...passage, sourceText: resolvedSource };
 
             return (
               <SourcePassage
@@ -627,10 +747,10 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
             <div className="flex justify-center py-8">
               <button
                 onClick={() => setVisibleCount(prev => prev + 100)}
-                className="flex items-center gap-2 rounded-xl bg-slate-200 px-6 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
+                className="flex items-center gap-2 rounded-xl bg-slate-200 px-6 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
-                {t.loadMore || 'Загрузить ещё 100 фрагментов'}
+                {t.loadMore}
               </button>
             </div>
           )}
@@ -661,32 +781,32 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
           {translationStatus === 'translating' && (
             <div className="flex items-center gap-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-950/80 px-2 py-0.5 rounded-md shadow-xs animate-pulse">
               <RefreshCw className="h-3 w-3 animate-spin text-amber-600 dark:text-amber-400" />
-              <span>Перевод выполняется...</span>
+              <span>{t.translatingProgress}</span>
             </div>
           )}
           {translationStatus === 'ready' && (
             <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-950/80 px-2 py-0.5 rounded-md shadow-xs">
               <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-              <span>Перевод готов</span>
+              <span>{t.translationReady}</span>
             </div>
           )}
           {translationStatus === 'error' && (
             <div className="flex items-center gap-1.5 text-[11px] font-medium text-rose-700 dark:text-rose-300 bg-rose-100/90 dark:bg-rose-950/90 px-2 py-0.5 rounded-md shadow-xs">
               <AlertCircle className="h-3 w-3 text-rose-600 shrink-0" />
               <span className="truncate max-w-[130px] sm:max-w-[200px]" title={translationErrorMessage || ''}>
-                {translationErrorMessage || 'Ошибка перевода'}
+                {translationErrorMessage || t.translationErrorTitle}
               </span>
               <button
                 type="button"
                 onClick={retryTranslation}
                 className="underline font-bold hover:text-rose-900 dark:hover:text-rose-100 cursor-pointer ml-0.5"
               >
-                Повторить
+                {t.retryShort}
               </button>
             </div>
           )}
           {preferences.activeMode === 'immersion' && (
-            <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400">Погружение</span>
+            <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400">{t.modeImmersionShort}</span>
           )}
         </div>
       </div>
@@ -697,14 +817,8 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
       >
         <div className="space-y-4 sm:space-y-5 max-w-2xl mx-auto pb-16">
           {visiblePassages.map((passage, idx) => {
-            const resolvedTargetText = isBuiltIn
-              ? (passage.translations?.[effectiveTargetLang] ||
-                 document.translations?.[effectiveTargetLang]?.[idx] ||
-                 (effectiveTargetLang === 'ru' ? (passage.translations?.['ru'] || document.translations?.['ru']?.[idx] || passage.sourceText) : '') ||
-                 passage.targetText ||
-                 '')
-              : (passage.targetText || '');
-            const displayPassage = { ...passage, targetText: resolvedTargetText };
+            const { resolvedSource, resolvedTarget } = resolvePassageTexts(passage, idx);
+            const displayPassage = { ...passage, sourceText: resolvedSource, targetText: resolvedTarget };
 
             return (
               <TargetPassage
@@ -714,13 +828,17 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
                 isEditing={editingPassageId === passage.id}
                 editTargetText={editTargetText}
                 setEditTargetText={setEditTargetText}
+                saveEditing={saveEditing}
+                cancelEditing={cancelEditing}
                 playAudio={playTargetAudio}
-                isTranslating={false}
+                isTranslating={translatingPassageIds.has(passage.id)}
+                translationError={translationErrorMessage}
+                onRetry={retryTranslation}
                 fontSizeStyle={fontSizeStyle}
                 lineHeightClass={lineHeightClass}
                 targetTextColorClass={targetTextColorClass}
                 t={t}
-                onShareQuote={(p) => setShareQuotePassage({ sourceText: passage.sourceText, targetText: p.targetText || '' })}
+                onShareQuote={(p) => setShareQuotePassage({ sourceText: resolvedSource, targetText: p.targetText || '' })}
               />
             );
           })}
@@ -729,10 +847,10 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
             <div className="flex justify-center py-8">
               <button
                 onClick={() => setVisibleCount(prev => prev + 100)}
-                className="flex items-center gap-2 rounded-xl bg-slate-200 px-6 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
+                className="flex items-center gap-2 rounded-xl bg-slate-200 px-6 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
-                {t.loadMore || 'Загрузить ещё 100 фрагментов'}
+                {t.loadMore}
               </button>
             </div>
           )}
@@ -789,7 +907,7 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
                           : (isDark ? 'text-slate-300 hover:bg-slate-800' : isSepia ? 'text-[#5c4c3b] hover:bg-[#e4d9c3]' : 'text-slate-700 hover:bg-slate-100')
                       }`}>
                       <div className="truncate">{getDocTitle(d, preferences.uiLang)}</div>
-                      <div className="text-[10px] text-slate-400">{d.sourceLang.toUpperCase()} → {d.targetLang.toUpperCase()} · {d.wordCount} слов</div>
+                      <div className="text-[10px] text-slate-400">{d.sourceLang.toUpperCase()} → {d.targetLang.toUpperCase()} · {d.wordCount} {t.wordsCount}</div>
                     </button>
                   ))}
                 </div>
@@ -834,7 +952,7 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
                   ? 'border-[#d4c6a6] bg-[#eae3d2] text-[#2b2118]'
                   : 'border-slate-200 bg-slate-100/90 text-slate-700'
               }`}
-              title="Для добавленного вами текста языки зафиксированы (оригинал и добавленный перевод)"
+              title={t.fixedLangsTooltip}
             >
               <span className="flex items-center gap-1">
                 <span>{sourceLangMeta.flag}</span>
@@ -852,7 +970,7 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
             <button onClick={onOpenImporter} className="flex items-center gap-1 rounded-lg bg-amber-600 px-1.5 py-0.5 sm:px-2 sm:py-0.5 text-[11px] sm:text-xs font-semibold text-white transition-colors hover:bg-amber-700 shadow-xs whitespace-nowrap shrink-0 cursor-pointer">
               <Plus className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               <span className="hidden sm:inline">{t.addNewText}</span>
-              <span className="sm:hidden text-[10px]">+Текст</span>
+              <span className="sm:hidden text-[10px]">{t.shortAddText}</span>
             </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
@@ -896,8 +1014,8 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
                   {mode === 'immersion' && t.modeImmersion}
                 </span>
                 <span className="sm:hidden">
-                  {mode === 'parallel' && 'Параллель'}
-                  {mode === 'immersion' && 'Погружение'}
+                  {mode === 'parallel' && t.modeParallelShort}
+                  {mode === 'immersion' && t.modeImmersionShort}
                 </span>
               </button>
             ))}
@@ -982,7 +1100,7 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
               }`}
             >
               {preferences.syncScroll ? <Link className="h-3.5 w-3.5 text-amber-600" /> : <Unlink className="h-3.5 w-3.5 text-slate-400" />}
-              <span className="hidden xl:inline text-[11px]">{preferences.syncScroll ? 'Синхрон' : 'Раздельно'}</span>
+              <span className="hidden xl:inline text-[11px]">{preferences.syncScroll ? t.syncShort : t.splitShort}</span>
             </button>
 
             <div className={`flex items-center rounded-lg border px-0.5 shrink-0 transition-colors ${
@@ -1021,14 +1139,14 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
           }`}>
             <div className="flex items-center gap-1.5 truncate">
               <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
-              <span className="font-medium shrink-0">Воспроизведение:</span>
+              <span className="font-medium shrink-0">{t.nowPlaying}</span>
               <span className="italic truncate">{speechState.currentText}</span>
             </div>
             <div className="flex items-center gap-1 shrink-0 ml-2">
-              <button onClick={() => (speechState.isPaused ? speechService.resume() : speechService.pause())} className="rounded p-1 hover:bg-amber-100 dark:hover:bg-amber-900">
+              <button onClick={() => (speechState.isPaused ? speechService.resume() : speechService.pause())} className="rounded p-1 hover:bg-amber-100 dark:hover:bg-amber-900 cursor-pointer">
                 {speechState.isPaused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
               </button>
-              <button onClick={() => speechService.stop()} className="rounded p-1 hover:bg-amber-100 dark:hover:bg-amber-900"><VolumeX className="h-3 w-3" /></button>
+              <button onClick={() => speechService.stop()} className="rounded p-1 hover:bg-amber-100 dark:hover:bg-amber-900 cursor-pointer"><VolumeX className="h-3 w-3" /></button>
             </div>
           </div>
         )}
@@ -1055,11 +1173,11 @@ export const ReaderWorkspace: React.FC<ReaderWorkspaceProps> = ({
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
           <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
-            <h4 className="font-serif text-base font-bold text-slate-900 dark:text-white">Удалить этот текст?</h4>
-            <p className="mt-2 text-xs text-slate-500">«{document.title}» будет удалён из вашей библиотеки. Это действие нельзя отменить.</p>
+            <h4 className="font-serif text-base font-bold text-slate-900 dark:text-white">{t.deleteDocTitle}</h4>
+            <p className="mt-2 text-xs text-slate-500">«{getDocTitle(document, uiLang)}» {t.deleteDocConfirm}</p>
             <div className="mt-5 flex justify-end gap-2">
-              <button onClick={() => setShowDeleteConfirm(false)} className="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800">Отмена</button>
-              <button onClick={() => { setShowDeleteConfirm(false); onDeleteDocument(document.id); }} className="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700">Удалить</button>
+              <button onClick={() => setShowDeleteConfirm(false)} className="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer">{t.cancel}</button>
+              <button onClick={() => { setShowDeleteConfirm(false); onDeleteDocument(document.id); }} className="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 cursor-pointer">{t.deleteDoc}</button>
             </div>
           </div>
         </div>

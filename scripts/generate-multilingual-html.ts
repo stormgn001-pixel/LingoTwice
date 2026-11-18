@@ -10,7 +10,6 @@ const PUBLIC_DIR = path.resolve(ROOT_DIR, 'public');
 
 const BASE_URL = 'https://lingotwice.com';
 const LOGO_URL = 'https://lingotwice.com/assets/aistudio/file_000000004eec82468ea111a6735b2471_8524203a.png';
-const ADSENSE_PUB_ID = 'ca-pub-2319563738462034';
 const GA4_ID = 'G-N059XGPE5M';
 
 // Generate all hreflang link tags (17 languages + x-default)
@@ -156,10 +155,6 @@ ${JSON.stringify(jsonLd, null, 2)}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-
-    <!-- Google AdSense Verification & Auto Ads -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_PUB_ID}"
-         crossorigin="anonymous"></script>
     <meta name="theme-color" content="#020617" id="theme-color-meta" />
     <style>
       html, body {
@@ -187,9 +182,6 @@ ${JSON.stringify(jsonLd, null, 2)}
       (function() {
         try {
           document.documentElement.classList.add('js-ready');
-          if (!localStorage.getItem('lingotwice_adsense_pub_id')) {
-            localStorage.setItem('lingotwice_adsense_pub_id', '${ADSENSE_PUB_ID}');
-          }
           var prefs = JSON.parse(localStorage.getItem('linguatwin_preferences_v1'));
           var theme = (prefs && prefs.theme) || 'dark';
           var metaTheme = document.getElementById('theme-color-meta');
@@ -414,10 +406,6 @@ ${JSON.stringify(jsonLd, null, 2)}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-
-    <!-- Google AdSense Verification & Auto Ads -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_PUB_ID}"
-         crossorigin="anonymous"></script>
     <meta name="theme-color" content="#020617" id="theme-color-meta" />
     <style>
       html, body {
@@ -445,9 +433,6 @@ ${JSON.stringify(jsonLd, null, 2)}
       (function() {
         try {
           document.documentElement.classList.add('js-ready');
-          if (!localStorage.getItem('lingotwice_adsense_pub_id')) {
-            localStorage.setItem('lingotwice_adsense_pub_id', '${ADSENSE_PUB_ID}');
-          }
           var prefs = JSON.parse(localStorage.getItem('linguatwin_preferences_v1'));
           var theme = (prefs && prefs.theme) || 'dark';
           var metaTheme = document.getElementById('theme-color-meta');

@@ -97,7 +97,7 @@
     .brand img {
       width: 32px;
       height: 32px;
-      object-contain: contain;
+      object-fit: contain;
     }
 
     .nav-links {
@@ -278,6 +278,22 @@
       animation: fadeIn 0.3s ease;
     }
 
+    .alert-error {
+      display: none;
+      background: #fff1f2;
+      border: 1px solid #f43f5e;
+      color: #9f1239;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.925rem;
+    }
+
+    .alert-error.show {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-6px); }
       to { opacity: 1; transform: translateY(0); }
@@ -366,6 +382,7 @@
       <div id="successAlert" class="alert-success">
         <strong>Thank you!</strong> Your message has been received. Our team will review your inquiry and respond to your email within 24–48 business hours.
       </div>
+      <div id="errorAlert" class="alert-error"></div>
 
       <div class="contact-layout">
         <!-- Form Column -->
@@ -450,10 +467,11 @@
   </footer>
 
   <script>
-    function handleContactSubmit(e) {
+    async function handleContactSubmit(e) {
       e.preventDefault();
       var form = document.getElementById('contactForm');
       var alertBox = document.getElementById('successAlert');
+      var errorBox = document.getElementById('errorAlert');
       var submitBtn = document.getElementById('submitBtn');
 
       if (!form.checkValidity()) {
@@ -461,17 +479,37 @@
         return;
       }
 
-      // Simulate sending with responsive feedback
+      alertBox.classList.remove('show');
+      errorBox.classList.remove('show');
       submitBtn.disabled = true;
       submitBtn.innerText = 'Sending...';
 
-      setTimeout(function() {
+      try {
+        var payload = {
+          name: document.getElementById('name').value,
+          email: document.getElementById('email').value,
+          subject: document.getElementById('subject').value,
+          message: document.getElementById('message').value
+        };
+        var res = await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        var data = await res.json().catch(function() { return {}; });
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to send message.');
+        }
         form.reset();
-        submitBtn.disabled = false;
-        submitBtn.innerText = 'Send Message';
         alertBox.classList.add('show');
         alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }, 700);
+      } catch (err) {
+        errorBox.innerText = err.message || 'Unable to send message right now. Please email support@lingotwice.com.';
+        errorBox.classList.add('show');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Send Message';
+      }
     }
   </script>
 

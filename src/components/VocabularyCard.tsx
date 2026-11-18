@@ -12,6 +12,8 @@ interface VocabularyCardProps {
   isSaved: boolean;
   uiLang: InterfaceLanguage;
   sourceLang: string;
+  speechRate?: number;
+  preferredVoice?: string;
 }
 
 export const VocabularyCard: React.FC<VocabularyCardProps> = ({
@@ -22,6 +24,8 @@ export const VocabularyCard: React.FC<VocabularyCardProps> = ({
   isSaved,
   uiLang,
   sourceLang,
+  speechRate = 1.0,
+  preferredVoice,
 }) => {
   const t = getTranslation(uiLang);
 
@@ -29,7 +33,7 @@ export const VocabularyCard: React.FC<VocabularyCardProps> = ({
 
   const handlePlayAudio = () => {
     if (lookup?.word) {
-      speechService.speak(lookup.word, sourceLang);
+      speechService.speak(lookup.word, sourceLang, speechRate, preferredVoice);
     }
   };
 
@@ -38,7 +42,7 @@ export const VocabularyCard: React.FC<VocabularyCardProps> = ({
       {isLoading ? (
         <div className="flex items-center justify-center py-8 text-sm text-slate-600 dark:text-slate-300">
           <div className="mr-3 h-5 w-5 animate-spin rounded-full border-2 border-amber-600 border-t-transparent"></div>
-          <span className="font-medium">Лингвистический анализ ИИ...</span>
+          <span className="font-medium">{t.analyzingWord}</span>
         </div>
       ) : lookup ? (
         <div className="space-y-4">

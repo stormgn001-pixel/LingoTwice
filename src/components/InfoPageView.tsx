@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { InterfaceLanguage } from '../types';
-import { Mail, Shield, ArrowLeft, ExternalLink, CheckCircle } from 'lucide-react';
+import { Mail, Shield, ArrowLeft, ExternalLink, CheckCircle, AlertCircle } from 'lucide-react';
+import { apiService } from '../services/api';
+import { getTranslation } from '../i18n/translations';
 
 interface InfoPageViewProps {
   page: 'about' | 'contact' | 'privacy' | 'terms';
@@ -89,11 +91,11 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
     topicSupport: 'Technical support / Bug report',
     topicPartnership: 'Partnership & collaboration',
     topicPrivacy: 'Data privacy questions',
-    privacyBadge: 'GDPR & AdSense Compliance',
+    privacyBadge: 'GDPR & Privacy Compliance',
     privacyTitle: 'Privacy Policy',
     privacySubtitle: 'Last updated: October 31, 2026',
-    privacyP1: 'This Privacy Policy describes how LingoTwice (https://lingotwice.com) collects, uses, and protects user information in accordance with GDPR, CCPA, and Google AdSense guidelines.',
-    privacyP2: 'Cookies & Google AdSense: Our site uses cookies (including third-party vendors like Google and DoubleClick DART) to serve ads based on user visits to this and other websites on the Internet. Users may opt out of personalized advertising by visiting Google Ads Settings (https://adssettings.google.com) and www.aboutads.info.',
+    privacyP1: 'This Privacy Policy describes how LingoTwice (https://lingotwice.com) collects, uses, and protects user information in accordance with GDPR and CCPA guidelines. LingoTwice is completely free and ad-free.',
+    privacyP2: 'Essential Storage & Cookies: Our service does not display advertising or use third-party ad tracking cookies (such as DoubleClick DART). We only use essential browser storage and optional Firebase authentication for cloud synchronization.',
     privacyP3: 'Local Data: Most of your reading preferences, vocabulary, and books are stored locally on your device (LocalStorage / IndexedDB). We do not transmit your personal texts to commercial servers.',
     privacyP4: 'GDPR Rights: If you are located in the European Economic Area (EEA), you have rights to access, correct, or delete your personal data. Contact us at support@lingotwice.com.',
     termsBadge: 'Terms of Service',
@@ -139,11 +141,11 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
     topicSupport: 'Техническая поддержка / Ошибка',
     topicPartnership: 'Партнерство и сотрудничество',
     topicPrivacy: 'Вопросы по конфиденциальности данных',
-    privacyBadge: 'GDPR & AdSense Compliance',
+    privacyBadge: 'GDPR & Защита данных',
     privacyTitle: 'Политика конфиденциальности (Privacy Policy)',
     privacySubtitle: 'Последнее обновление: 31 октября 2026 г.',
-    privacyP1: 'Настоящая Политика конфиденциальности описывает, как LingoTwice (https://lingotwice.com) собирает, использует и защищает информацию пользователей в соответствии с требованиями GDPR, CCPA и правилами рекламной сети Google AdSense.',
-    privacyP2: 'Использование файлов Cookie и Google AdSense: Наш сайт использует файлы cookie (включая файлы cookie сторонних поставщиков, таких как Google и DoubleClick DART) для показа релевантной рекламы на основе посещений пользователей данного сайта и других сайтов в интернете. Пользователи могут отказаться от использования файлов cookie для персонализированной рекламы через Настройки рекламы Google (https://adssettings.google.com) и www.aboutads.info.',
+    privacyP1: 'Настоящая Политика конфиденциальности описывает, как LingoTwice (https://lingotwice.com) собирает, использует и защищает информацию пользователей в соответствии с требованиями GDPR и CCPA. LingoTwice является полностью бесплатным сервисом без рекламы.',
+    privacyP2: 'Файлы Cookie и отсутствие рекламы: Сайт не показывает рекламу и не использует рекламные трекеры сторонних сетей. Мы применяем только техническое хранилище браузера и опциональную авторизацию Google Firebase для синхронизации вашей библиотеки.',
     privacyP3: 'Локальные данные: Большая часть ваших данных (настройки чтения, словарь, сохраненные книги и прогресс) хранится локально на вашем устройстве в памяти браузера. Мы не передаем ваши личные тексты на внешние коммерческие сервера.',
     privacyP4: 'Ваши права по GDPR: Если вы находитесь в Европейском экономическом пространстве, вы имеете право на доступ к персональным данным, их исправление или удаление. Обращайтесь на support@lingotwice.com.',
     termsBadge: 'Правила сервиса',
@@ -189,11 +191,11 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
     topicSupport: 'Технічна підтримка',
     topicPartnership: 'Партнерство',
     topicPrivacy: 'Питання конфіденційності',
-    privacyBadge: 'GDPR & AdSense Compliance',
+    privacyBadge: 'GDPR & Конфіденційність',
     privacyTitle: 'Політика конфіденційності',
     privacySubtitle: 'Останнє оновлення: 31 жовтня 2026 р.',
-    privacyP1: 'Ця Політика конфіденційності описує збір та захист даних користувачів згідно з GDPR, CCPA та Google AdSense.',
-    privacyP2: 'Використання файлів Cookie та Google AdSense для показу релевантної реклами та аналітики.',
+    privacyP1: 'Ця Політика конфіденційності описує збір та захист даних користувачів згідно з GDPR та CCPA. LingoTwice є безкоштовним сервісом без реклами.',
+    privacyP2: 'Використання файлів Cookie обмежується технічним збереженням налаштувань та синхронізацією в Firebase; реклама відсутня.',
     privacyP3: 'Локальні дані зберігаються на вашому пристрої.',
     privacyP4: 'Ваші права за GDPR: звертайтесь на support@lingotwice.com.',
     termsBadge: 'Правила сервісу',
@@ -239,11 +241,11 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
     topicSupport: 'Technischer Support',
     topicPartnership: 'Partnerschaft',
     topicPrivacy: 'Datenschutz',
-    privacyBadge: 'GDPR & AdSense Compliance',
+    privacyBadge: 'GDPR & Datenschutz',
     privacyTitle: 'Datenschutzerklärung',
     privacySubtitle: 'Stand: 31. Oktober 2026',
-    privacyP1: 'Diese Datenschutzerklärung beschreibt die Verarbeitung von Nutzerdaten gemäß GDPR, CCPA und Google AdSense Richtlinien.',
-    privacyP2: 'Verwendung von Cookies und Google AdSense zur Personalisierung von Anzeigen.',
+    privacyP1: 'Diese Datenschutzerklärung beschreibt die Verarbeitung von Nutzerdaten gemäß GDPR und CCPA. LingoTwice ist kostenlos und werbefrei.',
+    privacyP2: 'Verwendung essenzieller Cookies und lokaler Speicherung zur Cloud-Synchronisierung ohne Werbe-Tracking.',
     privacyP3: 'Lokale Datenspeicherung auf Ihrem Gerät.',
     privacyP4: 'Ihre GDPR-Rechte: support@lingotwice.com.',
     termsBadge: 'Nutzungsbedingungen',
@@ -289,11 +291,11 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
     topicSupport: 'Soporte técnico',
     topicPartnership: 'Colaboración',
     topicPrivacy: 'Privacidad de datos',
-    privacyBadge: 'Cumplimiento GDPR y AdSense',
+    privacyBadge: 'Cumplimiento GDPR y Privacidad',
     privacyTitle: 'Política de Privacidad',
     privacySubtitle: 'Actualizado: 31 de octubre de 2026',
-    privacyP1: 'Esta política describe cómo recopilamos y protegemos la información según GDPR, CCPA y Google AdSense.',
-    privacyP2: 'Uso de cookies y anuncios de Google AdSense.',
+    privacyP1: 'Esta política describe cómo protegemos su información según GDPR y CCPA. LingoTwice es gratuito y sin anuncios.',
+    privacyP2: 'Uso exclusivo de almacenamiento local y cookies esenciales para sincronización, sin rastreo publicitario.',
     privacyP3: 'Almacenamiento de datos locales en el dispositivo.',
     privacyP4: 'Derechos GDPR: support@lingotwice.com.',
     termsBadge: 'Términos de Servicio',
@@ -339,11 +341,11 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
     topicSupport: 'Support technique',
     topicPartnership: 'Partenariat',
     topicPrivacy: 'Confidentialité',
-    privacyBadge: 'Conformité GDPR & AdSense',
+    privacyBadge: 'Conformité RGPD & Confidentialité',
     privacyTitle: 'Politique de confidentialité',
     privacySubtitle: 'Dernière mise à jour : 31 octobre 2026',
-    privacyP1: 'Cette politique décrit la collecte de données selon le RGPD, CCPA et Google AdSense.',
-    privacyP2: 'Utilisation des cookies publicitaires Google AdSense.',
+    privacyP1: 'Cette politique décrit la protection des données selon le RGPD et le CCPA. LingoTwice est gratuit et sans publicité.',
+    privacyP2: 'Utilisation limitée aux cookies essentiels et à la synchronisation Firebase, sans suivi publicitaire.',
     privacyP3: 'Données stockées localement sur votre appareil.',
     privacyP4: 'Droits RGPD : support@lingotwice.com.',
     termsBadge: 'Conditions d’utilisation',
@@ -389,11 +391,11 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
     topicSupport: 'Supporto tecnico',
     topicPartnership: 'Partnership',
     topicPrivacy: 'Privacy dei dati',
-    privacyBadge: 'Conformità GDPR e AdSense',
+    privacyBadge: 'Conformità GDPR e Privacy',
     privacyTitle: 'Informativa sulla Privacy',
     privacySubtitle: 'Ultimo aggiornamento: 31 ottobre 2026',
-    privacyP1: 'Informativa conforme a GDPR, CCPA e Google AdSense.',
-    privacyP2: 'Utilizzo di cookie e annunci personalizzati Google.',
+    privacyP1: 'Informativa conforme a GDPR e CCPA. LingoTwice è completamente gratuito e privo di pubblicità.',
+    privacyP2: 'Utilizzo di cookie tecnici essenziali per le preferenze e la sincronizzazione senza tracciamento pubblicitario.',
     privacyP3: 'Memorizzazione locale dei dati.',
     privacyP4: 'Diritti GDPR: support@lingotwice.com.',
     termsBadge: 'Termini di Servizio',
@@ -439,11 +441,11 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
     topicSupport: 'Wsparcie techniczne',
     topicPartnership: 'Współpraca',
     topicPrivacy: 'Prywatność danych',
-    privacyBadge: 'Zgodność z GDPR i AdSense',
+    privacyBadge: 'Zgodność z GDPR i Prywatność',
     privacyTitle: 'Polityka Prywatności',
     privacySubtitle: 'Ostatnia aktualizacja: 31 października 2026',
-    privacyP1: 'Zasady ochrony prywatności zgodne z GDPR i Google AdSense.',
-    privacyP2: 'Użycie plików cookie do celów reklamowych i analitycznych.',
+    privacyP1: 'Zasady ochrony prywatności zgodne z GDPR i CCPA. LingoTwice jest całkowicie darmowy i wolny od reklam.',
+    privacyP2: 'Użycie niezbędnych plików cookie wyłącznie do zapisywania ustawień i synchronizacji.',
     privacyP3: 'Lokalne przechowywanie danych.',
     privacyP4: 'Prawa GDPR: support@lingotwice.com.',
     termsBadge: 'Regulamin',
@@ -489,11 +491,11 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
     topicSupport: 'Teknik destek',
     topicPartnership: 'Ortaklık',
     topicPrivacy: 'Gizlilik',
-    privacyBadge: 'GDPR ve AdSense Uyumluluğu',
+    privacyBadge: 'GDPR ve Gizlilik Uyumluluğu',
     privacyTitle: 'Gizlilik Politikası',
     privacySubtitle: 'Son güncelleme: 31 Ekim 2026',
-    privacyP1: 'GDPR, CCPA ve Google AdSense kurallarına uygunluk bildirimi.',
-    privacyP2: 'Çerezlerin ve Google AdSense reklamlarının kullanımı.',
+    privacyP1: 'GDPR ve CCPA kurallarına uygun gizlilik bildirimi. LingoTwice tamamen ücretsiz ve reklamsızdır.',
+    privacyP2: 'Reklam takibi olmadan yalnızca temel tercih ve senkronizasyon çerezlerinin kullanımı.',
     privacyP3: 'Yerel cihaz depolaması.',
     privacyP4: 'GDPR Hakları: support@lingotwice.com.',
     termsBadge: 'Kullanım Koşulları',
@@ -539,11 +541,11 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
     topicSupport: '技术支持与报错',
     topicPartnership: '商务合作',
     topicPrivacy: '隐私与数据',
-    privacyBadge: 'GDPR 与 AdSense 合规',
+    privacyBadge: 'GDPR 与隐私合规',
     privacyTitle: '隐私政策',
     privacySubtitle: '最后更新：2026年10月31日',
-    privacyP1: '本隐私政策说明我们如何根据 GDPR、CCPA 和 Google AdSense 收集和保护用户信息。',
-    privacyP2: 'Cookie 与广告：本站使用 Cookie 及 Google AdSense 提供个性化广告。',
+    privacyP1: '本隐私政策说明我们如何根据 GDPR 和 CCPA 保护用户信息。LingoTwice 完全免费且无广告。',
+    privacyP2: '仅使用必要 Cookie 和本地存储以支持阅读偏好和同步，不含任何广告追踪。',
     privacyP3: '本地存储：您的阅读数据安全保存在本地。',
     privacyP4: 'GDPR 权利：请联系 support@lingotwice.com。',
     termsBadge: '服务条款',
@@ -589,11 +591,11 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
     topicSupport: '技術サポート / バグ報告',
     topicPartnership: 'パートナーシップ',
     topicPrivacy: 'プライバシーに関する質問',
-    privacyBadge: 'GDPR & AdSense 準拠',
+    privacyBadge: 'GDPR 準拠とプライバシー',
     privacyTitle: 'プライバシーポリシー',
     privacySubtitle: '最終更新日：2026年10月31日',
-    privacyP1: '本ポリシーは、GDPRおよびGoogle AdSenseに準拠したデータ処理について説明します。',
-    privacyP2: 'CookieおよびGoogle AdSense広告の使用について。',
+    privacyP1: '本ポリシーはGDPRおよびCCPAに準拠したデータ保護について説明します。LingoTwiceは完全無料・広告なしです。',
+    privacyP2: '広告トラッキングは行わず、必要な設定保存・同期用のローカルストレージとCookieのみを使用します。',
     privacyP3: 'ローカルストレージによるデータ保護。',
     privacyP4: 'GDPRに関するお問い合わせ：support@lingotwice.com',
     termsBadge: '利用規約',
@@ -639,11 +641,11 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
     topicSupport: '기술 지원 / 버그 신고',
     topicPartnership: '제휴 문의',
     topicPrivacy: '개인정보 보호 문의',
-    privacyBadge: 'GDPR 및 AdSense 준수',
+    privacyBadge: 'GDPR 및 개인정보 보호 준수',
     privacyTitle: '개인정보처리방침',
     privacySubtitle: '최종 수정일: 2026년 10월 31일',
-    privacyP1: '본 방침은 GDPR 및 Google AdSense 지침에 따른 사용자 정보 수집 및 보호를 설명합니다.',
-    privacyP2: '쿠키 및 Google AdSense 광고 사용.',
+    privacyP1: '본 방침은 GDPR 및 CCPA 지침에 따른 사용자 정보 보호를 설명합니다. LingoTwice는 광고 없는 완전 무료 서비스입니다.',
+    privacyP2: '광고 추적 쿠키 없이 필수 설정 저장 및 동기화 기능만 사용합니다.',
     privacyP3: '로컬 저장소(LocalStorage)를 통한 데이터 보안.',
     privacyP4: 'GDPR 권리 행사: support@lingotwice.com',
     termsBadge: '이용약관',
@@ -689,11 +691,11 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
     topicSupport: 'Suporte técnico',
     topicPartnership: 'Parcerias',
     topicPrivacy: 'Privacidade de dados',
-    privacyBadge: 'Conformidade GDPR e AdSense',
+    privacyBadge: 'Conformidade GDPR e Privacidade',
     privacyTitle: 'Política de Privacidade',
     privacySubtitle: 'Última atualização: 31 de outubro de 2026',
-    privacyP1: 'Política em conformidade com GDPR, CCPA e Google AdSense.',
-    privacyP2: 'Uso de cookies e anúncios personalizados.',
+    privacyP1: 'Política em conformidade com GDPR e CCPA. O LingoTwice é totalmente gratuito e sem anúncios.',
+    privacyP2: 'Uso exclusivo de cookies essenciais e armazenamento local para sincronização sem rastreamento publicitário.',
     privacyP3: 'Armazenamento de dados locais no navegador.',
     privacyP4: 'Direitos GDPR: support@lingotwice.com.',
     termsBadge: 'Termos de Serviço',
@@ -742,8 +744,8 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
     privacyBadge: 'سياسة الخصوصية GDPR',
     privacyTitle: 'سياسة الخصوصية',
     privacySubtitle: 'آخر تحديث: 31 أكتوبر 2026',
-    privacyP1: 'تصف سياسة الخصوصية كيفية جمع وحماية بيانات المستخدمين.',
-    privacyP2: 'استخدام ملفات تعريف الارتباط (Cookies) وإعلانات Google AdSense.',
+    privacyP1: 'تصف سياسة الخصوصية حماية بيانات المستخدمين وفق GDPR وCCPA. الخدمة مجانية تماماً وخالية من الإعلانات.',
+    privacyP2: 'استخدام ملفات الارتباط الأساسية فقط للمزامنة والتفضيلات دون تتبع إعلاني.',
     privacyP3: 'تخزين البيانات محلياً على جهازك.',
     privacyP4: 'للتواصل: support@lingotwice.com.',
     termsBadge: 'شروط الخدمة',
@@ -789,11 +791,11 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
     topicSupport: 'Technische ondersteuning',
     topicPartnership: 'Partnerschap',
     topicPrivacy: 'Privacy',
-    privacyBadge: 'GDPR & AdSense Naleving',
+    privacyBadge: 'GDPR & Privacy Naleving',
     privacyTitle: 'Privacybeleid',
     privacySubtitle: 'Laatst bijgewerkt: 31 oktober 2026',
-    privacyP1: 'Dit beleid beschrijft de gegevensverwerking conform GDPR en Google AdSense.',
-    privacyP2: 'Gebruik van cookies en advertenties.',
+    privacyP1: 'Dit beleid beschrijft gegevensbescherming conform GDPR en CCPA. LingoTwice is volledig gratis en reclamevrij.',
+    privacyP2: 'Gebruik van alleen essentiële cookies en lokale opslag zonder advertentietracking.',
     privacyP3: 'Lokale gegevensopslag op uw apparaat.',
     privacyP4: 'GDPR-rechten: support@lingotwice.com.',
     termsBadge: 'Gebruiksvoorwaarden',
@@ -839,11 +841,11 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
     topicSupport: 'Teknisk support',
     topicPartnership: 'Samarbete',
     topicPrivacy: 'Integritet',
-    privacyBadge: 'GDPR & AdSense',
+    privacyBadge: 'GDPR & Integritet',
     privacyTitle: 'Integritetspolicy',
     privacySubtitle: 'Senast uppdaterad: 31 oktober 2026',
-    privacyP1: 'Denna policy beskriver hur vi hanterar data enligt GDPR och Google AdSense.',
-    privacyP2: 'Användning av cookies och Google AdSense-annonser.',
+    privacyP1: 'Denna policy beskriver dataskydd enligt GDPR och CCPA. LingoTwice är helt gratis och reklamfritt.',
+    privacyP2: 'Användning av endast nödvändiga cookies och lokal lagring utan annonsspårning.',
     privacyP3: 'Lokal datalagring på din enhet.',
     privacyP4: 'GDPR-rättigheter: support@lingotwice.com.',
     termsBadge: 'Användarvillkor',
@@ -889,11 +891,11 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
     topicSupport: 'תמיכה טכנית',
     topicPartnership: 'שותפות',
     topicPrivacy: 'שאלות פרטיות',
-    privacyBadge: 'עמידה ב-GDPR ו-AdSense',
+    privacyBadge: 'עמידה ב-GDPR ופרטיות',
     privacyTitle: 'מדיניות פרטיות',
     privacySubtitle: 'עדכון אחרון: 31 באוקטובר 2026',
-    privacyP1: 'מדיניות פרטיות זו מתארת את איסוף והגנת נתוני המשתמש בהתאם ל-GDPR ולכללי Google AdSense.',
-    privacyP2: 'שימוש בעוגיות (Cookies) ובמודעות Google AdSense.',
+    privacyP1: 'מדיניות פרטיות זו מתארת הגנה על נתוני המשתמש בהתאם ל-GDPR ו-CCPA. LingoTwice חינמי וללא פרסומות.',
+    privacyP2: 'שימוש בעוגיות חיוניות בלבד לסנכרון והעדפות ללא מעקב פרסומי.',
     privacyP3: 'שמירת נתונים מקומית בדפדפן.',
     privacyP4: 'זכויות GDPR: support@lingotwice.com.',
     termsBadge: 'תנאי שימוש',
@@ -908,7 +910,37 @@ const INFO_TRANSLATIONS: Record<InterfaceLanguage, PageTranslations> = {
 
 export const InfoPageView: React.FC<InfoPageViewProps> = ({ page, onBack, uiLang }) => {
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactSubject, setContactSubject] = useState('');
+  const [contactMessage, setContactMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const t = INFO_TRANSLATIONS[uiLang] || INFO_TRANSLATIONS['en'];
+  const uiT = getTranslation(uiLang);
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      await apiService.sendContactMessage({
+        name: contactName.trim(),
+        email: contactEmail.trim(),
+        subject: contactSubject,
+        message: contactMessage.trim(),
+      });
+      setFormSubmitted(true);
+      setContactName('');
+      setContactEmail('');
+      setContactSubject('');
+      setContactMessage('');
+    } catch (err: any) {
+      setSubmitError(err?.message || uiT.formSubmitError);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="h-full overflow-y-auto px-4 py-6 sm:px-8 md:px-12 reader-scrollbar">
@@ -1001,19 +1033,15 @@ export const InfoPageView: React.FC<InfoPageViewProps> = ({ page, onBack, uiLang
                   </button>
                 </div>
               ) : (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    setFormSubmitted(true);
-                  }}
-                  className="space-y-4"
-                >
+                <form onSubmit={handleContactSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">{t.nameLabel}</label>
                       <input
                         type="text"
                         required
+                        value={contactName}
+                        onChange={(e) => setContactName(e.target.value)}
                         className="w-full rounded-lg border border-slate-300 p-2.5 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:border-amber-500"
                       />
                     </div>
@@ -1022,6 +1050,8 @@ export const InfoPageView: React.FC<InfoPageViewProps> = ({ page, onBack, uiLang
                       <input
                         type="email"
                         required
+                        value={contactEmail}
+                        onChange={(e) => setContactEmail(e.target.value)}
                         className="w-full rounded-lg border border-slate-300 p-2.5 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:border-amber-500"
                       />
                     </div>
@@ -1031,6 +1061,8 @@ export const InfoPageView: React.FC<InfoPageViewProps> = ({ page, onBack, uiLang
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">{t.subjectLabel}</label>
                     <select
                       required
+                      value={contactSubject}
+                      onChange={(e) => setContactSubject(e.target.value)}
                       className="w-full rounded-lg border border-slate-300 p-2.5 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:border-amber-500"
                     >
                       <option value="">{t.selectTopic}</option>
@@ -1046,15 +1078,25 @@ export const InfoPageView: React.FC<InfoPageViewProps> = ({ page, onBack, uiLang
                     <textarea
                       required
                       rows={5}
+                      value={contactMessage}
+                      onChange={(e) => setContactMessage(e.target.value)}
                       className="w-full rounded-lg border border-slate-300 p-2.5 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:border-amber-500"
                     ></textarea>
                   </div>
 
+                  {submitError && (
+                    <div className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/60 dark:text-rose-300">
+                      <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                      <span>{submitError}</span>
+                    </div>
+                  )}
+
                   <button
                     type="submit"
-                    className="rounded-lg bg-amber-600 px-6 py-2.5 text-xs font-bold text-white hover:bg-amber-700 transition-colors shadow-sm cursor-pointer"
+                    disabled={isSubmitting}
+                    className="rounded-lg bg-amber-600 px-6 py-2.5 text-xs font-bold text-white hover:bg-amber-700 disabled:opacity-50 transition-colors shadow-sm cursor-pointer"
                   >
-                    {t.sendBtn}
+                    {isSubmitting ? uiT.loadingText : t.sendBtn}
                   </button>
                 </form>
               )}

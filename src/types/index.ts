@@ -117,15 +117,6 @@ export interface UserStats {
   todayWordsLearned: number;
 }
 
-export interface SubscriptionStatus {
-  tier: 'free' | 'premium';
-  isActive: boolean;
-  expiresAt?: number;
-  dailyTranslationsUsed: number;
-  dailyTranslationsLimit: number; // Free: 20 passages, Premium: 1000
-  wordsTranslatedToday: number;
-}
-
 export interface ComprehensionQuestion {
   id: string;
   question: string;

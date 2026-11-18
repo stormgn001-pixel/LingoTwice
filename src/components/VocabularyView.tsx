@@ -47,15 +47,16 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
       const context = (entry.contextSentence || '').replace(/"/g, '""');
       const grammar = [
         entry.grammar?.partOfSpeech ? `[${entry.grammar.partOfSpeech}]` : '',
-        entry.grammar?.gender ? `Род: ${entry.grammar.gender}` : '',
-        entry.grammar?.cefrLevel ? `Уровень: ${entry.grammar.cefrLevel}` : '',
+        entry.grammar?.gender ? `${t.gender}: ${entry.grammar.gender}` : '',
+        entry.grammar?.cefrLevel ? `${t.cefrLevel}: ${entry.grammar.cefrLevel}` : '',
         entry.grammar?.plural ? `Pl: ${entry.grammar.plural}` : '',
       ].filter(Boolean).join(' ');
 
       return `"${front}","${back}","${context}","${grammar}"`;
     });
 
-    const csvContent = '\uFEFF' + 'Слово,Перевод,Контекст,Грамматика\n' + rows.join('\n');
+    const contextHeader = t.contextSentence.replace(/:$/, '');
+    const csvContent = '\uFEFF' + `${t.originalPane},${t.translationPane},${contextHeader},${t.partOfSpeech}\n` + rows.join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -68,7 +69,10 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({
 
   const copyToQuizlet = async () => {
     if (vocabulary.length === 0) return;
-    const text = vocabulary.map((e) => `${e.word}\t${e.translation}${e.contextSentence ? ` (Контекст: ${e.contextSentence})` : ''}`).join('\n');
+    const contextLabel = t.contextSentence.replace(/:$/, '');
+    const text = vocabulary
+      .map((e) => `${e.word}\t${e.translation}${e.contextSentence ? ` (${contextLabel}: ${e.contextSentence})` : ''}`)
+      .join('\n');
     try {
       await navigator.clipboard.writeText(text);
       setCopiedNotice(true);

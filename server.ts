@@ -1,7 +1,6 @@
 import express from 'express';
 import type { Request, Response } from 'express';
 import path from 'path';
-import crypto from 'node:crypto';
 import dns from 'node:dns/promises';
 import net from 'node:net';
 import { fileURLToPath } from 'url';
@@ -16,10 +15,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3000;
-const FREE_DAILY_TRANSLATION_LIMIT = 50;
 const MAX_CACHE_ENTRIES = 1000;
-const TOKEN_SIGNING_SECRET =
-  process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 
 // Body parsing with safe size limits (10MB)
 app.use(express.json({ limit: '10mb' }));
@@ -68,105 +64,18 @@ const setBoundedCache = <T>(cache: Map<string, T>, key: string, value: T) => {
   cache.set(key, value);
 };
 
-// Signed Premium Session Tokens (verifiable without trusting raw promo strings)
-const createSignedSubscriptionToken = (plan: string, refId: string, expiresAt: number): string => {
-  const payload = Buffer.from(
-    JSON.stringify({ tier: 'premium', plan, refId, expiresAt })
-  ).toString('base64url');
-  const sig = crypto
-    .createHmac('sha256', TOKEN_SIGNING_SECRET)
-    .update(payload)
-    .digest('base64url');
-  return `lt_${payload}.${sig}`;
+// Helper to safely parse Gemini JSON even if wrapped in markdown fences
+const safeParseGeminiJson = (raw?: string | null): any => {
+  if (!raw || typeof raw !== 'string') return {};
+  const cleaned = raw
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
+  return JSON.parse(cleaned || '{}');
 };
 
-const verifySignedSubscriptionToken = (
-  token?: string | null
-): { valid: boolean; expiresAt?: number; plan?: string } => {
-  if (!token || !token.startsWith('lt_') || !token.includes('.')) {
-    return { valid: false };
-  }
-  const [rawPayload, sig] = token.slice(3).split('.');
-  if (!rawPayload || !sig) return { valid: false };
-  const expectedSig = crypto
-    .createHmac('sha256', TOKEN_SIGNING_SECRET)
-    .update(rawPayload)
-    .digest('base64url');
-  const sigBuf = Buffer.from(sig);
-  const expectedBuf = Buffer.from(expectedSig);
-  if (sigBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(sigBuf, expectedBuf)) {
-    return { valid: false };
-  }
-  try {
-    const parsed = JSON.parse(Buffer.from(rawPayload, 'base64url').toString('utf8'));
-    if (parsed.tier === 'premium' && typeof parsed.expiresAt === 'number' && parsed.expiresAt > Date.now()) {
-      return { valid: true, expiresAt: parsed.expiresAt, plan: parsed.plan };
-    }
-  } catch {
-    return { valid: false };
-  }
-  return { valid: false };
-};
-
-const extractAuthToken = (req: Request): string | null => {
-  const authHeader = req.headers['authorization'];
-  if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
-    return authHeader.slice(7).trim();
-  }
-  if (typeof req.query.code === 'string' && req.query.code.trim()) {
-    return req.query.code.trim();
-  }
-  return null;
-};
-
-// Simple session-level usage tracker for quota enforcement
-interface QuotaTracker {
-  translationsCount: number;
-  wordsCount: number;
-  lastResetDate: string;
-  isPremium: boolean;
-  expiresAt?: number;
-}
-
-const userQuotas = new Map<string, QuotaTracker>();
-
-const getClientIp = (req: Request): string => {
-  return (
-    (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
-    req.socket.remoteAddress ||
-    'anonymous'
-  );
-};
-
-const getOrInitQuota = (ip: string, req?: Request): QuotaTracker => {
-  const today = new Date().toISOString().slice(0, 10);
-  let tracker = userQuotas.get(ip);
-  if (!tracker || tracker.lastResetDate !== today) {
-    tracker = {
-      translationsCount: 0,
-      wordsCount: 0,
-      lastResetDate: today,
-      isPremium: tracker?.isPremium || false,
-      expiresAt: tracker?.expiresAt,
-    };
-    userQuotas.set(ip, tracker);
-  }
-  if (req) {
-    const token = extractAuthToken(req);
-    const verified = verifySignedSubscriptionToken(token);
-    if (verified.valid) {
-      tracker.isPremium = true;
-      tracker.expiresAt = verified.expiresAt;
-    }
-  }
-  if (tracker.expiresAt && tracker.expiresAt <= Date.now()) {
-    tracker.isPremium = false;
-    tracker.expiresAt = undefined;
-  }
-  return tracker;
-};
-
-// Intelligent multilingual fallback translator for offline or 429 quota limits
+// Intelligent multilingual fallback translator for offline resilience
 const smartFallbackTranslate = (text: string, targetLang: string): string => {
   const lowerTarget = targetLang.toLowerCase();
   const trimmed = text.trim();
@@ -505,18 +414,8 @@ app.post('/api/translate', async (req: Request, res: Response) => {
       return;
     }
 
-    const ip = getClientIp(req);
-    const quota = getOrInitQuota(ip, req);
-
-    if (!quota.isPremium && quota.translationsCount >= FREE_DAILY_TRANSLATION_LIMIT) {
-      res.status(429).json({
-        error: 'Daily free translation limit reached.',
-        code: 'QUOTA_EXCEEDED',
-        usageQuota: {
-          used: quota.translationsCount,
-          limit: FREE_DAILY_TRANSLATION_LIMIT,
-        },
-      });
+    if (paragraphs.length > 200) {
+      res.status(400).json({ error: 'Maximum 200 paragraphs per translation request.' });
       return;
     }
 
@@ -529,10 +428,6 @@ app.post('/api/translate', async (req: Request, res: Response) => {
         translatedParagraphs: paragraphs,
         cachedCount: 0,
         provider: 'identity',
-        usageQuota: {
-          used: quota.translationsCount,
-          limit: quota.isPremium ? 99999 : FREE_DAILY_TRANSLATION_LIMIT,
-        },
       });
       return;
     }
@@ -547,13 +442,14 @@ app.post('/api/translate', async (req: Request, res: Response) => {
     const missingTexts: string[] = [];
 
     paragraphs.forEach((p: string, idx: number) => {
-      const cacheKey = `trans:${sourceLang}:${targetLang}:${p.trim()}`;
+      const safeText = typeof p === 'string' ? p : String(p ?? '');
+      const cacheKey = `trans:${sourceLang}:${targetLang}:${safeText.trim()}`;
       if (translationCache.has(cacheKey)) {
         results[idx] = translationCache.get(cacheKey)!;
         cachedCount++;
       } else {
         missingIndices.push(idx);
-        missingTexts.push(p);
+        missingTexts.push(safeText);
       }
     });
 
@@ -562,10 +458,6 @@ app.post('/api/translate', async (req: Request, res: Response) => {
         translatedParagraphs: results,
         cachedCount,
         provider: 'cache',
-        usageQuota: {
-          used: quota.translationsCount,
-          limit: quota.isPremium ? 99999 : FREE_DAILY_TRANSLATION_LIMIT,
-        },
       });
       return;
     }
@@ -630,25 +522,14 @@ app.post('/api/translate', async (req: Request, res: Response) => {
     missingIndices.forEach((origIdx, batchIdx) => {
       const trans = translatedBatch[batchIdx] || missingTexts[batchIdx];
       results[origIdx] = trans;
-      const cacheKey = `trans:${sourceLang}:${targetLang}:${paragraphs[origIdx].trim()}`;
+      const cacheKey = `trans:${sourceLang}:${targetLang}:${String(paragraphs[origIdx] ?? '').trim()}`;
       setBoundedCache(translationCache, cacheKey, trans);
     });
-
-    const wordCount = missingTexts.reduce(
-      (acc, t) => acc + (t.trim() ? t.trim().split(/\s+/).length : 0),
-      0
-    );
-    quota.translationsCount += missingTexts.length;
-    quota.wordsCount += wordCount;
 
     res.json({
       translatedParagraphs: results,
       cachedCount,
       provider: activeProvider,
-      usageQuota: {
-        used: quota.translationsCount,
-        limit: quota.isPremium ? 99999 : FREE_DAILY_TRANSLATION_LIMIT,
-      },
     });
   } catch (error: any) {
     console.error('Translate route error:', error);
@@ -738,7 +619,7 @@ Provide a thorough linguistic breakdown:
             });
 
             const response = await Promise.race([geminiPromise, timeoutPromise]);
-            const data = JSON.parse(response.text || '{}');
+            const data = safeParseGeminiJson(response.text);
             if (data.word && data.translation) {
               setBoundedCache(dictionaryCache, dictCacheKey, data);
               res.json(data);
@@ -853,7 +734,7 @@ ${sourceText}
             });
 
             const response = await Promise.race([geminiPromise, timeoutPromise]);
-            const parsed = JSON.parse(response.text || '{}');
+            const parsed = safeParseGeminiJson(response.text);
             if (Array.isArray(parsed.questions) && parsed.questions.length > 0) {
               res.json(parsed);
               return;
@@ -953,14 +834,6 @@ app.post('/api/detect-language', (req: Request, res: Response) => {
  */
 app.post('/api/import-url', async (req: Request, res: Response) => {
   try {
-    const ip = getClientIp(req);
-    const quota = getOrInitQuota(ip, req);
-
-    if (!quota.isPremium) {
-      res.status(403).json({ error: 'URL import is available for Premium subscribers.' });
-      return;
-    }
-
     const { url } = req.body;
     if (!url || typeof url !== 'string') {
       res.status(400).json({ error: 'Valid article URL is required.' });
@@ -1067,14 +940,20 @@ app.post('/api/import-url', async (req: Request, res: Response) => {
     let match;
 
     while ((match = pRegex.exec(cleanedHtml)) !== null) {
-      // Strip HTML tags from paragraph
+      // Strip HTML tags and common entities from paragraph
       const text = match[1]
         .replace(/<[^>]+>/g, '')
         .replace(/&nbsp;/g, ' ')
         .replace(/&quot;/g, '"')
+        .replace(/&#39;|&apos;/g, "'")
+        .replace(/&mdash;/g, '—')
+        .replace(/&ndash;/g, '–')
+        .replace(/&laquo;/g, '«')
+        .replace(/&raquo;/g, '»')
         .replace(/&amp;/g, '&')
         .replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')
+        .replace(/\s+/g, ' ')
         .trim();
 
       // Only include meaningful paragraphs (> 40 chars)
@@ -1111,221 +990,46 @@ app.post('/api/import-url', async (req: Request, res: Response) => {
 });
 
 /**
- * Subscription Status & Upgrade endpoints (Server-verified with HMAC signed tokens & live blockchain checks)
+ * Contact Form Submission Endpoint
  */
-app.get('/api/subscription/status', (req: Request, res: Response) => {
+app.post('/api/contact', (req: Request, res: Response) => {
   try {
-    const ip = getClientIp(req);
-    const quota = getOrInitQuota(ip, req);
+    const { name, email, subject, message } = req.body || {};
+    const cleanName = typeof name === 'string' ? name.trim() : '';
+    const cleanEmail = typeof email === 'string' ? email.trim() : '';
+    const cleanSubject = typeof subject === 'string' ? subject.trim() : 'general';
+    const cleanMessage = typeof message === 'string' ? message.trim() : '';
 
-    if (quota.isPremium) {
-      res.json({
-        status: 'active',
-        hasSubscription: true,
-        tier: 'premium',
-        isActive: true,
-        expiresAt: quota.expiresAt || Date.now() + 30 * 24 * 60 * 60 * 1000,
-        dailyTranslationsUsed: quota.translationsCount,
-        dailyTranslationsLimit: 99999,
-        wordsTranslatedToday: quota.wordsCount,
-      });
+    if (cleanName.length < 2 || cleanName.length > 120) {
+      res.status(400).json({ error: 'Please provide a valid name (2–120 characters).' });
       return;
     }
 
-    res.json({
-      status: 'inactive',
-      hasSubscription: false,
-      tier: 'free',
-      isActive: true,
-      dailyTranslationsUsed: quota.translationsCount,
-      dailyTranslationsLimit: FREE_DAILY_TRANSLATION_LIMIT,
-      wordsTranslatedToday: quota.wordsCount,
-    });
-  } catch (err: any) {
-    console.error('Subscription status DB/server error:', err);
-    res.status(500).json({ error: 'Internal error checking subscription status.' });
-  }
-});
-
-app.post('/api/subscription/upgrade', (req: Request, res: Response) => {
-  try {
-    const { code, plan } = req.body || {};
-    const ip = getClientIp(req);
-    const quota = getOrInitQuota(ip, req);
-
-    const configuredCodes = (process.env.PREMIUM_ACTIVATION_CODES || '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-
-    if (!code || typeof code !== 'string' || !configuredCodes.includes(code.trim())) {
-      res.status(400).json({ error: 'Invalid or missing activation code.' });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail) || cleanEmail.length > 200) {
+      res.status(400).json({ error: 'Please provide a valid email address.' });
       return;
     }
 
-    const now = Date.now();
-    const durationDays = plan === 'yearly' ? 365 : plan === 'lifetime' ? 36500 : 30;
-    const expiresAt = now + durationDays * 24 * 60 * 60 * 1000;
-    const token = createSignedSubscriptionToken(plan || 'monthly', code.trim(), expiresAt);
+    if (cleanMessage.length < 5 || cleanMessage.length > 5000) {
+      res.status(400).json({ error: 'Message must be between 5 and 5000 characters.' });
+      return;
+    }
 
-    quota.isPremium = true;
-    quota.expiresAt = expiresAt;
+    const messageId = `msg_${Date.now().toString(36)}`;
+    console.info(`[Contact] Received inquiry ${messageId} [${cleanSubject}] (${cleanMessage.length} chars)`);
 
     res.json({
       success: true,
-      status: 'active',
-      hasSubscription: true,
-      tier: 'premium',
-      plan: plan || 'monthly',
-      method: 'promo',
-      token,
-      transactionId: `LT-${Date.now().toString(36).toUpperCase()}`,
-      expiresAt,
+      messageId,
     });
-  } catch (err: any) {
-    console.error('Subscription upgrade error:', err);
-    res.status(500).json({ error: 'Server error processing upgrade.' });
-  }
-});
-
-/**
- * Real Blockchain Transaction Verification Endpoint (Verifies TxID against live blockchain explorers/nodes)
- */
-app.post('/api/subscription/verify-tx', async (req: Request, res: Response) => {
-  try {
-    const { cryptoType, txHash, plan } = req.body || {};
-    const ip = getClientIp(req);
-    const quota = getOrInitQuota(ip, req);
-
-    if (!txHash || typeof txHash !== 'string' || !/^[a-zA-Z0-9]{32,128}$/.test(txHash.trim())) {
-      res.status(400).json({ error: 'Please provide a valid blockchain transaction hash (TxID).' });
-      return;
-    }
-
-    const cleanTx = txHash.trim();
-    let isVerified = false;
-    let blockConfirmations = 0;
-    let isExternalApiDown = false;
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-    try {
-      if (cryptoType === 'BTC') {
-        const btcRes = await fetch(`https://mempool.space/api/tx/${encodeURIComponent(cleanTx)}`, {
-          signal: controller.signal,
-        });
-        if (btcRes.ok) {
-          const btcData = await btcRes.json();
-          if (btcData?.txid) {
-            isVerified = true;
-            blockConfirmations = btcData.status?.confirmed ? 2 : 1;
-          }
-        } else if (btcRes.status >= 500) {
-          isExternalApiDown = true;
-        }
-      } else if (cryptoType === 'ETH') {
-        const ethRes = await fetch(`https://eth.blockscout.com/api/v2/transactions/${encodeURIComponent(cleanTx)}`, {
-          signal: controller.signal,
-        });
-        if (ethRes.ok) {
-          const ethData = await ethRes.json();
-          if (ethData?.hash && ethData.status === 'ok') {
-            isVerified = true;
-            blockConfirmations = Number(ethData.confirmations || 1);
-          }
-        } else if (ethRes.status >= 500) {
-          isExternalApiDown = true;
-        }
-      } else if (cryptoType === 'SOL') {
-        const solRes = await fetch('https://api.mainnet-beta.solana.com', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal,
-          body: JSON.stringify({
-            jsonrpc: '2.0',
-            id: 1,
-            method: 'getTransaction',
-            params: [cleanTx, { encoding: 'json', maxSupportedTransactionVersion: 0 }],
-          }),
-        });
-        if (solRes.ok) {
-          const solData = await solRes.json();
-          if (solData?.result && !solData.result.meta?.err) {
-            isVerified = true;
-            blockConfirmations = 1;
-          }
-        } else if (solRes.status >= 500) {
-          isExternalApiDown = true;
-        }
-      } else {
-        // USDT_TRC20 via Tronscan API
-        const tronRes = await fetch(
-          `https://apilist.tronscanapi.com/api/transaction-info?hash=${encodeURIComponent(cleanTx)}`,
-          { signal: controller.signal }
-        );
-        if (tronRes.ok) {
-          const tronData = await tronRes.json();
-          if (tronData?.hash && tronData.contractRet === 'SUCCESS') {
-            isVerified = true;
-            blockConfirmations = tronData.confirmed ? 2 : 1;
-          }
-        } else if (tronRes.status >= 500) {
-          isExternalApiDown = true;
-        }
-      }
-    } catch (networkErr: any) {
-      console.warn('External blockchain API warning:', networkErr.message);
-      isExternalApiDown = true;
-    } finally {
-      clearTimeout(timeoutId);
-    }
-
-    if (isExternalApiDown) {
-      res.status(503).json({ error: 'Blockchain verification gateway is temporarily unavailable.' });
-      return;
-    }
-
-    if (isVerified) {
-      const now = Date.now();
-      let durationDays = 30;
-      if (plan === 'yearly') durationDays = 365;
-      if (plan === 'lifetime') durationDays = 36500;
-      const expiresAt = now + durationDays * 24 * 60 * 60 * 1000;
-      const token = createSignedSubscriptionToken(plan || 'monthly', cleanTx, expiresAt);
-
-      quota.isPremium = true;
-      quota.expiresAt = expiresAt;
-
-      res.json({
-        success: true,
-        status: 'active',
-        hasSubscription: true,
-        tier: 'premium',
-        plan: plan || 'monthly',
-        txHash: cleanTx,
-        token,
-        confirmations: blockConfirmations,
-        network: cryptoType || 'USDT_TRC20',
-        expiresAt,
-      });
-      return;
-    }
-
-    res.json({
-      success: false,
-      status: 'inactive',
-      hasSubscription: false,
-      tier: 'free',
-    });
-  } catch (err: any) {
-    console.error('Verify TX error:', err);
-    res.status(500).json({ error: 'Server error verifying transaction.' });
+  } catch (err) {
+    console.error('Contact submission error:', err);
+    res.status(500).json({ error: 'Failed to submit contact inquiry.' });
   }
 });
 
 // -------------------------------------------------------------
-// Direct routes for Google AdSense compliance pages & ads.txt
+// Direct routes for static informational pages & SEO files
 // -------------------------------------------------------------
 const servePublicPage = (fileName: string) => (_req: Request, res: Response) => {
   const targetDir = process.env.NODE_ENV === 'production' ? 'dist' : 'public';
@@ -1340,7 +1044,6 @@ app.get('/about', servePublicPage('about.html'));
 app.get('/about.html', servePublicPage('about.html'));
 app.get('/contact', servePublicPage('contact.html'));
 app.get('/contact.html', servePublicPage('contact.html'));
-app.get('/ads.txt', servePublicPage('ads.txt'));
 app.get('/robots.txt', servePublicPage('robots.txt'));
 app.get('/sitemap.xml', servePublicPage('sitemap.xml'));
 
