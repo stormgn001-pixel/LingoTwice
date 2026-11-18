@@ -12,6 +12,22 @@ const BASE_URL = 'https://lingotwice.com';
 const LOGO_URL = 'https://lingotwice.com/assets/aistudio/file_000000004eec82468ea111a6735b2471_8524203a.png';
 const GA4_ID = 'G-N059XGPE5M';
 
+function getNormalizedAdSensePubId(): string {
+  const raw = (process.env.VITE_ADSENSE_PUB_ID || process.env.ADSENSE_PUB_ID || '').trim();
+  if (!raw) return '';
+  const prefixed = raw.startsWith('ca-') ? raw : raw.startsWith('pub-') ? `ca-${raw}` : raw;
+  return /^ca-pub-\d{10,20}$/.test(prefixed) ? prefixed : '';
+}
+
+function buildAdSenseHeadTags(): string {
+  const pubId = getNormalizedAdSensePubId();
+  if (!pubId) return '';
+  return `    <!-- Google AdSense -->
+    <meta name="google-adsense-account" content="${pubId}" />
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${pubId}" crossorigin="anonymous"></script>
+    <script>try { localStorage.setItem('lingotwice_adsense_pub_id', '${pubId}'); } catch(e) {}</script>\n`;
+}
+
 // Generate all hreflang link tags (17 languages + x-default)
 function generateHreflangTags(): string {
   const tags: string[] = [];
@@ -111,7 +127,7 @@ function renderLanguageHtml(lang: SeoLanguageCode): string {
         'cookie_flags': 'SameSite=None;Secure'
       });
     </script>
-    <meta charset="UTF-8" />
+${buildAdSenseHeadTags()}    <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>${data.title}</title>
     <meta name="description" content="${data.description}" />
@@ -363,7 +379,7 @@ function renderRootIndexHtml(): string {
         'cookie_flags': 'SameSite=None;Secure'
       });
     </script>
-    <meta charset="UTF-8" />
+${buildAdSenseHeadTags()}    <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>${data.title}</title>
     <meta name="description" content="${data.description}" />

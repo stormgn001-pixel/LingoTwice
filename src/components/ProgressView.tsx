@@ -1,7 +1,8 @@
 import React from 'react';
 import { Flame, Clock, BookOpen, Brain, TrendingUp, Calendar, Award } from 'lucide-react';
 import { InterfaceLanguage, UserStats, VocabularyEntry, ReadingDocument } from '../types';
-import { getTranslation, getDocTitle } from '../i18n/translations';
+import { getTranslation } from '../i18n/translations';
+import { AdSenseBanner } from './AdSenseBanner';
 
 interface ProgressViewProps {
   stats: UserStats;
@@ -138,7 +139,7 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
           {documents.map((doc) => (
             <div key={doc.id} className="py-3 flex items-center justify-between text-xs">
               <div>
-                <p className="font-medium text-slate-800 dark:text-slate-200">{getDocTitle(doc, uiLang)}</p>
+                <p className="font-medium text-slate-800 dark:text-slate-200">{doc.title}</p>
                 <p className="text-[11px] text-slate-400">
                   {new Date(doc.lastReadAt).toLocaleDateString(uiLang, {
                     day: 'numeric',
@@ -157,6 +158,11 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Google AdSense Ad Unit */}
+      <div className="mt-10">
+        <AdSenseBanner />
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { InterfaceLanguage, ReadingDocument } from '../types';
 import { getTranslation, getDocTitle } from '../i18n/translations';
 import { getLanguageByCode } from '../constants/languages';
 import { SAMPLE_DOCUMENTS } from '../constants/sampleLibrary';
+import { AdSenseBanner } from './AdSenseBanner';
 
 interface LibraryViewProps {
   documents: ReadingDocument[];
@@ -235,11 +236,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                           referrerPolicy="no-referrer"
                           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-103"
                           onError={(e) => {
-                            const img = e.currentTarget;
-                            if (!img.dataset.fallbackApplied) {
-                              img.dataset.fallbackApplied = 'true';
-                              img.src = '/assets/images/reading_desk_atmosphere_1793214356959.jpg';
-                            }
+                            // Fallback if the specific asset fails to load
+                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=800';
                           }}
                         />
                       );
@@ -361,6 +359,11 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           </button>
         </div>
       )}
+
+      {/* Google AdSense Ad Unit */}
+      <div className="mt-10">
+        <AdSenseBanner />
+      </div>
     </div>
   );
 };

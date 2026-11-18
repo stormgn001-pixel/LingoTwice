@@ -15,7 +15,7 @@ export const EXTRA_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string
     loadingText: 'Загрузка...',
     contextualFallback: 'Значение в контексте предложения.',
     offlineNotice: 'Нет подключения к интернету. Работает офлайн-режим.',
-    cookieMessage: 'LingoTwice использует локальное хранилище браузера для сохранения ваших книг, словаря и прогресса интервального повторения.',
+    cookieMessage: 'LingoTwice использует локальное хранилище и файлы cookie (включая Google Analytics и Google AdSense) для сохранения ваших книг, словаря и поддержки бесплатного доступа к платформе.',
     cookieLearnMore: 'Подробнее',
     cookieAccept: 'Принять',
 
@@ -40,6 +40,12 @@ export const EXTRA_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string
     defaultVoiceOption: 'Системный голос по умолчанию',
     dailyGoalMinutesLabel: 'Цель чтения (мин/день)',
     dailyGoalWordsLabel: 'Цель слов (слов/день)',
+    adsenseTitle: 'Монетизация Google AdSense',
+    adsenseDesc: 'LingoTwice полностью бесплатен для всех пользователей и поддерживается только рекламой Google AdSense. При необходимости укажите свой Publisher ID и Ad Slot ID.',
+    adsensePubLabel: 'Publisher ID (ca-pub-...)',
+    adsenseSlotLabel: 'Ad Slot ID (необязательно для Auto Ads)',
+    adsenseSavedNotice: 'Настройки AdSense сохранены',
+    adsenseInvalidPubError: 'Неверный формат ID. Ожидается ca-pub-XXXXXXXXXXXXXXXX',
 
     // Reader & Translation
     translatingProgress: 'Перевод выполняется...',
@@ -186,7 +192,7 @@ export const EXTRA_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string
     loadingText: 'Loading...',
     contextualFallback: 'Meaning in the sentence context.',
     offlineNotice: 'You are offline. Cached library and offline tools remain available.',
-    cookieMessage: 'LingoTwice uses browser local storage to save your books, vocabulary, and spaced repetition progress.',
+    cookieMessage: 'LingoTwice uses browser local storage and cookies (including Google Analytics and Google AdSense) to save your books, vocabulary, and keep all learning tools free.',
     cookieLearnMore: 'Learn more',
     cookieAccept: 'Accept',
 
@@ -209,6 +215,12 @@ export const EXTRA_TRANSLATIONS: Record<InterfaceLanguage, Record<string, string
     defaultVoiceOption: 'System default voice',
     dailyGoalMinutesLabel: 'Daily Reading Goal (min)',
     dailyGoalWordsLabel: 'Daily Vocabulary Goal (words)',
+    adsenseTitle: 'Google AdSense Monetization',
+    adsenseDesc: 'LingoTwice is 100% free and supported solely by Google AdSense. Optionally configure your Publisher ID and Ad Slot ID here.',
+    adsensePubLabel: 'Publisher ID (ca-pub-...)',
+    adsenseSlotLabel: 'Ad Slot ID (optional for Auto Ads)',
+    adsenseSavedNotice: 'AdSense configuration saved',
+    adsenseInvalidPubError: 'Invalid format. Expected ca-pub-XXXXXXXXXXXXXXXX',
 
     translatingProgress: 'Translating...',
     translationReady: 'Translation ready',

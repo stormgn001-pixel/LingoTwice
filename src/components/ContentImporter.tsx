@@ -3,6 +3,7 @@ import {
   Globe,
   FileText,
   Upload,
+  Sparkles,
   AlertCircle,
   X,
   Plus,
@@ -10,11 +11,11 @@ import {
   Check,
   Eye,
   EyeOff,
+  BookOpen,
   Image as ImageIcon,
   Trash2,
   Link as LinkIcon,
 } from 'lucide-react';
-import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { InterfaceLanguage, ReadingDocument } from '../types';
 import { SUPPORTED_LANGUAGES, SOURCE_LANGUAGES, getLanguageByCode } from '../constants/languages';
 import { getTranslation } from '../i18n/translations';
@@ -54,10 +55,10 @@ const PRESET_COVERS = [
 ];
 
 // Resize local user uploaded images via canvas to keep localStorage quota lightweight
-const processCoverImageFile = (file: File, invalidTypeError: string): Promise<string> => {
+const processCoverImageFile = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith('image/')) {
-      reject(new Error(invalidTypeError));
+      reject(new Error('Пожалуйста, выберите файл изображения (PNG, JPG, WebP)'));
       return;
     }
 
@@ -91,10 +92,10 @@ const processCoverImageFile = (file: File, invalidTypeError: string): Promise<st
         const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
         resolve(compressedDataUrl);
       };
-      img.onerror = () => reject(new Error(invalidTypeError));
+      img.onerror = () => reject(new Error('Не удалось обработать изображение'));
       img.src = e.target?.result as string;
     };
-    reader.onerror = () => reject(new Error(invalidTypeError));
+    reader.onerror = () => reject(new Error('Ошибка чтения файла'));
     reader.readAsDataURL(file);
   });
 };
@@ -117,13 +118,11 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
   const t = getTranslation(uiLang);
 
   const [activeTab, setActiveTab] = useState<'bilingual' | 'url' | 'file'>('bilingual');
-  const [sourceLang, setSourceLang] = useState<string>(defaultSourceLang || 'en');
+  const [sourceLang, setSourceLang] = useState<string>(
+    defaultSourceLang === 'auto' ? 'en' : defaultSourceLang
+  );
   const [targetLang, setTargetLang] = useState<string>(
-    defaultTargetLang && defaultTargetLang !== defaultSourceLang
-      ? defaultTargetLang
-      : defaultSourceLang === 'ru'
-      ? 'en'
-      : 'ru'
+    defaultTargetLang === sourceLang ? (sourceLang === 'ru' ? 'en' : 'ru') : defaultTargetLang
   );
 
   // Document metadata
@@ -195,9 +194,9 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
 
   // Swap languages and their texts
   const handleSwap = () => {
-    const prevSource = sourceLang === 'auto' ? (targetLang === 'en' ? 'ru' : 'en') : sourceLang;
+    const tempLang = sourceLang;
     setSourceLang(targetLang);
-    setTargetLang(prevSource);
+    setTargetLang(tempLang);
 
     const tempText = sourceTextInput;
     setSourceTextInput(targetTextInput);
@@ -211,11 +210,11 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
 
     try {
       setIsProcessing(true);
-      setProgressStatus(t.loadingText);
-      const processed = await processCoverImageFile(file, t.imageProcessError || t.uploadCoverError);
+      setProgressStatus('Обработка обложки...');
+      const processed = await processCoverImageFile(file);
       setCustomCoverImage(processed);
     } catch (err: any) {
-      setErrorMessage(err.message || t.uploadCoverError);
+      setErrorMessage(err.message || 'Ошибка загрузки обложки.');
     } finally {
       setIsProcessing(false);
       setProgressStatus('');
@@ -255,30 +254,24 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
     try {
       setIsProcessing(true);
       setErrorMessage(null);
-      setProgressStatus(t.translatingText);
+      setProgressStatus('Формирование параллельного текста...');
 
       const sParas = sourceParagraphs;
       const tParas = targetParagraphs;
       const maxLen = Math.max(sParas.length, tParas.length);
 
       if (maxLen === 0) {
-        throw new Error(t.needOriginalError);
+        throw new Error('Текст не содержит абзацев.');
       }
 
-      let resolvedSourceLang = sourceLang;
-      if (resolvedSourceLang === 'auto') {
-        const detected = await apiService.detectLanguage(sourceTextInput.slice(0, 1500));
-        resolvedSourceLang = detected && detected !== 'auto' ? detected : (targetLang === 'en' ? 'de' : 'en');
-      }
-
-      // If user provided original but no translation, translate first batch immediately; remainder translates lazily in reader
+      // If user provided original but no translation, and wants auto-translate
       let translatedArray: string[] = [...tParas];
-      if (tParas.length === 0 && resolvedSourceLang.toLowerCase() !== targetLang.toLowerCase()) {
-        setProgressStatus(t.translatingProgress);
+      if (tParas.length === 0 && sourceLang.toLowerCase() !== targetLang.toLowerCase()) {
+        setProgressStatus('Автоматический перевод первых фрагментов...');
         try {
           const initialBatch = sParas.slice(0, 5);
           const transResult = await apiService.translate({
-            sourceLang: resolvedSourceLang,
+            sourceLang,
             targetLang,
             paragraphs: initialBatch,
           });
@@ -303,7 +296,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
         titleInput.trim() ||
         (sParas[0]
           ? sParas[0].slice(0, 45).replace(/[.,;:!?]+$/, '') + '...'
-          : t.sampleCategoryCustom);
+          : 'Пользовательский текст');
 
       const defaultCategoryCover =
         selectedCategory === 'literature'
@@ -320,13 +313,13 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
         id: `doc-${Date.now()}`,
         title: generatedTitle,
         author: authorInput.trim() || undefined,
-        sourceLang: resolvedSourceLang,
+        sourceLang,
         targetLang,
         category: forceSave ? selectedCategory : 'custom',
         createdAt: Date.now(),
         lastReadAt: Date.now(),
         readingProgress: 0,
-        wordCount: sourceWords || targetWords || 0,
+        wordCount: sourceWords || targetWords || 100,
         coverImage,
         passages,
         isSample: false,
@@ -334,7 +327,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
 
       onImportComplete(newDoc);
     } catch (err: any) {
-      setErrorMessage(err.message || t.readFileError);
+      setErrorMessage(err.message || 'Ошибка обработки текста.');
     } finally {
       setIsProcessing(false);
       setProgressStatus('');
@@ -349,24 +342,17 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
     try {
       setIsProcessing(true);
       setErrorMessage(null);
-      setProgressStatus(t.loadingText);
+      setProgressStatus('Извлечение очищенного текста статьи...');
 
       const extracted = await apiService.importUrl(urlInput.trim());
 
-      let resolvedSourceLang = sourceLang;
-      if (resolvedSourceLang === 'auto') {
-        const snippet = extracted.paragraphs.slice(0, 3).join('\n\n').slice(0, 1500);
-        const detected = await apiService.detectLanguage(snippet);
-        resolvedSourceLang = detected && detected !== 'auto' ? detected : (targetLang === 'en' ? 'de' : 'en');
-      }
-
       const newDoc: ReadingDocument = {
         id: `doc-${Date.now()}`,
-        title: extracted.title || new URL(urlInput.trim()).hostname,
-        author: extracted.author || new URL(urlInput.trim()).hostname,
-        sourceLang: resolvedSourceLang,
+        title: extracted.title || 'Импортированная статья',
+        author: extracted.author || new URL(urlInput).hostname,
+        sourceLang,
         targetLang,
-        sourceUrl: urlInput.trim(),
+        sourceUrl: urlInput,
         category: 'news',
         createdAt: Date.now(),
         lastReadAt: Date.now(),
@@ -383,7 +369,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
 
       onImportComplete(newDoc);
     } catch (err: any) {
-      setErrorMessage(err.message || t.uploadUrlError);
+      setErrorMessage(err.message || 'Ошибка извлечения статьи. Попробуйте скопировать текст вручную.');
     } finally {
       setIsProcessing(false);
       setProgressStatus('');
@@ -394,7 +380,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
   const extractTextFromPdf = async (file: File): Promise<string> => {
     const arrayBuffer = await file.arrayBuffer();
     const pdfjs = await import('pdfjs-dist');
-    pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+    pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
     const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
     let fullText = '';
@@ -416,7 +402,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
     setSelectedFileName(file.name);
     setIsProcessing(true);
     setErrorMessage(null);
-    setProgressStatus(`${t.loadingText} (${file.name})`);
+    setProgressStatus(`Чтение файла (${file.name})...`);
 
     try {
       let content = '';
@@ -426,7 +412,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
         const reader = new FileReader();
         content = await new Promise<string>((resolve, reject) => {
           reader.onload = (event) => resolve(event.target?.result as string);
-          reader.onerror = () => reject(new Error(t.readFileError));
+          reader.onerror = () => reject(new Error('Ошибка чтения файла'));
           reader.readAsText(file);
         });
       }
@@ -442,14 +428,13 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
         }
         setActiveTab('bilingual');
       } else {
-        throw new Error(t.readFileError);
+        throw new Error('Файл пуст или не удалось извлечь текст.');
       }
     } catch (err: any) {
-      setErrorMessage(err.message || t.readFileError);
+      setErrorMessage(err.message || 'Ошибка обработки файла.');
     } finally {
       setIsProcessing(false);
       setProgressStatus('');
-      e.target.value = '';
     }
   };
 
@@ -496,9 +481,9 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
               {/* Source Language Picker */}
               <div className="flex-1">
                 <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  <span>{t.sourceLangLabel}:</span>
+                  <span>{t.sourceLangLabel || 'Язык оригинала'}:</span>
                   <span className="text-xs font-bold text-slate-900 dark:text-white">
-                    {sourceLang === 'auto' ? `✨ ${t.autoDetectLang}` : `${sourceMeta.flag} ${sourceMeta.name}`}
+                    {sourceMeta.flag} {sourceMeta.name}
                   </span>
                 </label>
                 <select
@@ -506,9 +491,9 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
                   onChange={(e) => setSourceLang(e.target.value)}
                   className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 cursor-pointer"
                 >
-                  {SOURCE_LANGUAGES.map((l) => (
+                  {SUPPORTED_LANGUAGES.map((l) => (
                     <option key={l.code} value={l.code}>
-                      {l.flag} {l.code === 'auto' ? t.autoDetectLang : `${l.name} (${l.nativeName})`}
+                      {l.flag} {l.name} ({l.nativeName})
                     </option>
                   ))}
                 </select>
@@ -519,7 +504,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
                 <button
                   type="button"
                   onClick={handleSwap}
-                  title={t.swapLangsTitle}
+                  title="Поменять языки и тексты местами"
                   className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-amber-950/60 dark:hover:text-amber-300 transition-colors cursor-pointer shadow-xs"
                 >
                   <ArrowLeftRight className="h-4 w-4" />
@@ -529,7 +514,7 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
               {/* Target Language Picker */}
               <div className="flex-1">
                 <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  <span>{t.targetLangLabel}:</span>
+                  <span>{t.targetLangLabel || 'Язык перевода'}:</span>
                   <span className="text-xs font-bold text-slate-900 dark:text-white">
                     {targetMeta.flag} {targetMeta.name}
                   </span>
@@ -909,17 +894,11 @@ export const ContentImporter: React.FC<ContentImporterProps> = ({
           {/* Tab 2: Upload Files */}
           {activeTab === 'file' && (
             <div className="space-y-4 py-2">
-              {selectedFileName && (
-                <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300">
-                  <Check className="h-4 w-4 shrink-0 text-emerald-600" />
-                  <span>{t.fileSelectedLabel} <strong>{selectedFileName}</strong></span>
-                </div>
-              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 p-5 text-center">
                   <Upload className="mx-auto h-8 w-8 text-amber-600 mb-2" />
                   <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    {t.origFileTitle} ({sourceLang === 'auto' ? t.autoDetectLang : sourceMeta.name})
+                    {t.origFileTitle} ({sourceMeta.name})
                   </h4>
                   <p className="text-[11px] text-slate-400 mt-1 mb-3">
                     {t.supportedFormats}

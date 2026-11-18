@@ -5,6 +5,11 @@ import { SUPPORTED_LANGUAGES } from '../constants/languages';
 import { getTranslation } from '../i18n/translations';
 import { useAuthActions } from '../contexts/AuthContext';
 import { speechService } from '../services/speech';
+import {
+  ADSENSE_PUB_STORAGE_KEY,
+  ADSENSE_SLOT_STORAGE_KEY,
+  normalizeAdSensePubId,
+} from './AdSenseBanner';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -34,6 +39,48 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const t = getTranslation(preferences.uiLang);
   const { user, signIn, signOut } = useAuthActions();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [adsensePubId, setAdsensePubId] = useState(() => {
+    try {
+      return localStorage.getItem(ADSENSE_PUB_STORAGE_KEY) || (import.meta as any).env?.VITE_ADSENSE_PUB_ID || '';
+    } catch {
+      return '';
+    }
+  });
+  const [adsenseSlotId, setAdsenseSlotId] = useState(() => {
+    try {
+      return localStorage.getItem(ADSENSE_SLOT_STORAGE_KEY) || (import.meta as any).env?.VITE_ADSENSE_SLOT_ID || '';
+    } catch {
+      return '';
+    }
+  });
+  const [adsenseStatus, setAdsenseStatus] = useState<'idle' | 'saved' | 'error'>('idle');
+
+  const handleSaveAdSense = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedPub = adsensePubId.trim();
+    const trimmedSlot = adsenseSlotId.trim();
+    if (trimmedPub && !normalizeAdSensePubId(trimmedPub)) {
+      setAdsenseStatus('error');
+      return;
+    }
+    try {
+      if (trimmedPub) {
+        localStorage.setItem(ADSENSE_PUB_STORAGE_KEY, normalizeAdSensePubId(trimmedPub));
+      } else {
+        localStorage.removeItem(ADSENSE_PUB_STORAGE_KEY);
+      }
+      if (trimmedSlot) {
+        localStorage.setItem(ADSENSE_SLOT_STORAGE_KEY, trimmedSlot);
+      } else {
+        localStorage.removeItem(ADSENSE_SLOT_STORAGE_KEY);
+      }
+      window.dispatchEvent(new CustomEvent('lingotwice:adsense-updated'));
+      setAdsenseStatus('saved');
+      setTimeout(() => setAdsenseStatus('idle'), 2500);
+    } catch {
+      setAdsenseStatus('error');
+    }
+  };
 
   const availableVoices = useMemo(() => {
     return speechService.getAvailableVoicesForLocale(preferences.sourceLang || 'en');
@@ -312,6 +359,65 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
             </div>
           )}
+
+          {/* Google AdSense Configuration */}
+          <form
+            onSubmit={handleSaveAdSense}
+            className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-800/30 space-y-2.5"
+          >
+            <div>
+              <div className="font-medium text-slate-700 dark:text-slate-300">
+                {t.adsenseTitle}
+              </div>
+              <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                {t.adsenseDesc}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] text-slate-500 block mb-1">{t.adsensePubLabel}</label>
+                <input
+                  type="text"
+                  value={adsensePubId}
+                  onChange={(e) => {
+                    setAdsensePubId(e.target.value);
+                    setAdsenseStatus('idle');
+                  }}
+                  placeholder="ca-pub-XXXXXXXXXXXXXXXX"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono text-[11px] dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] text-slate-500 block mb-1">{t.adsenseSlotLabel}</label>
+                <input
+                  type="text"
+                  value={adsenseSlotId}
+                  onChange={(e) => {
+                    setAdsenseSlotId(e.target.value);
+                    setAdsenseStatus('idle');
+                  }}
+                  placeholder="1234567890"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-mono text-[11px] dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-[11px]">
+                {adsenseStatus === 'saved' && (
+                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">{t.adsenseSavedNotice}</span>
+                )}
+                {adsenseStatus === 'error' && (
+                  <span className="text-rose-600 dark:text-rose-400 font-medium">{t.adsenseInvalidPubError}</span>
+                )}
+              </div>
+              <button
+                type="submit"
+                className="rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 cursor-pointer"
+              >
+                {t.saveBtn}
+              </button>
+            </div>
+          </form>
 
           {/* Data Export & Reset */}
           <div className="border-t border-slate-100 pt-4 dark:border-slate-800 space-y-2">

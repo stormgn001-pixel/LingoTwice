@@ -1,6 +1,6 @@
 import {
   ComprehensionQuestion,
-  WordLookupResponse,
+  WordLookupResponse
 } from '../types';
 
 import { translateOnDevice } from './clientTranslator';
@@ -16,11 +16,15 @@ export interface TranslateResponse {
   detectedSourceLang?: string;
   cachedCount: number;
   provider: string;
+  usageQuota?: {
+    used: number;
+    limit: number;
+  };
 }
 
 export const apiService = {
   /**
-   * Get base URL for backend API (supports separate backend deployment)
+   * Get base URL for backend API (supports separate backend deployment like Render/Railway/VPS)
    */
   getBaseUrl() {
     const raw = (import.meta.env.VITE_API_BASE_URL as string) || '';
@@ -29,9 +33,9 @@ export const apiService = {
   },
 
   /**
-   * Helper to get common JSON headers
+   * Helper to get common headers
    */
-  getHeaders(): Record<string, string> {
+  getHeaders() {
     return { 'Content-Type': 'application/json' };
   },
 
@@ -49,11 +53,7 @@ export const apiService = {
 
       if (res.ok) {
         const data = await res.json();
-        if (
-          data &&
-          Array.isArray(data.translatedParagraphs) &&
-          data.translatedParagraphs.length === req.paragraphs.length
-        ) {
+        if (data && Array.isArray(data.translatedParagraphs) && data.translatedParagraphs.length === req.paragraphs.length) {
           return data;
         }
       }
@@ -110,9 +110,9 @@ export const apiService = {
         examples: [
           {
             source: params.contextSentence || params.word,
-            target: isRussian ? 'Пример использования в литературном контексте.' : 'Usage example in literary context.',
-          },
-        ],
+            target: isRussian ? 'Пример использования в литературном контексте.' : 'Usage example in literary context.'
+          }
+        ]
       };
     }
   },
@@ -148,29 +148,53 @@ export const apiService = {
               id: 'q-1',
               question: 'Какова главная мысль или ключевое действие в прочитанном фрагменте?',
               options: [
-                'Установление глубокого понимания и взаимной связи',
-                'Случайный диалог без существенного смысла',
-                'Прекращение общения и прощание',
-                'Описание второстепенных погодных явлений',
+                'Установление глубокой смысловой связи между персонажами или понятиями',
+                'Поверхностный диалог без существенного развития мысли',
+                'Отказ от дальнейшего взаимодействия и прекращение беседы',
+                'Описание второстепенных бытовых деталей обстановки'
               ],
               correctOptionIndex: 0,
-              explanation: 'Текст раскрывает тему создания смысловой связи.',
+              explanation: 'Текст раскрывает суть создания уз и взаимной ответственности.'
             },
+            {
+              id: 'q-2',
+              question: 'Какое утверждение наилучшим образом передаёт настроение автора?',
+              options: [
+                'Агрессивное и конфликтное',
+                'Философское, созерцательное и доверительное',
+                'Иронично-насмешливое',
+                'Абсолютно нейтральное статистическое'
+              ],
+              correctOptionIndex: 1,
+              explanation: 'Автор использует мягкую и глубокую метафорическую интонацию.'
+            }
           ]
         : [
             {
               id: 'q-1',
               question: 'What is the main idea or key event in the passage?',
               options: [
-                'Establishing deeper understanding and meaningful connection',
-                'A casual dialogue with no central theme',
+                'Establishing a meaningful connection between characters or ideas',
+                'Superficial small talk with no progression',
                 'Refusing further communication',
-                'A dry inventory of household objects',
+                'A dry inventory of household objects'
               ],
               correctOptionIndex: 0,
-              explanation: 'The passage focuses on context, connection, and mutual understanding.',
+              explanation: 'The passage focuses on context, connection, and mutual understanding.'
             },
-          ],
+            {
+              id: 'q-2',
+              question: 'Which option best describes the tone of the passage?',
+              options: [
+                'Aggressive and confrontational',
+                'Reflective, engaging, and thoughtful',
+                'Sarcastic and dismissive',
+                'Purely statistical'
+              ],
+              correctOptionIndex: 1,
+              explanation: 'The author uses an inviting and thoughtful narrative tone.'
+            }
+          ]
     };
   },
 
@@ -193,30 +217,6 @@ export const apiService = {
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
       throw new Error(errorData.error || 'Failed to load URL content.');
-    }
-
-    return await res.json();
-  },
-
-  /**
-   * Submit contact form inquiry to backend
-   */
-  async sendContactMessage(params: {
-    name: string;
-    email: string;
-    subject: string;
-    message: string;
-  }): Promise<{ success: boolean; messageId?: string }> {
-    const baseUrl = this.getBaseUrl();
-    const res = await fetch(`${baseUrl}/api/contact`, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      body: JSON.stringify(params),
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Failed to send message.');
     }
 
     return await res.json();
@@ -253,5 +253,5 @@ export const apiService = {
       if (res.ok) return await res.json();
     } catch {}
     return null;
-  },
+  }
 };

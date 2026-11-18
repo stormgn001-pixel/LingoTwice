@@ -64,18 +64,7 @@ const setBoundedCache = <T>(cache: Map<string, T>, key: string, value: T) => {
   cache.set(key, value);
 };
 
-// Helper to safely parse Gemini JSON even if wrapped in markdown fences
-const safeParseGeminiJson = (raw?: string | null): any => {
-  if (!raw || typeof raw !== 'string') return {};
-  const cleaned = raw
-    .trim()
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/\s*```$/i, '')
-    .trim();
-  return JSON.parse(cleaned || '{}');
-};
-
-// Intelligent multilingual fallback translator for offline resilience
+// Intelligent multilingual fallback translator for offline or API outages
 const smartFallbackTranslate = (text: string, targetLang: string): string => {
   const lowerTarget = targetLang.toLowerCase();
   const trimmed = text.trim();
@@ -414,11 +403,6 @@ app.post('/api/translate', async (req: Request, res: Response) => {
       return;
     }
 
-    if (paragraphs.length > 200) {
-      res.status(400).json({ error: 'Maximum 200 paragraphs per translation request.' });
-      return;
-    }
-
     const srcIso3 = mapToApertiumCode(sourceLang);
     const tgtIso3 = mapToApertiumCode(targetLang);
 
@@ -442,14 +426,13 @@ app.post('/api/translate', async (req: Request, res: Response) => {
     const missingTexts: string[] = [];
 
     paragraphs.forEach((p: string, idx: number) => {
-      const safeText = typeof p === 'string' ? p : String(p ?? '');
-      const cacheKey = `trans:${sourceLang}:${targetLang}:${safeText.trim()}`;
+      const cacheKey = `trans:${sourceLang}:${targetLang}:${p.trim()}`;
       if (translationCache.has(cacheKey)) {
         results[idx] = translationCache.get(cacheKey)!;
         cachedCount++;
       } else {
         missingIndices.push(idx);
-        missingTexts.push(safeText);
+        missingTexts.push(p);
       }
     });
 
@@ -522,7 +505,7 @@ app.post('/api/translate', async (req: Request, res: Response) => {
     missingIndices.forEach((origIdx, batchIdx) => {
       const trans = translatedBatch[batchIdx] || missingTexts[batchIdx];
       results[origIdx] = trans;
-      const cacheKey = `trans:${sourceLang}:${targetLang}:${String(paragraphs[origIdx] ?? '').trim()}`;
+      const cacheKey = `trans:${sourceLang}:${targetLang}:${paragraphs[origIdx].trim()}`;
       setBoundedCache(translationCache, cacheKey, trans);
     });
 
@@ -619,7 +602,7 @@ Provide a thorough linguistic breakdown:
             });
 
             const response = await Promise.race([geminiPromise, timeoutPromise]);
-            const data = safeParseGeminiJson(response.text);
+            const data = JSON.parse(response.text || '{}');
             if (data.word && data.translation) {
               setBoundedCache(dictionaryCache, dictCacheKey, data);
               res.json(data);
@@ -734,7 +717,7 @@ ${sourceText}
             });
 
             const response = await Promise.race([geminiPromise, timeoutPromise]);
-            const parsed = safeParseGeminiJson(response.text);
+            const parsed = JSON.parse(response.text || '{}');
             if (Array.isArray(parsed.questions) && parsed.questions.length > 0) {
               res.json(parsed);
               return;
@@ -940,20 +923,14 @@ app.post('/api/import-url', async (req: Request, res: Response) => {
     let match;
 
     while ((match = pRegex.exec(cleanedHtml)) !== null) {
-      // Strip HTML tags and common entities from paragraph
+      // Strip HTML tags from paragraph
       const text = match[1]
         .replace(/<[^>]+>/g, '')
         .replace(/&nbsp;/g, ' ')
         .replace(/&quot;/g, '"')
-        .replace(/&#39;|&apos;/g, "'")
-        .replace(/&mdash;/g, '—')
-        .replace(/&ndash;/g, '–')
-        .replace(/&laquo;/g, '«')
-        .replace(/&raquo;/g, '»')
         .replace(/&amp;/g, '&')
         .replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')
-        .replace(/\s+/g, ' ')
         .trim();
 
       // Only include meaningful paragraphs (> 40 chars)
@@ -989,47 +966,8 @@ app.post('/api/import-url', async (req: Request, res: Response) => {
   }
 });
 
-/**
- * Contact Form Submission Endpoint
- */
-app.post('/api/contact', (req: Request, res: Response) => {
-  try {
-    const { name, email, subject, message } = req.body || {};
-    const cleanName = typeof name === 'string' ? name.trim() : '';
-    const cleanEmail = typeof email === 'string' ? email.trim() : '';
-    const cleanSubject = typeof subject === 'string' ? subject.trim() : 'general';
-    const cleanMessage = typeof message === 'string' ? message.trim() : '';
-
-    if (cleanName.length < 2 || cleanName.length > 120) {
-      res.status(400).json({ error: 'Please provide a valid name (2–120 characters).' });
-      return;
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail) || cleanEmail.length > 200) {
-      res.status(400).json({ error: 'Please provide a valid email address.' });
-      return;
-    }
-
-    if (cleanMessage.length < 5 || cleanMessage.length > 5000) {
-      res.status(400).json({ error: 'Message must be between 5 and 5000 characters.' });
-      return;
-    }
-
-    const messageId = `msg_${Date.now().toString(36)}`;
-    console.info(`[Contact] Received inquiry ${messageId} [${cleanSubject}] (${cleanMessage.length} chars)`);
-
-    res.json({
-      success: true,
-      messageId,
-    });
-  } catch (err) {
-    console.error('Contact submission error:', err);
-    res.status(500).json({ error: 'Failed to submit contact inquiry.' });
-  }
-});
-
 // -------------------------------------------------------------
-// Direct routes for static informational pages & SEO files
+// Direct routes for Google AdSense compliance pages & ads.txt
 // -------------------------------------------------------------
 const servePublicPage = (fileName: string) => (_req: Request, res: Response) => {
   const targetDir = process.env.NODE_ENV === 'production' ? 'dist' : 'public';
@@ -1044,6 +982,7 @@ app.get('/about', servePublicPage('about.html'));
 app.get('/about.html', servePublicPage('about.html'));
 app.get('/contact', servePublicPage('contact.html'));
 app.get('/contact.html', servePublicPage('contact.html'));
+app.get('/ads.txt', servePublicPage('ads.txt'));
 app.get('/robots.txt', servePublicPage('robots.txt'));
 app.get('/sitemap.xml', servePublicPage('sitemap.xml'));
 

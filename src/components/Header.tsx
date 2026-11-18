@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { BookOpen, Languages, HelpCircle, LogIn, LogOut } from 'lucide-react';
+import { Languages, HelpCircle, LogIn, LogOut } from 'lucide-react';
 import { InterfaceLanguage } from '../types';
 import { getTranslation } from '../i18n/translations';
 import { PWAInstallButton } from './PWAInstallButton';
@@ -221,7 +221,7 @@ export const Header: React.FC<HeaderProps> = ({
         </nav>
       </div>
 
-      {/* Zone 3: Actions (PWA, Help, Auth & Settings) */}
+      {/* Zone 3: Actions (PWA, Help & Settings) */}
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         <PWAInstallButton uiLang={uiLang} theme={theme} />
 

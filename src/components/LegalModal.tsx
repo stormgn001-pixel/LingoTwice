@@ -63,9 +63,9 @@ export const LegalModal: React.FC<LegalModalProps> = ({ page, onClose, uiLang })
                 В гостевом режиме все ваши книги, словарь и прогресс сохраняются локально в браузере (LocalStorage). При входе через Google данные синхронизируются с облаком Firebase (Firestore) с доступом только для вашей учётной записи.
               </p>
 
-              <h4 className="font-bold text-slate-900 dark:text-white text-sm">3. Передача третьим сторонам</h4>
+              <h4 className="font-bold text-slate-900 dark:text-white text-sm">3. Передача третьим сторонам и реклама Google AdSense</h4>
               <p>
-                Для контекстного разбора и перевода фрагменты текста передаются через защищённый серверный API. Мы не продаём персональные данные и не используем ваши личные тексты для публичных баз.
+                Для контекстного разбора и перевода фрагменты текста передаются через защищённый серверный API. Приложение полностью бесплатно и поддерживается рекламой Google AdSense: сторонние поставщики, включая Google, могут использовать файлы cookie (в том числе DoubleClick DART) для показа объявлений на основе ваших посещений. Отказаться от персонализированной рекламы можно в настройках Google Ads.
               </p>
             </>
           ) : (
@@ -80,9 +80,9 @@ export const LegalModal: React.FC<LegalModalProps> = ({ page, onClose, uiLang })
                 In guest mode, data stays in your browser LocalStorage. When signed in with Google, your library, vocabulary, stats, and preferences sync securely to Firebase Firestore under your user ID.
               </p>
 
-              <h4 className="font-bold text-slate-900 dark:text-white text-sm">3. Third-Party Processing</h4>
+              <h4 className="font-bold text-slate-900 dark:text-white text-sm">3. Third-Party Processing & Google AdSense</h4>
               <p>
-                Selected snippets are processed through our backend translation and dictionary API endpoints. You can export or delete your stored data anytime from Settings.
+                Selected snippets are processed through our backend translation and dictionary API endpoints. LingoTwice is completely free and supported by Google AdSense. Third-party vendors, including Google, may use cookies (such as the DoubleClick DART cookie) to serve ads based on your visits. You may opt out of personalized advertising in Google Ads Settings.
               </p>
             </>
           ))}
